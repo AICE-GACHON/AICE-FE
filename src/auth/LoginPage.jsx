@@ -1,0 +1,145 @@
+import { useState } from 'react';
+import AuthLayout from './AuthLayout';
+import Field from './Field';
+import GoogleLoginButton from './GoogleLoginButton';
+import { login, loginWithGoogle } from '../api/auth';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validate({ email, password }) {
+  const errors = {};
+  if (!email.trim()) errors.email = '이메일을 입력해 주세요.';
+  else if (!EMAIL_RE.test(email)) errors.email = '올바른 이메일 형식이 아니에요.';
+  if (!password) errors.password = '비밀번호를 입력해 주세요.';
+  return errors;
+}
+
+export default function LoginPage({ onExit, onSwitchToSignup, onSuccess }) {
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const [googleError, setGoogleError] = useState('');
+  const [pendingIdToken, setPendingIdToken] = useState(null); // openreview_id를 더 물어봐야 할 때만 채워짐
+  const [googleOpenreviewId, setGoogleOpenreviewId] = useState('');
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+
+  const update = (patch) => setForm((f) => ({ ...f, ...patch }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const nextErrors = validate(form);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const res = await login({ email: form.email.trim(), password: form.password });
+      onSuccess(res.user ?? { email: form.email.trim() });
+    } catch (err) {
+      setSubmitError(err.message || '로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // 처음 구글로 가입하는 계정이면 백엔드가 openreview_id를 요구한다 — 그때만
+  // id_token을 잠깐 들고 있다가 openreview_id를 받아 같은 토큰으로 재시도한다.
+  const handleGoogleCredential = async (idToken) => {
+    setGoogleError('');
+    setGoogleSubmitting(true);
+    try {
+      const user = await loginWithGoogle(idToken);
+      onSuccess(user);
+    } catch (err) {
+      if (err.needsOpenreviewId) {
+        setPendingIdToken(idToken);
+      } else {
+        setGoogleError(err.message || '구글 로그인에 실패했어요.');
+      }
+    } finally {
+      setGoogleSubmitting(false);
+    }
+  };
+
+  const submitGoogleOpenreviewId = async (e) => {
+    e.preventDefault();
+    if (!googleOpenreviewId.trim()) return;
+    setGoogleSubmitting(true);
+    setGoogleError('');
+    try {
+      const user = await loginWithGoogle(pendingIdToken, googleOpenreviewId.trim());
+      onSuccess(user);
+    } catch (err) {
+      setGoogleError(err.message || '구글 로그인에 실패했어요.');
+    } finally {
+      setGoogleSubmitting(false);
+    }
+  };
+
+  return (
+    <AuthLayout onExit={onExit}>
+      <div className="eyebrow">로그인</div>
+      <h2>다시 오신 것을 환영해요</h2>
+
+      {pendingIdToken ? (
+        <form className="auth-form" onSubmit={submitGoogleOpenreviewId} style={{ marginTop: 20 }}>
+          <p className="onboard-desc">처음 구글로 가입하시네요. OpenReview ID만 알려주시면 가입이 끝나요.</p>
+          <Field
+            label="OpenReview ID"
+            type="text"
+            placeholder="openreview.net 계정 아이디"
+            value={googleOpenreviewId}
+            onChange={(e) => setGoogleOpenreviewId(e.target.value)}
+          />
+          {googleError && <div className="auth-submit-error">{googleError}</div>}
+          <button type="submit" className="pill btn-lg" style={{ width: '100%', justifyContent: 'center' }} disabled={googleSubmitting}>
+            {googleSubmitting ? '확인 중…' : '계속하기'}
+          </button>
+          <button type="button" className="auth-switch" style={{ border: 'none', background: 'none', cursor: 'pointer' }} onClick={() => setPendingIdToken(null)}>
+            취소
+          </button>
+        </form>
+      ) : (
+        <>
+          <GoogleLoginButton onCredential={handleGoogleCredential} />
+          {googleSubmitting && <p className="auth-google-notice">구글 로그인 확인 중…</p>}
+          {googleError && <p className="auth-google-notice" style={{ color: 'var(--red)' }}>{googleError}</p>}
+
+          <div className="auth-divider"><span>또는 이메일로 로그인</span></div>
+
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <Field
+              label="이메일"
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => update({ email: e.target.value })}
+              error={errors.email}
+            />
+            <Field
+              label="비밀번호"
+              type="password"
+              autoComplete="current-password"
+              value={form.password}
+              onChange={(e) => update({ password: e.target.value })}
+              error={errors.password}
+            />
+
+            {submitError && <div className="auth-submit-error">{submitError}</div>}
+
+            <button type="submit" className="pill btn-lg" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} disabled={submitting}>
+              {submitting ? '로그인 중…' : '로그인'}
+            </button>
+          </form>
+
+          <p className="auth-switch">
+            아직 계정이 없으신가요? <button type="button" onClick={onSwitchToSignup}>회원가입</button>
+          </p>
+        </>
+      )}
+    </AuthLayout>
+  );
+}

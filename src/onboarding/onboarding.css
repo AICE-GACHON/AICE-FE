@@ -1,0 +1,116 @@
+/* ---------- ONBOARDING (Get Started → 3단계 → 미리보기) ---------- */
+
+.onboard-shell{min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+
+.onboard-topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 32px;border-bottom:1px solid var(--line);
+}
+.onboard-brand{
+  display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;letter-spacing:-0.01em;
+  border:none;background:none;cursor:pointer;font-family:inherit;color:var(--ink);
+}
+.onboard-exit{border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--muted);}
+.onboard-exit:hover{color:var(--teal-deep);}
+
+.onboard-main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;}
+@media (max-width:900px){ .onboard-main{grid-template-columns:1fr;} }
+
+.onboard-panel-form{
+  padding:56px clamp(28px,6vw,88px);display:flex;flex-direction:column;
+  max-width:640px;width:100%;margin:0 auto;
+}
+
+.onboard-progress{display:flex;gap:8px;margin-bottom:22px;}
+.onboard-dot{width:36px;height:6px;border-radius:999px;background:var(--line);}
+.onboard-dot.done{background:var(--teal-deep);}
+.onboard-dot.active{background:var(--teal-bright);}
+
+.onboard-step-label{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;margin-bottom:28px;
+}
+
+.onboard-q h2{font-size:clamp(22px,2.6vw,28px);font-weight:800;letter-spacing:-0.015em;line-height:1.32;}
+.onboard-desc{margin-top:10px;color:var(--muted);font-size:15px;}
+.onboard-subq{font-size:15.5px;font-weight:700;margin-bottom:14px;}
+.onboard-optional{font-weight:500;color:var(--muted);font-size:13px;}
+
+.onboard-options{display:flex;flex-direction:column;gap:10px;}
+
+.onboard-option{
+  display:flex;align-items:flex-start;gap:12px;text-align:left;
+  border:1.5px solid var(--line);border-radius:12px;padding:13px 16px;
+  background:#fff;cursor:pointer;font-family:inherit;
+  transition:border-color .15s,background .15s;
+}
+.onboard-option:hover:not(:disabled){border-color:var(--teal);}
+.onboard-option.selected{border-color:var(--teal-deep);background:var(--teal-soft);}
+.onboard-option:disabled{opacity:0.4;cursor:not-allowed;}
+
+.onboard-indicator{
+  flex:0 0 auto;width:18px;height:18px;margin-top:1px;border:1.5px solid var(--line);
+  background:#fff;transition:border-color .15s,background .15s;
+}
+.onboard-indicator.radio{border-radius:50%;}
+.onboard-indicator.checkbox{border-radius:5px;}
+.onboard-indicator.on{border-color:var(--teal-deep);background:var(--teal-deep);box-shadow:inset 0 0 0 3px #fff;}
+
+.onboard-option-text{display:flex;flex-direction:column;gap:3px;}
+.onboard-option-label{font-size:15px;font-weight:700;color:var(--ink);}
+.onboard-option-desc{font-size:13px;color:var(--muted);line-height:1.5;}
+
+.onboard-input{
+  margin-top:12px;width:100%;border:1.5px solid var(--line);border-radius:10px;
+  padding:12px 14px;font-size:14.5px;font-family:inherit;color:var(--ink);
+}
+.onboard-input:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
+
+.onboard-nav{display:flex;align-items:center;justify-content:space-between;margin-top:40px;padding-top:24px;border-top:1px solid var(--line);}
+.onboard-nav-right{display:flex;align-items:center;gap:18px;}
+.onboard-back,.onboard-skip{border:none;background:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;color:var(--muted);}
+.onboard-back:hover:not(:disabled),.onboard-skip:hover:not(:disabled){color:var(--teal-deep);}
+.onboard-back:disabled{opacity:0.35;cursor:not-allowed;}
+.onboard-nav .pill.btn-lg:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+
+/* ---------- right illustration panel ---------- */
+.onboard-panel-art{
+  background:linear-gradient(160deg,var(--teal-soft) 0%,var(--card-lime-1) 100%);
+  display:flex;align-items:center;justify-content:center;padding:48px;position:relative;overflow:hidden;
+}
+.onboard-panel-art::before,
+.onboard-panel-art::after{
+  content:'';position:absolute;border-radius:50%;opacity:0.5;
+}
+.onboard-panel-art::before{width:260px;height:260px;background:var(--card-violet-2);filter:blur(60px);top:-60px;right:-60px;}
+.onboard-panel-art::after{width:220px;height:220px;background:var(--teal-bright);filter:blur(70px);bottom:-40px;left:-40px;opacity:0.3;}
+@media (max-width:900px){ .onboard-panel-art{display:none;} }
+
+.onboard-art-card{position:relative;max-width:360px;width:100%;padding:22px 24px;}
+.onboard-art-example{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
+.onboard-art-example-label{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:4px;}
+.onboard-art-example-before{font-size:12.5px;color:#4a4f49;line-height:1.55;margin-bottom:8px;}
+.onboard-art-example-after{font-size:12.5px;color:var(--teal-deep);font-weight:700;line-height:1.5;}
+
+/* ---------- preview / handoff screen ---------- */
+.onboard-preview-body{flex:1;display:flex;align-items:center;justify-content:center;padding:48px 24px;}
+.onboard-preview-card{
+  width:100%;max-width:560px;background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);
+  padding:44px clamp(24px,4vw,48px);box-shadow:0 30px 60px -30px rgba(12,18,16,0.18);
+}
+.onboard-preview-card h2{font-size:clamp(22px,2.6vw,26px);font-weight:800;letter-spacing:-0.01em;margin-top:8px;line-height:1.35;}
+.onboard-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px;margin-top:26px;padding:20px;background:#fafaf8;border-radius:12px;}
+.onboard-summary-grid > div{display:flex;flex-direction:column;gap:4px;}
+.onboard-summary-key{font-family:var(--mono);font-size:10.5px;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+.onboard-summary-val{font-size:14px;font-weight:700;color:var(--ink);}
+@media (max-width:520px){ .onboard-summary-grid{grid-template-columns:1fr;} }
+
+.onboard-tone-note{margin-top:18px;font-size:13.5px;color:var(--teal-deep);background:var(--teal-soft);border-radius:10px;padding:12px 14px;line-height:1.55;}
+
+.onboard-result-order{margin-top:14px;padding-left:22px;display:flex;flex-direction:column;gap:8px;}
+.onboard-result-order li{font-size:14.5px;color:#33372f;font-weight:600;}
+
+.onboard-preview-actions{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:32px;}
+.onboard-preview-actions .pill.btn-lg{width:100%;justify-content:center;}
+.onboard-login-link{border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--muted);}
+.onboard-login-link:hover{color:var(--teal-deep);}
