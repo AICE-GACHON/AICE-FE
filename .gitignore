@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# 로컬 환경변수 — .env.example을 복사해서 만드세요.
+# ⚠️ 이 파일이 없으면 VITE_API_BASE_URL이 비어서 화면이 에러 없이
+#    조용히 mock 데이터로 동작합니다 (백엔드가 꺼져 있어도 멀쩡해 보임).
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
