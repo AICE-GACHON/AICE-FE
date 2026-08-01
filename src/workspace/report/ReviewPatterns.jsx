@@ -1,5 +1,28 @@
 // AI 파트 4대 규칙 #3: 빈도순이 아니라 is_distinctive(코퍼스 대비 두드러짐) 기준으로 강조한다.
 // baselines 지적은 코퍼스의 78.8%가 받아서 "20편 중 17편"은 정보량이 0이다 (DEVELOPMENT.md §6).
+
+/** 패턴 대표 문장 1건.
+ *
+ * ⚠️ examples는 근거 추적 도입(AI 파트 설계서 §23.2) 때 list[str] -> list[ReviewExample]로
+ * 바뀌었다. {text, paper_id, review_point_id, from_unsplit_review} 객체다.
+ * 옛 문자열 형태도 받아주는 이유는 예전 응답이 캐시돼 있을 수 있어서다.
+ *
+ * from_unsplit_review는 2023년 이전 학회처럼 강·약점이 분리되지 않은 리뷰에서 나온
+ * 문장이라는 뜻이다. 이때는 '지적'이라고 단정하면 안 되고 리뷰 본문의 일부로만
+ * 표시해야 한다 (DEVELOPMENT.md §6, 설계서 §23.5).
+ */
+function PatternExample({ example }) {
+  const text = typeof example === 'string' ? example : example?.text;
+  if (!text) return null;
+  const unsplit = typeof example === 'object' && example.from_unsplit_review;
+  return (
+    <div className="wr-ex">
+      {unsplit ? '리뷰 본문 중: ' : '예: '}
+      {text}
+    </div>
+  );
+}
+
 export default function ReviewPatterns({ patterns, neighborCount }) {
   const denom = patterns[0]?.total_papers;
   const hasLift = patterns.some((p) => p.lift != null);
@@ -48,7 +71,7 @@ export default function ReviewPatterns({ patterns, neighborCount }) {
                 지적이 없던 {p.decided_without}편은 {(100 * p.accept_rate_without).toFixed(0)}% 통과
               </div>
             )}
-            {p.examples?.[0] && <div className="wr-ex">예: {p.examples[0]}</div>}
+            {p.examples?.[0] && <PatternExample example={p.examples[0]} />}
           </div>
         );
       })}
