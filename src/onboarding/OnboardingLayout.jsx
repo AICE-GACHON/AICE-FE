@@ -1,3 +1,5 @@
+import BrandMark from '../components/BrandMark';
+
 const STEP_LABELS = ['사용자 유형', '이용 목적', '분석 기준'];
 
 export default function OnboardingLayout({
@@ -18,7 +20,7 @@ export default function OnboardingLayout({
     <div className="onboard-shell">
       <div className="onboard-topbar">
         <button type="button" className="onboard-brand" onClick={onExit}>
-          <span className="mark" style={{ width: 26, height: 26, fontSize: 13 }}>P</span>PaperTrace
+          <BrandMark size={26} />PAIR
         </button>
         <button type="button" className="onboard-exit" onClick={onExit}>나중에 하기</button>
       </div>

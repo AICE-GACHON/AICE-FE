@@ -1,8 +1,10 @@
+import BrandMark from './BrandMark';
+
 export default function Header({ onGetStarted, onLogin }) {
   return (
     <header>
       <nav>
-        <div className="brand"><span className="mark">P</span>PaperTrace</div>
+        <div className="brand"><BrandMark />PAIR</div>
         <div className="navlinks">
           <a href="#features">Product <span className="chev">▾</span></a>
           <a href="#process">Use Cases <span className="chev">▾</span></a>

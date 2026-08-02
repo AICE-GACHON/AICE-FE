@@ -18,12 +18,12 @@ export default function ProblemCompare() {
             </ul>
           </div>
           <div className="new">
-            <h4>PaperTrace</h4>
+            <h4>PAIR</h4>
             <ul>
-              <li>Similar papers plus the actual reviews they received</li>
-              <li>Connects review comments all the way to the final revision</li>
-              <li>Generates predicted review comments for your draft, paragraph by paragraph</li>
-              <li>Also shows which conferences or journals similar papers were published in</li>
+              <li>Similar papers ranked by real match signals — not a raw similarity score</li>
+              <li>Open any paper into the actual reviews, rebuttals, and revisions it went through</li>
+              <li>Surfaces review patterns that are genuinely distinctive for your topic, not just common</li>
+              <li>Shows acceptance trends by venue, with sample-bias warnings where the data can mislead</li>
             </ul>
           </div>
         </div>

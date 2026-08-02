@@ -65,7 +65,7 @@ export default function App() {
       <ReviewSimulator />
       <ProcessSteps />
       <Features />
-      <CtaBand onGetStarted={goToOnboarding} />
+      <CtaBand onGetStarted={goToOnboarding} onLogin={goToLogin} />
       <Footer />
     </>
   );
