@@ -1,10 +1,10 @@
 const FEATURES = [
-  { icon: '⌕', title: 'Multimodal similarity search', desc: 'We embed text together with figures and tables to find papers that are truly similar in methodology.' },
-  { icon: '✎', title: 'Review-to-revision linking', desc: 'We connect review comments to the final revision paragraph by paragraph, showing what changed and why.' },
-  { icon: '✓', title: 'Conference & journal matching', desc: 'See which conferences and journals published similar papers, and how they tend to review.' },
-  { icon: '§', title: 'Section-aware predictions', desc: 'Predicted comments are tailored to the section — Related Work, Method, Experiments, and more.' },
-  { icon: '↻', title: 'Revision history', desc: 'Track a paper from v1 to v2 to the final version, and see what changed at every review round.' },
-  { icon: '⌁', title: 'Code-change linking (experimental)', desc: 'For papers with public GitHub repos, we try to connect how the code changed after review.' },
+  { icon: '⌕', title: 'Confidence-scored search', desc: 'Every result comes with a confidence signal — weak or off-topic matches get flagged instead of shown as certain.' },
+  { icon: '≈', title: 'Rank + match reason, not a score', desc: 'We show why a paper matched — semantic, lexical, or both — instead of a similarity percentage that can’t really be compared.' },
+  { icon: '🕓', title: 'Full review timeline per paper', desc: 'Reviews, rebuttals, comments, and revisions merged into one chronological story, in the order they actually happened.' },
+  { icon: '★', title: 'Distinctive review patterns', desc: 'Patterns are ranked by how unusual they are for your topic against the corpus baseline, not by raw frequency.' },
+  { icon: '🏛', title: 'Venue trends with bias warnings', desc: 'Acceptance rates are shown alongside corpus baselines, with sample-bias flags where a venue’s data is skewed.' },
+  { icon: '✎', title: 'Real revision diffs', desc: 'See exactly what authors changed in the title, abstract, and attachments after review — word-level, not guessed.' },
 ];
 
 export default function Features() {

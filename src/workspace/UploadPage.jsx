@@ -3,6 +3,7 @@ import { createSubmission, createSubmissionFromPdf, startAnalysis, pollAnalysis 
 import { loadAnswers } from '../onboarding/sessionState';
 import { fieldLabel } from '../onboarding/onboardingData';
 import ResultReport from './ResultReport';
+import BrandMark from '../components/BrandMark';
 
 // 온보딩에서 고른 연구 분야가 있으면 SubmissionCreate.field 기본값으로 이어 쓴다.
 function defaultField() {
@@ -97,7 +98,7 @@ export default function UploadPage({ user, onLogout }) {
     <div className="workspace-shell">
       <div className="workspace-topbar">
         <div className="onboard-brand">
-          <span className="mark" style={{ width: 26, height: 26, fontSize: 13 }}>P</span>PaperTrace
+          <BrandMark size={26} />PAIR
         </div>
         <div className="workspace-topbar-right">
           {user?.nickname && <span className="workspace-user">{user.nickname} 님</span>}

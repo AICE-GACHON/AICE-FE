@@ -9,10 +9,10 @@ const MATCH_LABEL = {
 
 const isAccept = (decision) => (decision || '').startsWith('accept');
 
-function PaperRow({ paper }) {
+function PaperRow({ paper, onSelect }) {
   const match = MATCH_LABEL[paper.match_type];
   return (
-    <div className="wr-paper-row">
+    <div className="wr-paper-row wr-paper-row-clickable" onClick={() => onSelect(paper.paper_id)} role="button" tabIndex={0}>
       <span className="wr-paper-rank">{paper.rank}.</span>
       <div className="wr-paper-main">
         <div className="wr-paper-top">
@@ -43,7 +43,7 @@ function PaperRow({ paper }) {
   );
 }
 
-export default function SimilarPapers({ papers }) {
+export default function SimilarPapers({ papers, onSelectPaper }) {
   const [expanded, setExpanded] = useState(false);
   const TOP_SHOWN = 5;
   const shown = papers.slice(0, TOP_SHOWN);
@@ -52,14 +52,15 @@ export default function SimilarPapers({ papers }) {
   return (
     <div className="wr-card">
       <div className="wr-card-title">📄 유사 논문 <span className="wr-pill">상위 {shown.length}편</span></div>
+      <div className="wr-hint">논문 제목을 클릭하면 요약과 심사 타임라인을 볼 수 있어요.</div>
       {papers.length === 0 && <div className="wr-muted">결과 없음.</div>}
       {rest.length > 0 && (
         <div className="wr-muted" style={{ marginBottom: 10 }}>
           아래 분석은 유사 논문 {papers.length}편 전체를 기준으로 계산됩니다.
         </div>
       )}
-      {shown.map((p) => <PaperRow key={p.paper_id} paper={p} />)}
-      {expanded && rest.map((p) => <PaperRow key={p.paper_id} paper={p} />)}
+      {shown.map((p) => <PaperRow key={p.paper_id} paper={p} onSelect={onSelectPaper} />)}
+      {expanded && rest.map((p) => <PaperRow key={p.paper_id} paper={p} onSelect={onSelectPaper} />)}
       {rest.length > 0 && !expanded && (
         <button type="button" className="wr-more-btn" onClick={() => setExpanded(true)}>
           나머지 {rest.length}편 보기

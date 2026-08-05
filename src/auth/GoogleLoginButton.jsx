@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import googleLogo from '../assets/Google.png';
 
 // Google Identity Services(GIS) — 프론트가 구글과 직접 통신해 id_token을 받고,
 // 백엔드(app/core/google_oauth.py)는 그 토큰의 서명/audience/만료만 검증한다.
@@ -58,7 +59,7 @@ export default function GoogleLoginButton({ onCredential }) {
   if (!CLIENT_ID) {
     return (
       <div className="auth-google-btn auth-google-btn-disabled" title="VITE_GOOGLE_CLIENT_ID가 설정되면 활성화됩니다.">
-        <span className="auth-google-icon" aria-hidden="true">G</span>
+        <img className="auth-google-icon" src={googleLogo} alt="" />
         Google로 계속하기 (설정 필요)
       </div>
     );
