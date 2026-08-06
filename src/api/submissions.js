@@ -17,18 +17,6 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // mock 모드에서 submission_id별 폴링 횟수를 기억해 pending → running → done을 흉내낸다.
 const mockProgress = new Map();
 
-/** @param {{title: string, abstract: string, content?: string|null, field?: string|null}} payload */
-export async function createSubmission({ title, abstract, content = null, field = null }) {
-  if (!BASE_URL) {
-    console.info('[submissions] VITE_API_BASE_URL 미설정 — 업로드 mock 처리:', { title, field });
-    return { submission_id: `mock-${Date.now()}`, title, abstract, content, field };
-  }
-  return authorizedFetch('/api/submissions', {
-    method: 'POST',
-    body: JSON.stringify({ title, abstract, content, field }),
-  });
-}
-
 /**
  * PDF로 초안을 올린다. title/abstract는 비워 보내도 되고(서버가 PDF에서 추출),
  * 사용자가 직접 입력했으면 그 값을 우선한다.
@@ -43,6 +31,8 @@ export async function createSubmissionFromPdf({ file, title = '', abstract = '',
       abstract: abstract || '(mock) PDF에서 제목/초록을 추출했다고 가정한 값입니다.',
       content: null,
       field,
+      // 15페이지 초과 경고 흐름도 mock으로 밟아볼 수 있게 둔다 (16으로 바꾸면 경고).
+      page_count: 12,
     };
   }
 

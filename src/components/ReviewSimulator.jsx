@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import SimilarPapers from '../workspace/report/SimilarPapers';
-import ReviewPatterns from '../workspace/report/ReviewPatterns';
+import SelectedPapers from '../workspace/report/SelectedPapers';
+import Summary from '../workspace/report/Summary';
 import PaperStoryPanel from '../workspace/story/PaperStoryPanel';
 import { MOCK_REPORT } from '../workspace/mockReport';
 
@@ -17,12 +17,12 @@ export default function ReviewSimulator() {
         <div className="section-head">
           <div className="eyebrow">Try it — live demo</div>
           <h2>This is the real result screen,<br />with a sample paper already analyzed</h2>
-          <p>Click a paper below to open its actual review timeline — this is the same panel you'll see with your own draft.</p>
+          <p>These are the reviews that similar papers actually received. Click one to open its full review timeline.</p>
         </div>
 
         <div className="sim-demo wr-stack">
-          <SimilarPapers papers={MOCK_REPORT.similar_papers} onSelectPaper={setSelectedPaperId} />
-          <ReviewPatterns patterns={MOCK_REPORT.review_patterns} neighborCount={MOCK_REPORT.similar_papers.length} />
+          <SelectedPapers papers={MOCK_REPORT.selected_papers} onOpenStory={setSelectedPaperId} />
+          <Summary markdown={MOCK_REPORT.summary_markdown} />
         </div>
 
         {selectedPaperId != null && (
