@@ -137,7 +137,7 @@ export default function UploadPage({ user, onLogout }) {
 
               <p className="fine" style={{ marginTop: 12 }}>
                 본문과 참고문헌까지 읽어야 정확하게 고를 수 있어서 PDF 원문이 필요해요.
-                텍스트가 들어 있지 않은 스캔본은 분석할 수 없어요.
+                스캔본도 괜찮아요 — 페이지를 그대로 읽어서 제목과 초록을 찾아냅니다.
               </p>
 
               <button
