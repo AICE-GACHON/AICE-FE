@@ -1,10 +1,10 @@
 export default function Hero({ onGetStarted, onLogin }) {
   return (
     <section className="hero">
-      <h1>Write it. We'll show you <span className="accent">the review first.</span></h1>
+      <h1>Read the reviews <span className="accent">papers like yours got.</span></h1>
       <p className="hero-sub">
-        Paste your title and abstract, or upload a PDF — we find similar papers ranked by real match signals, <br className="hero-sub-break" />
-        then open any of them into the actual reviews, rebuttals, and revisions they went through, plus the review patterns and venue trends for your topic.
+        Upload your paper as a PDF. We read it — method, experiments, reference list — to pick the papers <br className="hero-sub-break" />
+        that are genuinely closest to it, then show you the reviews those papers actually received, in full.
       </p>
       <div className="hero-actions">
         <button type="button" className="pill btn-lg" onClick={onGetStarted}>Get started free <span>→</span></button>

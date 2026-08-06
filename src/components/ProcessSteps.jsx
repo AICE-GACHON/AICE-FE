@@ -7,9 +7,9 @@ export default function ProcessSteps() {
           <h2>Three steps to see how papers like yours were actually reviewed</h2>
         </div>
         <div className="process">
-          <div><div className="num">01</div><h4>Upload your abstract or PDF</h4><p>Paste a title and abstract, or upload a PDF draft. We search the corpus and rank matches by real signals — not just embeddings.</p></div>
-          <div><div className="num">02</div><h4>Open any similar paper's story</h4><p>See the full timeline for that paper — reviews, author rebuttals, comments, and revisions — all in one place.</p></div>
-          <div><div className="num">03</div><h4>Read the patterns, not a verdict</h4><p>We show which review patterns are genuinely distinctive for your topic and how venues trended. The final call is always yours.</p></div>
+          <div><div className="num">01</div><h4>Upload your PDF</h4><p>The whole paper, not just the abstract — we need the method, the experiments, and the references to tell a close match from a superficial one.</p></div>
+          <div><div className="num">02</div><h4>Read what reviewers said</h4><p>Up to five genuinely similar papers, each with the reason it was picked and every review it received, in full.</p></div>
+          <div><div className="num">03</div><h4>Follow any paper further</h4><p>Open its whole story — what reviewers asked, how the authors answered, what they changed, and how it ended. The final call is always yours.</p></div>
         </div>
       </div>
     </section>

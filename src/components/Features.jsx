@@ -1,10 +1,10 @@
 const FEATURES = [
-  { icon: '⌕', title: 'Confidence-scored search', desc: 'Every result comes with a confidence signal — weak or off-topic matches get flagged instead of shown as certain.' },
-  { icon: '≈', title: 'Rank + match reason, not a score', desc: 'We show why a paper matched — semantic, lexical, or both — instead of a similarity percentage that can’t really be compared.' },
-  { icon: '🕓', title: 'Full review timeline per paper', desc: 'Reviews, rebuttals, comments, and revisions merged into one chronological story, in the order they actually happened.' },
-  { icon: '★', title: 'Distinctive review patterns', desc: 'Patterns are ranked by how unusual they are for your topic against the corpus baseline, not by raw frequency.' },
-  { icon: '🏛', title: 'Venue trends with bias warnings', desc: 'Acceptance rates are shown alongside corpus baselines, with sample-bias flags where a venue’s data is skewed.' },
-  { icon: '✎', title: 'Real revision diffs', desc: 'See exactly what authors changed in the title, abstract, and attachments after review — word-level, not guessed.' },
+  { icon: '📄', title: 'Your whole paper, not its abstract', desc: 'Search finds fifty candidates from the title and abstract. Then we hand the full PDF and those candidates to a model that reads both and picks the ones that actually match.' },
+  { icon: '≈', title: 'A reason, not a score', desc: 'Each pick comes with one sentence on what the two papers share. We don’t show a similarity percentage, because between the top candidates the numbers differ by less than noise.' },
+  { icon: '∅', title: 'Fewer results when fewer fit', desc: 'If only three papers genuinely match, you get three. If none do, we say so. Padding the list would make “what reviewers said about similar papers” a false claim.' },
+  { icon: '❝', title: 'The reviews themselves', desc: 'Every review each paper received, in full — scores, criticisms, questions — plus the area chair’s summary. Not our paraphrase of them.' },
+  { icon: '⌕', title: 'Flagged when we’re out of depth', desc: 'The corpus is ICLR and NeurIPS. Upload something outside it and you get a warning, not five confident-looking matches.' },
+  { icon: '🕓', title: 'The full review timeline', desc: 'Open any paper into reviews, author rebuttals, comments, and revisions merged in the order they actually happened — with word-level diffs of what changed.' },
 ];
 
 export default function Features() {
