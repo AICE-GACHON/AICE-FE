@@ -48,7 +48,10 @@ export default function ReviewPatterns({ patterns, neighborCount }) {
                 지적이 없던 {p.decided_without}편은 {(100 * p.accept_rate_without).toFixed(0)}% 통과
               </div>
             )}
-            {p.examples?.[0] && <div className="wr-ex">예: {p.examples[0]}</div>}
+            {/* examples는 문자열이 아니라 ReviewExample 객체다 (schemas.py ReviewExample:
+                text/paper_id/review_point_id/from_unsplit_review). 객체를 그대로 렌더하면
+                React가 트리 전체를 언마운트시켜 화면이 백지가 된다. */}
+            {p.examples?.[0]?.text && <div className="wr-ex">예: {p.examples[0].text}</div>}
           </div>
         );
       })}

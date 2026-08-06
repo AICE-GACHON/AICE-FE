@@ -28,7 +28,7 @@ export const MOCK_REPORT = {
   review_patterns: [
     {
       label: 'Baselines', aspect: 'baselines', paper_count: 16, total_papers: 20,
-      examples: ['비교 대상 베이스라인이 최신 기법을 포함하지 않습니다.'],
+      examples: [{ text: '비교 대상 베이스라인이 최신 기법을 포함하지 않습니다.', paper_id: 32316, review_point_id: 100001, from_unsplit_review: false }],
       base_rate: 0.788, lift: 1.02, p_value: 0.44, is_distinctive: false,
       accept_with: 5, accept_without: 2, decided_with: 14, decided_without: 6,
       accept_rate_with: 0.357, accept_rate_without: 0.333,
@@ -36,7 +36,7 @@ export const MOCK_REPORT = {
     },
     {
       label: '재현성', aspect: 'reproducibility', paper_count: 9, total_papers: 20,
-      examples: ['하이퍼파라미터와 학습 설정이 충분히 기술되지 않아 재현이 어렵습니다.'],
+      examples: [{ text: '하이퍼파라미터와 학습 설정이 충분히 기술되지 않아 재현이 어렵습니다.', paper_id: 29573, review_point_id: 100002, from_unsplit_review: false }],
       base_rate: 0.21, lift: 2.14, p_value: 0.012, is_distinctive: true,
       accept_with: 2, accept_without: 6, decided_with: 9, decided_without: 11,
       accept_rate_with: 0.222, accept_rate_without: 0.545,
@@ -44,7 +44,7 @@ export const MOCK_REPORT = {
     },
     {
       label: '실험 규모', aspect: 'experimental_scale', paper_count: 7, total_papers: 20,
-      examples: ['데이터셋 1~2개로는 일반화 가능성을 주장하기 부족합니다.'],
+      examples: [{ text: '데이터셋 1~2개로는 일반화 가능성을 주장하기 부족합니다.', paper_id: 8213, review_point_id: 100003, from_unsplit_review: false }],
       base_rate: 0.19, lift: 1.85, p_value: 0.08, is_distinctive: false,
       accept_with: 1, accept_without: 7, decided_with: 7, decided_without: 13,
       accept_rate_with: 0.143, accept_rate_without: 0.538,
