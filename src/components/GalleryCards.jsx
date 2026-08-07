@@ -4,13 +4,13 @@ export default function GalleryCards() {
       <div className="gallery">
         <div className="gcard dark">
           <div className="float-panel">
-            <div className="mini-tabs"><span className="on">Similar Papers</span><span>Review Patterns</span><span>Venue Trends</span></div>
-            <div className="mini-body">Ranked by match signals, not a similarity score</div>
+            <div className="mini-tabs"><span className="on">Similar Papers</span><span>Reviews</span><span>Timeline</span></div>
+            <div className="mini-body">Picked by reading your PDF, not by matching its abstract</div>
             <div className="mini-bar"></div>
             <div className="mini-bar short"></div>
             <span className="mini-btn">Open</span>
           </div>
-          <div className="gcard-label">Rank + match reason (semantic, lexical, or both)</div>
+          <div className="gcard-label">Every pick comes with the reason it was picked</div>
         </div>
 
         <div className="gcard violet">
@@ -24,10 +24,10 @@ export default function GalleryCards() {
 
         <div className="gcard lime">
           <div className="float-panel">
-            <div className="tag"><span className="badge">★</span>Distinctive review pattern</div>
-            <div className="headline">Reproducibility flagged 2.1× more than average</div>
-            <div className="quote">9 of 20 similar papers got this note — and <mark>it tracked with lower acceptance</mark>.</div>
-            <div className="actions"><span className="accept">View pattern</span><span className="dismiss">Dismiss</span></div>
+            <div className="tag"><span className="badge">❝</span>What a reviewer wrote</div>
+            <div className="headline">“Evaluated only on QM9”</div>
+            <div className="quote">From the actual review of a paper we picked — <mark>their words, not our summary</mark>.</div>
+            <div className="actions"><span className="accept">Read the review</span><span className="dismiss">Dismiss</span></div>
           </div>
           <div className="icon-dock"><span>⌕</span><span>✓</span><span>§</span></div>
         </div>
