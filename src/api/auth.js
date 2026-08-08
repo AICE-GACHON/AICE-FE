@@ -24,8 +24,14 @@ async function unwrap(res) {
   return body.data;
 }
 
-/** @param {{email: string, password: string, nickname: string, openreviewId: string, onboardingId?: string|null}} payload */
-export async function signup({ email, password, nickname, openreviewId, onboardingId }) {
+/**
+ * inviteCode는 배포 환경에서 **필수**다. 서버가 SIGNUP_INVITE_CODE를 설정한 채로
+ * 떠 있으면(배포 기본값) 코드 없이 보낸 가입은 403 "초대 코드가 필요합니다"로
+ * 거절된다. 개발 서버는 보통 비어 있어서 이 값을 무시한다.
+ *
+ * @param {{email: string, password: string, nickname: string, openreviewId: string, inviteCode?: string, onboardingId?: string|null}} payload
+ */
+export async function signup({ email, password, nickname, openreviewId, inviteCode, onboardingId }) {
   if (!BASE_URL) {
     console.info('[auth] VITE_API_BASE_URL 미설정 — 회원가입 mock 성공 처리:', { email, nickname, openreviewId, onboardingId });
     mockNicknameByEmail.set(email, nickname);
@@ -40,6 +46,7 @@ export async function signup({ email, password, nickname, openreviewId, onboardi
       password,
       nickname,
       openreview_id: openreviewId,
+      ...(inviteCode ? { invite_code: inviteCode } : {}),
       ...(onboardingId ? { onboarding_id: onboardingId } : {}),
     }),
   });
@@ -75,10 +82,15 @@ export async function login({ email, password }) {
  * 처음 구글로 가입하는 경우에만 openreview_id가 필요하고, 없이 호출하면 백엔드가
  * 400으로 이를 알려준다 — 이때 err.needsOpenreviewId를 true로 표시해 호출부가
  * openreview_id를 입력받아 같은 id_token으로 재시도할 수 있게 한다.
+ * 처음 구글로 가입하는 계정에만 openreviewId·inviteCode가 필요하다. 이미 가입한
+ * 사람의 로그인에는 서버가 둘 다 요구하지 않는다 — 초대받아 가입한 사람이 로그인할
+ * 때마다 코드를 다시 입력해야 한다면 그건 초대가 아니라 비밀번호다.
+ *
  * @param {string} idToken
  * @param {string} [openreviewId]
+ * @param {string} [inviteCode]
  */
-export async function loginWithGoogle(idToken, openreviewId) {
+export async function loginWithGoogle(idToken, openreviewId, inviteCode) {
   if (!BASE_URL) {
     console.info('[auth] VITE_API_BASE_URL 미설정 — 구글 로그인 mock 성공 처리');
     saveTokens({ access_token: 'mock-access-token', refresh_token: 'mock-refresh-token' });
@@ -88,10 +100,21 @@ export async function loginWithGoogle(idToken, openreviewId) {
   const res = await fetch(`${BASE_URL}/api/auth/google`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id_token: idToken, ...(openreviewId ? { openreview_id: openreviewId } : {}) }),
+    body: JSON.stringify({
+      id_token: idToken,
+      ...(openreviewId ? { openreview_id: openreviewId } : {}),
+      ...(inviteCode ? { invite_code: inviteCode } : {}),
+    }),
   });
   const body = await res.json().catch(() => null);
 
+  // 서버는 신규 가입일 때만 이 둘을 요구한다. 순서가 있다 — 초대 코드를 먼저
+  // 보고(403), 통과하면 openreview_id를 본다(400). 화면에서는 한 번에 받는다.
+  if (res.status === 403) {
+    const err = new Error(body?.error?.message || '초대 코드가 필요합니다.');
+    err.needsInvite = true;
+    throw err;
+  }
   if (res.status === 400 && body?.error?.message?.includes('openreview_id')) {
     const err = new Error(body.error.message);
     err.needsOpenreviewId = true;
