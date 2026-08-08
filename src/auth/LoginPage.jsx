@@ -23,6 +23,7 @@ export default function LoginPage({ onExit, onSwitchToSignup, onSuccess }) {
   const [googleError, setGoogleError] = useState('');
   const [pendingIdToken, setPendingIdToken] = useState(null); // openreview_id를 더 물어봐야 할 때만 채워짐
   const [googleOpenreviewId, setGoogleOpenreviewId] = useState('');
+  const [googleInviteCode, setGoogleInviteCode] = useState('');
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   const update = (patch) => setForm((f) => ({ ...f, ...patch }));
@@ -45,8 +46,9 @@ export default function LoginPage({ onExit, onSwitchToSignup, onSuccess }) {
     }
   };
 
-  // 처음 구글로 가입하는 계정이면 백엔드가 openreview_id를 요구한다 — 그때만
-  // id_token을 잠깐 들고 있다가 openreview_id를 받아 같은 토큰으로 재시도한다.
+  // 처음 구글로 가입하는 계정이면 백엔드가 초대 코드(403)와 openreview_id(400)를
+  // 요구한다. 그때만 id_token을 잠깐 들고 있다가 둘을 받아 같은 토큰으로
+  // 재시도한다. **이미 가입한 사람은 이 화면을 아예 보지 않는다.**
   const handleGoogleCredential = async (idToken) => {
     setGoogleError('');
     setGoogleSubmitting(true);
@@ -54,7 +56,7 @@ export default function LoginPage({ onExit, onSwitchToSignup, onSuccess }) {
       const user = await loginWithGoogle(idToken);
       onSuccess(user);
     } catch (err) {
-      if (err.needsOpenreviewId) {
+      if (err.needsInvite || err.needsOpenreviewId) {
         setPendingIdToken(idToken);
       } else {
         setGoogleError(err.message || '구글 로그인에 실패했어요.');
@@ -64,13 +66,16 @@ export default function LoginPage({ onExit, onSwitchToSignup, onSuccess }) {
     }
   };
 
-  const submitGoogleOpenreviewId = async (e) => {
+  const submitGoogleSignup = async (e) => {
     e.preventDefault();
-    if (!googleOpenreviewId.trim()) return;
+    if (!googleOpenreviewId.trim() || !googleInviteCode.trim()) return;
     setGoogleSubmitting(true);
     setGoogleError('');
     try {
-      const user = await loginWithGoogle(pendingIdToken, googleOpenreviewId.trim());
+      // 서버가 초대 코드를 먼저 보므로 둘을 함께 보낸다 — 따로 보내면 코드를
+      // 통과한 뒤 openreview_id 때문에 한 번 더 왕복해야 한다.
+      const user = await loginWithGoogle(
+        pendingIdToken, googleOpenreviewId.trim(), googleInviteCode.trim());
       onSuccess(user);
     } catch (err) {
       setGoogleError(err.message || '구글 로그인에 실패했어요.');
@@ -85,8 +90,17 @@ export default function LoginPage({ onExit, onSwitchToSignup, onSuccess }) {
       <h2>다시 오신 것을 환영해요</h2>
 
       {pendingIdToken ? (
-        <form className="auth-form" onSubmit={submitGoogleOpenreviewId} style={{ marginTop: 20 }}>
-          <p className="onboard-desc">처음 구글로 가입하시네요. OpenReview ID만 알려주시면 가입이 끝나요.</p>
+        <form className="auth-form" onSubmit={submitGoogleSignup} style={{ marginTop: 20 }}>
+          <p className="onboard-desc">
+            처음 구글로 가입하시네요. 초대 코드와 OpenReview ID만 알려주시면 가입이 끝나요.
+          </p>
+          <Field
+            label="초대 코드"
+            type="text"
+            placeholder="초대받은 코드를 입력해 주세요"
+            value={googleInviteCode}
+            onChange={(e) => setGoogleInviteCode(e.target.value)}
+          />
           <Field
             label="OpenReview ID"
             type="text"
