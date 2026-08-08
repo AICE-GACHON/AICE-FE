@@ -24,8 +24,14 @@ async function unwrap(res) {
   return body.data;
 }
 
-/** @param {{email: string, password: string, nickname: string, openreviewId: string, onboardingId?: string|null}} payload */
-export async function signup({ email, password, nickname, openreviewId, onboardingId }) {
+/**
+ * inviteCode는 배포 환경에서 **필수**다. 서버가 SIGNUP_INVITE_CODE를 설정한 채로
+ * 떠 있으면(배포 기본값) 코드 없이 보낸 가입은 403 "초대 코드가 필요합니다"로
+ * 거절된다. 개발 서버는 보통 비어 있어서 이 값을 무시한다.
+ *
+ * @param {{email: string, password: string, nickname: string, openreviewId: string, inviteCode?: string, onboardingId?: string|null}} payload
+ */
+export async function signup({ email, password, nickname, openreviewId, inviteCode, onboardingId }) {
   if (!BASE_URL) {
     console.info('[auth] VITE_API_BASE_URL 미설정 — 회원가입 mock 성공 처리:', { email, nickname, openreviewId, onboardingId });
     mockNicknameByEmail.set(email, nickname);
@@ -40,6 +46,7 @@ export async function signup({ email, password, nickname, openreviewId, onboardi
       password,
       nickname,
       openreview_id: openreviewId,
+      ...(inviteCode ? { invite_code: inviteCode } : {}),
       ...(onboardingId ? { onboarding_id: onboardingId } : {}),
     }),
   });
