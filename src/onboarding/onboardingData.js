@@ -126,6 +126,7 @@ export const EXPERIENCE_TONE = {
 };
 
 export const userTypeLabel = (value) => USER_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? '';
+export const experienceLabel = (value) => EXPERIENCE_OPTIONS.find((o) => o.value === value)?.label ?? '';
 export const purposeLabel = (value) => PURPOSE_OPTIONS.find((o) => o.value === value)?.label ?? '';
 export const fieldLabel = (value) => FIELD_OPTIONS.find((o) => o.value === value)?.label ?? '';
 export const stageLabel = (value) => STAGE_OPTIONS.find((o) => o.value === value)?.label ?? '';

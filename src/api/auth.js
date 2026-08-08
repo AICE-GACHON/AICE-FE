@@ -6,6 +6,8 @@
 //   POST /api/auth/refresh { refresh_token }                 -> { access_token, refresh_token, token_type } (회전)
 //   POST /api/auth/logout  (인증 필요)                        -> 서버가 token_version을 올려 이전 refresh_token을 전부 무효화
 //   GET  /api/user/me      (인증 필요)                        -> UserResponse
+//   POST /api/auth/password/forgot { email }                 -> 200 (가입 여부와 무관하게 항상 200)
+//   POST /api/auth/password/reset  { token, new_password }   -> 200 / 400(만료·재사용 토큰)
 // 모든 응답은 { success, data, error: {code, message} | null } 공통 포맷(ApiResponse[T])으로 온다.
 // 인증 없는 5개 엔드포인트(signup/login/google/refresh/onboarding)에는 IP 기준 rate limit이
 // 걸려 있어 너무 자주 호출하면 429 + "요청이 너무 많습니다..." 메시지가 온다 — 그대로 노출하면 됨.
@@ -19,7 +21,12 @@ const mockNicknameByEmail = new Map();
 async function unwrap(res) {
   const body = await res.json().catch(() => null);
   if (!res.ok || !body || body.success === false) {
-    throw new Error(body?.error?.message || `요청에 실패했어요 (${res.status})`);
+    const err = new Error(body?.error?.message || `요청에 실패했어요 (${res.status})`);
+    // 호출부가 상태로 갈라야 할 때가 있다 — 예를 들어 온보딩 답변 404는 오류가
+    // 아니라 "아직 없음"이다. 메시지 문자열로 판별하게 두면 서버 문구가 바뀌는
+    // 순간 조용히 깨진다.
+    err.status = res.status;
+    throw err;
   }
   return body.data;
 }
@@ -181,6 +188,62 @@ export async function authorizedFetch(path, options = {}, _retried = false) {
 /** GET /api/user/me */
 export function fetchMe() {
   return authorizedFetch('/api/user/me');
+}
+
+/**
+ * 비밀번호 재설정 메일 요청.
+ *
+ * 서버는 가입되지 않은 이메일에도 200을 준다 — 어떤 이메일이 가입돼 있는지
+ * 알아내는 통로가 되면 안 되기 때문이다. 그래서 이 함수도 "보냈다/못 보냈다"를
+ * 구분해 돌려주지 않는다. 화면 문구도 마찬가지로 단정하면 안 된다.
+ *
+ * @param {{email: string}} payload
+ */
+export async function requestPasswordReset({ email }) {
+  if (!BASE_URL) {
+    console.info('[auth] VITE_API_BASE_URL 미설정 — 비밀번호 찾기 mock 처리:', { email });
+    return;
+  }
+
+  const res = await fetch(`${BASE_URL}/api/auth/password/forgot`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  await unwrap(res); // 200 외에는 네트워크/서버 장애뿐이라 그대로 에러로 올린다
+}
+
+/**
+ * 메일 링크(/reset-password?token=...)로 받은 토큰과 새 비밀번호를 보낸다.
+ * 만료됐거나 이미 쓴 토큰이면 400 — 이건 사용자가 고칠 수 없는 상태라
+ * err.tokenInvalid로 표시해서, 화면이 "다시 시도"가 아니라 "링크를 다시 받기"를
+ * 안내하게 한다.
+ *
+ * @param {{token: string, newPassword: string}} payload
+ */
+export async function resetPassword({ token, newPassword }) {
+  if (!BASE_URL) {
+    console.info('[auth] VITE_API_BASE_URL 미설정 — 비밀번호 재설정 mock 성공 처리');
+    return;
+  }
+
+  const res = await fetch(`${BASE_URL}/api/auth/password/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+  const body = await res.json().catch(() => null);
+
+  if (res.status === 400) {
+    const err = new Error(
+      body?.error?.message || '링크가 만료됐거나 이미 사용됐어요.',
+    );
+    err.tokenInvalid = true;
+    throw err;
+  }
+  if (!res.ok || !body || body.success === false) {
+    throw new Error(body?.error?.message || `비밀번호 재설정에 실패했어요 (${res.status})`);
+  }
 }
 
 export async function logout() {
