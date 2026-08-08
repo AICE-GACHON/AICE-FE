@@ -1,13 +1,14 @@
 export default function Hero({ onGetStarted, onLogin }) {
   return (
     <section className="hero">
-      <h1>Write it. We'll show you <span className="accent">the review first.</span></h1>
+      <h1>Read the reviews <span className="accent">papers like yours got.</span></h1>
       <p className="hero-sub">
-        We connect the real reviews similar papers received with <br />how they were revised — so you can see your draft through <br />a reviewer's eyes before you submit.
+        Upload your paper as a PDF. We read it — method, experiments, reference list — to pick the papers <br className="hero-sub-break" />
+        that are genuinely closest to it, then show you the reviews those papers actually received, in full.
       </p>
       <div className="hero-actions">
         <button type="button" className="pill btn-lg" onClick={onGetStarted}>Get started free <span>→</span></button>
-        <button type="button" className="pill ghost btn-lg" onClick={onLogin}>Log in with Google</button>
+        <button type="button" className="pill ghost btn-lg" onClick={onLogin}>Log in</button>
       </div>
       <p className="fine">
         By signing up you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.<br />

@@ -5,25 +5,25 @@ export default function ProblemCompare() {
         <div className="section-head">
           <div className="eyebrow">Why not just search similar papers</div>
           <h2>Finding similar papers already exists.<br />What's missing is everything after that.</h2>
-          <p>Existing similar-paper search tools stop at listing related work by embedding. What you actually need comes next.</p>
+          <p>Existing similar-paper search matches titles and abstracts by embedding, and stops there. What you actually need comes next.</p>
         </div>
         <div className="compare">
           <div className="old">
             <h4>Existing similar-paper search</h4>
             <ul>
-              <li>Just lists papers with similar topics or citations</li>
-              <li>No way to know what reviews they received</li>
-              <li>What changed after review is a separate question</li>
-              <li>You have to guess what reviews your own paper will get</li>
+              <li>Matches on the title and abstract only — never opens the paper</li>
+              <li>Returns twenty near-identical scores and calls it a ranking</li>
+              <li>Lists related work, then leaves you there</li>
+              <li>No way to see what reviewers said about any of it</li>
             </ul>
           </div>
           <div className="new">
-            <h4>PaperTrace</h4>
+            <h4>PAIR</h4>
             <ul>
-              <li>Similar papers plus the actual reviews they received</li>
-              <li>Connects review comments all the way to the final revision</li>
-              <li>Generates predicted review comments for your draft, paragraph by paragraph</li>
-              <li>Also shows which conferences or journals similar papers were published in</li>
+              <li>Reads your full PDF — method, experiments, reference list — to pick what's genuinely close</li>
+              <li>Tells you in a sentence why each paper was picked, and picks fewer when fewer match</li>
+              <li>Hands you the reviews those papers received, in full, with the reviewers' own words</li>
+              <li>Opens any of them into the whole story — rebuttals, revisions, what happened next</li>
             </ul>
           </div>
         </div>

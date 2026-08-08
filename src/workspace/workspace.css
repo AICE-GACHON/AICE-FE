@@ -32,6 +32,7 @@
 .wr-card-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:6px;}
 .wr-pill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--teal-soft);color:var(--teal-deep);}
 .wr-muted{color:var(--muted);font-size:13px;}
+.wr-hint{color:var(--teal-deep);font-size:12px;font-weight:600;margin:2px 0 12px;}
 .wr-query-title{font-weight:800;font-size:15px;margin-top:8px;}
 
 .wr-banner{margin-top:0;padding:11px 14px;border-radius:10px;font-size:13.5px;background:#fdf0e3;color:#8a4d10;border:1px solid #f0d8bb;}
@@ -49,37 +50,10 @@
 .wr-paper-meta{font-size:12.5px;color:var(--muted);margin-top:3px;}
 .wr-match-badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:var(--teal-soft);color:var(--teal-deep);margin-left:6px;cursor:help;}
 .wr-split-badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:#fdf0e3;color:#a35b12;margin-left:6px;}
-.wr-tags{margin-top:6px;}
-.wr-tag{display:inline-block;font-size:11px;background:var(--teal-soft);color:var(--teal-deep);border-radius:6px;padding:2px 8px;margin:2px 6px 0 0;}
 .wr-more-btn{
   background:none;border:1px solid var(--line);border-radius:8px;color:var(--teal-deep);
   font-size:13px;font-weight:700;padding:8px 16px;margin-top:12px;cursor:pointer;font-family:inherit;
 }
-
-/* review patterns / venue trends bars */
-.wr-pattern{padding:10px 0;border-top:1px solid var(--line);}
-.wr-pattern:first-of-type{border-top:none;padding-top:0;}
-.wr-bar-row{display:flex;align-items:center;gap:10px;font-size:13px;}
-.wr-bar-label{min-width:170px;font-weight:600;}
-.wr-bar-track{flex:1;background:var(--teal-soft);border-radius:6px;height:16px;overflow:hidden;}
-.wr-bar-fill{height:100%;background:var(--teal-deep);display:block;}
-.wr-bar-fill-accept{background:var(--teal-bright);}
-.wr-bar-count{min-width:60px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;}
-.wr-star{color:var(--teal-deep);}
-.wr-ex{font-size:12.5px;color:var(--muted);margin:5px 0 0 180px;}
-.wr-ex-risk{color:var(--red);}
-.wr-venue{padding:10px 0;border-top:1px solid var(--line);}
-.wr-venue:first-of-type{border-top:none;padding-top:0;}
-
-.wr-flows{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
-.wr-flow{font-size:13px;margin:4px 0;}
-.wr-arrow{color:var(--teal-deep);font-weight:700;}
-
-.wr-summary h4{font-size:13px;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);margin:14px 0 6px;}
-.wr-summary h4:first-child{margin-top:0;}
-.wr-summary p{font-size:14px;margin:4px 0;}
-.wr-summary ul{margin:4px 0 4px 20px;padding:0;}
-.wr-summary li{font-size:14px;margin:3px 0;}
 
 /* ---------- first-time tour (Grammarly 스타일 코치마크) ---------- */
 .tour-card{
@@ -99,6 +73,146 @@
 
 @media (max-width:520px){
   .tour-card{left:12px;right:12px;top:12px;width:auto;}
-  .wr-bar-label{min-width:120px;}
   .wr-ex{margin-left:0;}
+}
+
+/* ---------- PAPER STORY PANEL (유사 논문 클릭 시 여는 상세 패널) ---------- */
+.wr-paper-row-clickable{cursor:pointer;border-radius:10px;margin:0 -10px;padding-left:10px;padding-right:10px;transition:background .15s;}
+.wr-paper-row-clickable:hover{background:var(--teal-soft);}
+.wr-paper-row-clickable:focus-visible{outline:2px solid var(--teal);outline-offset:-2px;}
+
+.story-overlay{
+  position:fixed;inset:0;background:rgba(12,18,16,0.45);z-index:300;
+  display:flex;justify-content:flex-end;
+}
+.story-panel{
+  position:relative;background:var(--bg);width:min(640px,100%);height:100%;
+  overflow-y:auto;padding:56px 32px 60px;box-shadow:-20px 0 50px rgba(0,0,0,0.25);
+}
+.story-close{
+  position:absolute;top:18px;right:20px;width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--line);background:#fff;cursor:pointer;font-size:15px;color:var(--muted);
+}
+.story-close:hover{color:var(--ink);border-color:var(--teal);}
+
+.story-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:80px 20px;text-align:center;}
+.story-spinner{width:26px;height:26px;border:3px solid var(--teal-soft);border-top-color:var(--teal-deep);border-radius:50%;animation:story-spin .8s linear infinite;}
+@keyframes story-spin{to{transform:rotate(360deg);}}
+
+.story-content{display:flex;flex-direction:column;gap:16px;}
+.story-head-meta{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:6px;}
+.story-title{font-size:clamp(19px,2.4vw,23px);font-weight:800;letter-spacing:-0.01em;line-height:1.35;}
+
+.story-journey{border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;background:#fafaf8;}
+.story-journey-chain{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:13.5px;font-weight:600;}
+.story-journey-arrow{color:var(--teal-deep);font-weight:700;margin-right:8px;}
+.story-journey-stop.is-query{color:var(--teal-deep);}
+.story-journey-outcome{margin-top:10px;font-size:12.5px;font-weight:700;color:var(--teal-deep);}
+.story-journey-outcome.outcome-still_rejected{color:var(--red);}
+
+.story-caveats{display:flex;flex-direction:column;gap:6px;}
+
+.story-narrative-headline{font-size:14.5px;line-height:1.7;color:#2c302a;margin-top:8px;}
+.story-subhead{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);margin:16px 0 6px;}
+.story-list{margin:0 0 0 20px;padding:0;display:flex;flex-direction:column;gap:5px;}
+.story-list li{font-size:13.5px;color:#33372f;}
+.story-evidence-scope{margin-top:16px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);}
+
+.story-timeline{display:flex;flex-direction:column;gap:2px;}
+.story-event{border-left:2px solid var(--line);padding-left:16px;position:relative;padding-bottom:14px;}
+.story-event::before{content:'';position:absolute;left:-5px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--line);}
+.story-event.tone-blue::before{background:#6a63e0;}
+.story-event.tone-author::before{background:var(--teal-deep);}
+.story-event.tone-green::before{background:var(--teal-bright);}
+.story-event.tone-amber::before{background:var(--amber);}
+.story-event.tone-strong::before{background:var(--ink);}
+.story-event-head{
+  width:100%;text-align:left;background:none;border:none;cursor:pointer;font-family:inherit;
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:2px 0;
+}
+.story-event-date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;}
+.story-event-actor{font-size:12px;font-weight:700;color:var(--teal-deep);white-space:nowrap;}
+.story-event-headline{font-size:13.5px;color:#2c302a;flex:1;min-width:160px;}
+.story-event-chev{color:var(--muted);font-size:11px;}
+.story-event-body{margin-top:8px;padding:12px 14px;background:#fafaf8;border:1px solid var(--line);border-radius:10px;}
+.story-review-body{font-size:13.5px;line-height:1.7;color:#33372f;white-space:pre-wrap;}
+.story-review-body p{margin:0 0 8px;}
+.story-review-body p:last-child{margin-bottom:0;}
+.story-review-body b{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;}
+
+.story-changes{display:flex;flex-direction:column;gap:12px;}
+.story-change-label{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.story-change-text,.story-change-value{font-size:13px;line-height:1.7;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
+.story-change-file{font-size:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.story-change-file a{color:var(--teal-deep);font-weight:600;text-decoration:underline;text-underline-offset:2px;}
+.diff-ins{background:#d6f0e6;color:#0b6e57;border-radius:3px;padding:0 2px;}
+.diff-del{background:#fbeceb;color:#8f2f28;border-radius:3px;padding:0 2px;text-decoration:line-through;}
+
+@media (max-width:700px){
+  .story-panel{width:100%;padding:52px 20px 48px;}
+}
+
+/* ---------- 선정 논문 + 리뷰 (개편: 화면의 본론) ---------- */
+.wr-selected-intro{padding-bottom:14px;}
+.wr-selected-card{border-color:var(--teal-soft);}
+.wr-selected-head{display:flex;gap:10px;}
+
+/* 왜 골랐는지 — 유사도 점수를 못 주는 대신 사람이 읽을 근거를 준다 */
+.wr-selection-reason{
+  margin-top:10px;padding:10px 12px;border-radius:10px;
+  background:var(--teal-soft);color:var(--teal-deep);font-size:13px;line-height:1.6;
+}
+.wr-selection-reason b{margin-right:6px;}
+
+.wr-meta-review{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--bg);}
+.wr-meta-review p{margin:4px 0 0;font-size:13px;line-height:1.65;color:var(--muted);}
+
+.wr-reviews{margin-top:14px;}
+.wr-review-part-label{font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.02em;}
+
+.wr-review{border-top:1px solid var(--line);}
+.wr-review-head{
+  display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;
+  background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;
+}
+.wr-review-no{font-size:12.5px;font-weight:700;}
+.wr-review-score{font-size:12.5px;color:var(--muted);}
+.wr-review-toggle{margin-left:auto;font-size:12px;color:var(--teal-deep);font-weight:600;}
+.wr-review-body{padding:0 0 12px;}
+.wr-review-part{margin-top:10px;}
+.wr-review-part p{margin:4px 0 0;font-size:13px;line-height:1.7;white-space:pre-wrap;}
+
+.wr-paper-links{
+  display:flex;align-items:center;gap:14px;margin-top:14px;
+  padding-top:12px;border-top:1px solid var(--line);
+}
+.wr-paper-links a{font-size:12.5px;color:var(--teal-deep);font-weight:600;text-decoration:none;}
+.wr-paper-links a:hover{text-decoration:underline;}
+
+/* ---------- 검색 후보 (근거 추적용, 기본 접힘) ---------- */
+.wr-candidate{
+  display:flex;align-items:baseline;gap:10px;padding:7px 0;
+  border-top:1px solid var(--line);font-size:12.5px;
+}
+.wr-candidate.picked{background:var(--teal-soft);border-radius:6px;padding-left:8px;}
+.wr-candidate-title{flex:1;min-width:0;}
+.wr-candidate-meta{color:var(--muted);white-space:nowrap;}
+.wr-picked-badge{
+  display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:9px;
+  background:var(--teal-deep);color:#fff;margin-left:6px;
+}
+
+/* ---------- 업로드: 추출 결과 확인 단계 ---------- */
+.upload-extracted{
+  margin-top:16px;padding:14px;border:1px solid var(--line);
+  border-radius:12px;background:var(--bg);
+}
+.upload-extracted-abstract{line-height:1.7;max-height:220px;overflow:auto;}
+.upload-review-actions{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;
+}
+
+@media (max-width:700px){
+  .wr-candidate{flex-wrap:wrap;}
+  .wr-candidate-meta{white-space:normal;}
 }

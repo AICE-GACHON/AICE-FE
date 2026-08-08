@@ -1,10 +1,10 @@
 const FEATURES = [
-  { icon: '⌕', title: 'Multimodal similarity search', desc: 'We embed text together with figures and tables to find papers that are truly similar in methodology.' },
-  { icon: '✎', title: 'Review-to-revision linking', desc: 'We connect review comments to the final revision paragraph by paragraph, showing what changed and why.' },
-  { icon: '✓', title: 'Conference & journal matching', desc: 'See which conferences and journals published similar papers, and how they tend to review.' },
-  { icon: '§', title: 'Section-aware predictions', desc: 'Predicted comments are tailored to the section — Related Work, Method, Experiments, and more.' },
-  { icon: '↻', title: 'Revision history', desc: 'Track a paper from v1 to v2 to the final version, and see what changed at every review round.' },
-  { icon: '⌁', title: 'Code-change linking (experimental)', desc: 'For papers with public GitHub repos, we try to connect how the code changed after review.' },
+  { icon: '📄', title: 'Your whole paper, not its abstract', desc: 'Search finds fifty candidates from the title and abstract. Then we hand the full PDF and those candidates to a model that reads both and picks the ones that actually match.' },
+  { icon: '≈', title: 'A reason, not a score', desc: 'Each pick comes with one sentence on what the two papers share. We don’t show a similarity percentage, because between the top candidates the numbers differ by less than noise.' },
+  { icon: '∅', title: 'Fewer results when fewer fit', desc: 'If only three papers genuinely match, you get three. If none do, we say so. Padding the list would make “what reviewers said about similar papers” a false claim.' },
+  { icon: '❝', title: 'The reviews themselves', desc: 'Every review each paper received, in full — scores, criticisms, questions — plus the area chair’s summary. Not our paraphrase of them.' },
+  { icon: '⌕', title: 'Flagged when we’re out of depth', desc: 'The corpus is ICLR and NeurIPS. Upload something outside it and you get a warning, not five confident-looking matches.' },
+  { icon: '🕓', title: 'The full review timeline', desc: 'Open any paper into reviews, author rebuttals, comments, and revisions merged in the order they actually happened — with word-level diffs of what changed.' },
 ];
 
 export default function Features() {

@@ -4,12 +4,12 @@ export default function ProcessSteps() {
       <div className="wrap">
         <div className="section-head">
           <div className="eyebrow">How it works</div>
-          <h2>Three steps to see the review before you submit</h2>
+          <h2>Three steps to see how papers like yours were actually reviewed</h2>
         </div>
         <div className="process">
-          <div><div className="num">01</div><h4>Search similar papers</h4><p>Using embeddings that include text, figures, and equations, we find the prior papers closest to your draft.</p></div>
-          <div><div className="num">02</div><h4>Check review & revision history</h4><p>See the actual review comments those papers received, side by side with how they were revised afterward.</p></div>
-          <div><div className="num">03</div><h4>Predicted review & suggested edits</h4><p>Based on accumulated review patterns, we suggest likely comments and revision directions. The final call is always the author's.</p></div>
+          <div><div className="num">01</div><h4>Upload your PDF</h4><p>The whole paper, not just the abstract — we need the method, the experiments, and the references to tell a close match from a superficial one.</p></div>
+          <div><div className="num">02</div><h4>Read what reviewers said</h4><p>Up to five genuinely similar papers, each with the reason it was picked and every review it received, in full.</p></div>
+          <div><div className="num">03</div><h4>Follow any paper further</h4><p>Open its whole story — what reviewers asked, how the authors answered, what they changed, and how it ended. The final call is always yours.</p></div>
         </div>
       </div>
     </section>
