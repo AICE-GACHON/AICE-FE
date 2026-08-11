@@ -34,8 +34,6 @@ export default function NarrativeCard({ narrative }) {
         </>
       )}
 
-      {narrative.outcome_note && <p className="wr-muted" style={{ marginTop: 10 }}>{narrative.outcome_note}</p>}
-
       <p className="story-evidence-scope">
         근거 범위: {SCOPE_LABEL[narrative.evidence_scope] || narrative.evidence_scope}
       </p>

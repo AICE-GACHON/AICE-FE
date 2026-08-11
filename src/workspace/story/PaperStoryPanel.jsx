@@ -38,6 +38,15 @@ export default function PaperStoryPanel({ paperId, onClose }) {
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // 이 패널은 position:fixed 오버레이라 뒤에 깔린 페이지가 화면엔 안 보이지만
+  // 여전히 스크롤은 가능하다 — 그대로 두면 뒷페이지 스크롤바가 오버레이 오른쪽
+  // 끝에 하나 더 뜬다(패널 자체 스크롤바와 별개로). 열려있는 동안만 잠근다.
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prevOverflow; };
+  }, []);
+
   return (
     <div className="story-overlay" onClick={onClose}>
       <BodyDiffPanel paperId={paperId} />
@@ -77,12 +86,6 @@ export default function PaperStoryPanel({ paperId, onClose }) {
 
             <NarrativeCard narrative={story.narrative} />
             <Timeline events={story.timeline} supported={story.timeline_supported} />
-
-            {story.cached_at && (
-              <p className="wr-muted" style={{ textAlign: 'center', marginTop: 4 }}>
-                캐시된 결과 (최초 생성: {new Date(story.cached_at).toLocaleString('ko-KR')})
-              </p>
-            )}
           </div>
         )}
       </div>
