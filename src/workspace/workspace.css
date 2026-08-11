@@ -88,6 +88,7 @@
 .story-panel{
   position:relative;background:var(--bg);width:min(640px,100%);height:100%;
   overflow-y:auto;padding:56px 32px 60px;box-shadow:-20px 0 50px rgba(0,0,0,0.25);
+  flex:0 0 auto;
 }
 .story-close{
   position:absolute;top:18px;right:20px;width:34px;height:34px;border-radius:50%;
@@ -151,6 +152,43 @@
 
 @media (max-width:700px){
   .story-panel{width:100%;padding:52px 20px 48px;}
+}
+
+/* ---------- 본문/그림/표 diff 패널 (PaperStoryPanel 왼쪽) ---------- */
+.bodydiff-panel{
+  position:relative;background:var(--bg);flex:1 1 auto;min-width:360px;max-width:860px;
+  height:100%;overflow-y:auto;padding:32px 28px 48px;
+  box-shadow:-10px 0 30px rgba(0,0,0,0.1);border-right:1px solid var(--line);
+}
+.bodydiff-head{margin-bottom:16px;}
+.bodydiff-head-title{font-size:17px;font-weight:800;letter-spacing:-0.01em;margin-bottom:4px;}
+.bodydiff-warn{color:var(--amber);font-size:13.5px;}
+
+.bodydiff-timeline{display:flex;gap:8px;overflow-x:auto;padding:4px 0 14px;}
+.bodydiff-version-btn{
+  flex:0 0 auto;text-align:left;padding:9px 13px;border-radius:9px;cursor:pointer;
+  border:1.5px solid var(--line);background:#fff;font-family:inherit;
+}
+.bodydiff-version-btn.is-active{border-color:var(--teal-deep);background:var(--teal-soft);}
+.bodydiff-version-no{font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;}
+.bodydiff-version-meta{font-size:11.5px;color:var(--muted);white-space:nowrap;margin-top:2px;}
+
+.bodydiff-body{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#fafaf8;}
+.bodydiff-body-head{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px;}
+.bodydiff-pdf-links{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--line);}
+.bodydiff-pdf-links a{font-size:12.5px;color:var(--teal-deep);font-weight:600;text-decoration:underline;text-underline-offset:2px;}
+.bodydiff-text{font-size:13.5px;line-height:1.8;white-space:pre-wrap;color:#2c302a;}
+
+.bodydiff-media-block{margin:16px 0;white-space:normal;}
+.bodydiff-media-title{font-weight:700;font-size:12.5px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.bodydiff-moved-badge{font-weight:600;font-size:11.5px;}
+.bodydiff-media-pair{display:flex;gap:12px;flex-wrap:wrap;}
+.bodydiff-media-slot{flex:1 1 220px;}
+.bodydiff-media-slot-label{font-size:11.5px;color:var(--muted);margin-bottom:4px;}
+.bodydiff-media-img{max-width:100%;border:1px solid var(--line);border-radius:4px;background:#fff;}
+
+@media (max-width:999px){
+  .bodydiff-panel{display:none;}
 }
 
 /* ---------- 선정 논문 + 리뷰 (개편: 화면의 본론) ---------- */
