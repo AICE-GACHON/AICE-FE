@@ -55,7 +55,14 @@ const OP_TITLE = {
 function VersionText({ block }) {
   if (block.text == null) {
     if (block.noPdfChange) {
-      return <p style={{ color: '#888' }}>이 버전에서는 본문 PDF가 바뀌지 않았습니다 (제목·초록 등 다른 항목만 수정됨).</p>;
+      return (
+        <p style={{ color: '#888' }}>
+          이 리비전은 PDF 파일을 다시 올리지 않고 제목·초록 같은 메타데이터만
+          고쳤습니다 — PDF 자체는 그대로라 본문에서 비교할 게 없습니다
+          (title/abstract/keywords 변경은 /revisions 쪽 title/abstract diff에서
+          이미 다룹니다).
+        </p>
+      );
     }
     return <p style={{ color: '#a60' }}>이 버전은 본문을 비교할 수 없습니다 (다운로드 실패·스캔본·페이지 상한 등).</p>;
   }

@@ -56,7 +56,13 @@ function MediaPiece({ piece, mediaByLabel, mediaByDeleted }) {
 function VersionText({ block }) {
   if (block.text == null) {
     if (block.noPdfChange) {
-      return <p className="wr-muted">이 버전에서는 본문 PDF가 바뀌지 않았어요 (제목·초록 등 다른 항목만 수정됨).</p>;
+      return (
+        <p className="wr-muted">
+          이 리비전은 PDF 파일을 다시 올리지 않고 제목·초록 같은 메타데이터만
+          고쳤어요 — PDF 자체는 그대로라 본문에서 비교할 게 없어요. 이 변경
+          내용은 오른쪽 심사 서사 패널의 타임라인에서 확인할 수 있어요.
+        </p>
+      );
     }
     return <p className="bodydiff-warn">이 버전은 본문을 비교할 수 없어요 (다운로드 실패·스캔본·페이지 상한 등).</p>;
   }
