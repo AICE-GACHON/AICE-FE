@@ -191,11 +191,15 @@ export default function BodyDiffPanel({ paperId }) {
     target.scrollIntoView({ block: 'center', behavior: 'smooth' });
     target.classList.add('bodydiff-change-focus');
     const timer = setTimeout(() => target.classList.remove('bodydiff-change-focus'), 1200);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      target.classList.remove('bodydiff-change-focus');
+    };
   }, [changePos]);
 
   return (
     <div className="bodydiff-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="bodydiff-scroll">
       <div className="bodydiff-head">
         <div className="bodydiff-head-title">📄 본문 변경 이력</div>
         <div className="bodydiff-callout">
@@ -285,18 +289,19 @@ export default function BodyDiffPanel({ paperId }) {
 
               {summary && <ChangeSummary summary={summary} />}
 
-              {changeCount > 0 && (
-                <div className="bodydiff-change-nav" aria-label="변경 위치 이동">
-                  <button type="button" className="bodydiff-change-nav-btn" onClick={goPrevChange}>◀ 이전 변경</button>
-                  <span className="bodydiff-change-nav-pos">{changePos >= 0 ? changePos + 1 : '-'} / {changeCount}</span>
-                  <button type="button" className="bodydiff-change-nav-btn" onClick={goNextChange}>다음 변경 ▶</button>
-                </div>
-              )}
-
               <VersionText block={current} />
             </div>
           )}
         </>
+      )}
+    </div>
+
+      {changeCount > 0 && (
+        <div className="bodydiff-change-nav" aria-label="변경 위치 이동">
+          <button type="button" className="bodydiff-change-nav-btn" onClick={goPrevChange}>◀ 이전 변경</button>
+          <span className="bodydiff-change-nav-pos">{changePos >= 0 ? changePos + 1 : '-'} / {changeCount}</span>
+          <button type="button" className="bodydiff-change-nav-btn" onClick={goNextChange}>다음 변경 ▶</button>
+        </div>
       )}
     </div>
   );
