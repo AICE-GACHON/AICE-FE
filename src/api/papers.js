@@ -31,3 +31,15 @@ export async function getPaperStory(paperId, { refresh = false } = {}) {
   }
   return body.data;
 }
+
+// 임시 테스트 전용 — GET /api/papers/{paper_id}/revisions/body-diff
+// (PDF 본문 전체 diff, AICE-BE euichan 브랜치 신규 기능 수동 검증용. mock 폴백 없음.)
+export async function getPaperRevisionsBodyDiff(paperId) {
+  if (!BASE_URL) throw new Error('VITE_API_BASE_URL이 설정돼 있지 않아요.');
+  const res = await fetch(`${BASE_URL}/api/papers/${paperId}/revisions/body-diff`);
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body || body.success === false) {
+    throw new Error(body?.error?.message || `본문 diff를 불러오지 못했어요 (${res.status})`);
+  }
+  return body.data;
+}

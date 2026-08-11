@@ -147,6 +147,7 @@
 .story-change-file a{color:var(--teal-deep);font-weight:600;text-decoration:underline;text-underline-offset:2px;}
 .diff-ins{background:#d6f0e6;color:#0b6e57;border-radius:3px;padding:0 2px;}
 .diff-del{background:#fbeceb;color:#8f2f28;border-radius:3px;padding:0 2px;text-decoration:line-through;}
+.diff-moved{background:#e8ecfb;color:#33409e;border-radius:3px;padding:0 2px;border-bottom:1px dashed #8891d6;}
 
 @media (max-width:700px){
   .story-panel{width:100%;padding:52px 20px 48px;}
