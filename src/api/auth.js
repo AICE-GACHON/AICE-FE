@@ -200,6 +200,62 @@ export function fetchMe(options) {
 }
 
 /**
+ * PATCH /api/user/me — 보낸 필드만 갱신한다.
+ *
+ * 비밀번호는 currentPassword와 newPassword를 **함께** 보내야 바뀐다. 하나만
+ * 보내면 서버가 422로 막는다(스키마 단계). 현재 비밀번호를 확인하는 이유는
+ * 탈취된 access_token 하나로 계정을 통째로 빼앗지 못하게 하기 위해서다.
+ *
+ * ⚠️ **비밀번호를 바꾸면 서버가 기존 refresh_token을 전부 폐기한다**(token_version
+ * 증가). 지금 쓰는 access_token은 만료 전까지 살아 있지만, 만료 뒤 자동 재발급이
+ * 실패해 로그아웃된다. 화면에서 그 사실을 알려야 한다.
+ *
+ * 409는 openreview_id 중복이다 — 사용자가 고칠 수 있는 입력 오류라 필드 옆에
+ * 붙일 수 있게 err.duplicateOpenreviewId로 표시한다. 401은 현재 비밀번호가 틀린
+ * 것이고, 400은 구글 전용 계정이 비밀번호를 설정하려 한 경우다.
+ *
+ * @param {{nickname?: string, openreviewId?: string|null, currentPassword?: string, newPassword?: string}} payload
+ */
+export async function updateMe({ nickname, openreviewId, currentPassword, newPassword }) {
+  const body = {
+    ...(nickname !== undefined ? { nickname } : {}),
+    ...(openreviewId !== undefined ? { openreview_id: openreviewId } : {}),
+    ...(currentPassword !== undefined ? { current_password: currentPassword } : {}),
+    ...(newPassword !== undefined ? { new_password: newPassword } : {}),
+  };
+
+  try {
+    return await authorizedFetch('/api/user/me', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    if (err.status === 409) err.duplicateOpenreviewId = true;
+    throw err;
+  }
+}
+
+/**
+ * DELETE /api/user/me — 되돌릴 수 없다.
+ *
+ * ⚠️ **비밀번호가 있는 계정(has_password=true)은 password가 필수다.** 안 보내면
+ * 400이다. 구글 전용 계정은 대조할 비밀번호가 없어 없이 보내야 한다 — 요구하면
+ * 그 계정은 영영 탈퇴할 수 없다.
+ *
+ * 성공하면 계정이 사라지므로 남은 토큰은 아무 데도 쓸 수 없다. 호출부가 반드시
+ * 토큰을 지우고 로그아웃 화면으로 보내야 한다.
+ *
+ * @param {{password?: string}} payload
+ */
+export function deleteMe({ password } = {}) {
+  return authorizedFetch('/api/user/me', {
+    method: 'DELETE',
+    // 구글 전용 계정은 body 자체를 안 보낸다 (서버가 Body(default=None)로 받는다).
+    ...(password ? { body: JSON.stringify({ password }) } : {}),
+  });
+}
+
+/**
  * 비밀번호 재설정 메일 요청.
  *
  * 서버는 가입되지 않은 이메일에도 200을 준다 — 어떤 이메일이 가입돼 있는지

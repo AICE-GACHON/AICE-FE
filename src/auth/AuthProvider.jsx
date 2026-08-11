@@ -81,9 +81,18 @@ export function AuthProvider({ children }) {
     setState(GUEST);
   }, []);
 
+  // 마이페이지에서 닉네임·OpenReview ID를 바꾼 뒤 서버가 돌려준 값으로 갈아끼운다.
+  // 없으면 상단바의 "OO 님"이 로그인 시점의 옛 이름 그대로 남는다 — user는 세션이
+  // 시작될 때 한 번 받아오고 끝이기 때문이다.
+  const setUser = useCallback((user) => {
+    setState((prev) => (prev.status === 'authed' ? { ...prev, user } : prev));
+  }, []);
+
+  // 회원 탈퇴는 여기를 거치지 않는다 — 계정이 사라지면 이 Provider를 포함해 앱을
+  // 통째로 다시 띄우는 편이 맞아서, routes.jsx가 토큰만 지우고 하드 이동한다.
   const value = useMemo(
-    () => ({ ...state, signIn, signOut }),
-    [state, signIn, signOut],
+    () => ({ ...state, signIn, signOut, setUser }),
+    [state, signIn, signOut, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -8,6 +8,7 @@ import { createContext, useContext } from 'react';
  *   user: object | null,
  *   signIn: (user: object) => Promise<void>,
  *   signOut: () => Promise<void>,
+ *   setUser: (user: object) => void,
  * }} AuthValue
  */
 

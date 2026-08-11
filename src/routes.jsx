@@ -20,6 +20,8 @@ import BodyDiffTest from './dev/BodyDiffTest';
 import { RequireAuth, RedirectIfAuthed } from './auth/guards';
 import { useAuth } from './auth/authContext';
 import { parseStep } from './onboarding/steps';
+import { clearAnswers } from './onboarding/sessionState';
+import { clearTokens } from './api/tokenStorage';
 
 // 온보딩은 단계마다 주소가 있다(/onboarding/1..4). 3단계에서 뒤로가기를 눌렀을 때
 // 앱을 벗어나는 대신 2단계로 가야 하기 때문이다.
@@ -108,9 +110,31 @@ function ResetPasswordRoute() {
   );
 }
 
+/**
+ * 회원 탈퇴 직후. 라우터로 화면만 바꾸지 않고 페이지를 통째로 다시 연다.
+ *
+ * SPA 안에서 옮기려면 "세션을 비우는 것"과 "보호 구역을 벗어나는 것"의 순서를
+ * 맞춰야 하는데, 그게 되지 않았다. navigate를 먼저 하고 flushSync로 커밋까지
+ * 확정시켜도, 뒤이어 RequireAuth가 만들어 둔 <Navigate>의 effect가 늦게 돌면서
+ * /login?next=/app/mypage로 덮어썼다(history 호출을 추적해 확인).
+ *
+ * 순서를 더 정교하게 맞추는 대신 하드 이동을 고른 이유는, 그게 이 상황에 맞는
+ * 동작이기도 해서다 — 계정이 사라졌으면 메모리에 남은 것(진행 중이던 분석,
+ * 사용자 정보, 라우터 히스토리)도 같이 버리는 게 맞다. 평생 한 번 하는 조작이라
+ * 새로고침 한 번의 비용은 문제가 되지 않는다.
+ *
+ * onboarding 답변(sessionStorage)까지 지우는 이유는 같은 브라우저에서 다음 사람이
+ * 가입할 때 남의 답변을 물려받지 않게 하기 위해서다.
+ */
+function leaveAfterAccountDeleted() {
+  clearTokens();
+  clearAnswers();
+  window.location.replace('/');
+}
+
 function MyPageRoute() {
-  const { user } = useAuth();
-  return <MyPage user={user} />;
+  const { user, setUser } = useAuth();
+  return <MyPage user={user} onUserChange={setUser} onAccountDeleted={leaveAfterAccountDeleted} />;
 }
 
 export default function AppRoutes() {
