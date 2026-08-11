@@ -16,7 +16,7 @@ const hasSeenTour = () => {
   }
 };
 
-export default function Workspace({ user, onLogout }) {
+export default function Workspace({ user, onUserChange, onLogout, onAccountDeleted }) {
   const [showTour, setShowTour] = useState(() => !hasSeenTour());
   const [page, setPage] = useState('upload'); // 'upload' | 'mypage'
 
@@ -42,7 +42,9 @@ export default function Workspace({ user, onLogout }) {
         {/* 업로드 화면은 분석 진행 상태(phase)를 들고 있어서, 내 정보를 잠깐
             들렀다 와도 날아가면 안 된다 — 언마운트하지 않고 감춘다. */}
         <div hidden={page !== 'upload'}><UploadPage /></div>
-        {page === 'mypage' && <MyPage user={user} />}
+        {page === 'mypage' && (
+          <MyPage user={user} onUserChange={onUserChange} onAccountDeleted={onAccountDeleted} />
+        )}
       </WorkspaceShell>
     </>
   );
