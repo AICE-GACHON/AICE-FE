@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import TourOverlay from './TourOverlay';
 import WorkspaceShell from './WorkspaceShell';
+import { AnalysisProvider } from './AnalysisProvider';
 import { useAuth } from '../auth/authContext';
 
 // 최초 시작인지는 기기(브라우저) 단위로 판단한다 — 백엔드에 계정별 "튜토리얼을 봤는지" 필드가
@@ -48,8 +49,11 @@ export default function WorkspaceLayout() {
     await signOut();
   };
 
+  // AnalysisProvider가 /app 화면들보다 위에 있어야 한다. 업로드 화면 안에 두면
+  // 화면이 언마운트될 때 분석 상태가 같이 사라진다 — 그걸 막으려고 올린 것이다.
+  // 반대로 이 레이아웃을 벗어나면(로그아웃, 랜딩으로 이동) 같이 사라지는 게 맞다.
   return (
-    <>
+    <AnalysisProvider>
       {showTour && <TourOverlay onDone={dismissTour} />}
       <WorkspaceShell
         user={user}
@@ -60,6 +64,6 @@ export default function WorkspaceLayout() {
       >
         <Outlet />
       </WorkspaceShell>
-    </>
+    </AnalysisProvider>
   );
 }
