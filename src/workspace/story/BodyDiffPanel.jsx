@@ -129,7 +129,13 @@ function VersionText({ block }) {
   );
 }
 
-export default function BodyDiffPanel({ paperId }) {
+// layout='modal': PaperStoryPanel의 오버레이 왼쪽에 붙는 형태 — 고정 높이,
+// 자체 스크롤, 999px 이하에서 숨김(모달은 좁은 화면에서 오른쪽 패널만으로도
+// 충분하다고 판단).
+// layout='inline': PaperDetail처럼 페이지 안에 카드 하나로 놓이는 형태 —
+// 높이를 페이지 흐름에 맡기고, 좁은 화면에서도 숨기지 않는다(메인 콘텐츠라
+// 숨기면 기능 자체가 사라진다). bodyDiff.js 계산 로직·마크업은 완전히 같다.
+export default function BodyDiffPanel({ paperId, layout = 'modal' }) {
   const [phase, setPhase] = useState('loading'); // loading | done | error
   const [data, setData] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -197,9 +203,11 @@ export default function BodyDiffPanel({ paperId }) {
     };
   }, [changePos]);
 
+  const panelClass = layout === 'inline' ? 'bodydiff-panel bodydiff-panel--inline' : 'bodydiff-panel';
   return (
-    <div className="bodydiff-panel" onClick={(e) => e.stopPropagation()}>
-      <div className="bodydiff-scroll">
+    <div className={panelClass} onClick={(e) => e.stopPropagation()}>
+      {/* 콜아웃 + 버전 탭은 스크롤 밖(항상 보임) — 실제로 길어서 스크롤이
+          필요한 건 아래 본문 텍스트뿐이다. */}
       <div className="bodydiff-head">
         <div className="bodydiff-head-title">📄 본문 변경 이력</div>
         <div className="bodydiff-callout">
@@ -289,12 +297,15 @@ export default function BodyDiffPanel({ paperId }) {
 
               {summary && <ChangeSummary summary={summary} />}
 
-              <VersionText block={current} />
+              {/* 버전 헤더·PDF 링크·범례·요약은 늘 보이고, 실제로 길어서
+                  스크롤이 필요한 diff 본문만 이 안에서 스크롤한다. */}
+              <div className="bodydiff-scroll">
+                <VersionText block={current} />
+              </div>
             </div>
           )}
         </>
       )}
-    </div>
 
       {changeCount > 0 && (
         <div className="bodydiff-change-nav" aria-label="변경 위치 이동">

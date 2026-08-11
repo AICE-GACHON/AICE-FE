@@ -216,14 +216,7 @@ export default function UploadPage() {
           </div>
         )}
 
-        {phase === 'done' && (
-          <>
-            <button type="button" className="onboard-back" style={{ marginBottom: 12 }} onClick={handleReset}>
-              ← 새 논문 분석하기
-            </button>
-            <ResultReport report={report} />
-          </>
-        )}
+        {phase === 'done' && <ResultReport report={report} onReset={handleReset} />}
     </>
   );
 }
