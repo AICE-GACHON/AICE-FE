@@ -111,6 +111,10 @@ function mediaByDeletedLabel(source) {
 // revisions[]를 "버전 하나당 블록 하나"로 편다. revisions.length가 N이면
 // 버전은 N개(baseline 1 + 그 뒤 N-1)다 — diff는 N-1개지만 블록은 N개가 맞다.
 export function buildVersionBlocks(revisions) {
+  // PDF가 안 바뀐 리비전(noPdfChange)에서도 "지금 이 시점의 PDF가 뭔지"는
+  // 알 수 있다 — 마지막으로 실제 바뀐 시점의 after_url을 그대로 들고
+  // 있으면 된다. 순서대로 훑으면서 pdf FieldChange를 만날 때마다 갱신한다.
+  let lastKnownPdfUrl = null;
   return revisions.map((r, i) => {
     const mediaSource = i === 0 ? revisions[1] : r;
     const side = i === 0 ? 'before' : 'after';
@@ -130,29 +134,37 @@ export function buildVersionBlocks(revisions) {
       // baseline(v1) 자신은 diff가 없어(changes=[]) 자기 pdf 링크가 없다 —
       // 바로 다음 리비전(v1→v2)의 before_url이 곧 v1 원문 파일이다.
       const nextPdf = pdfChangeOf(revisions[1]);
+      lastKnownPdfUrl = nextPdf?.before_url ?? null;
       return {
         label: `${r.kind_label} (baseline)`, date: r.date,
         text: ownBody ? reconstruct(ownBody.segments, 'before') : null,
         segments: null, // 원문 그대로 — diff 색칠 없음
         mediaByLabel,
         mediaByDeleted,
-        pdfLinks: { beforeUrl: null, afterUrl: nextPdf?.before_url ?? null },
+        pdfLinks: { beforeUrl: null, afterUrl: lastKnownPdfUrl },
       };
     }
     const body = bodyChangeOf(r);
     const pdf = pdfChangeOf(r);
+    // attach_body_diffs는 field="pdf" FieldChange가 있는 리비전에서만 body
+    // diff를 계산한다(revisions.py) — 이 리비전이 제목·초록 등만 고치고
+    // PDF 파일 자체는 안 바꿨으면 pdf 항목 자체가 없어 body도 당연히 없다.
+    // 이건 실패가 아니라 "비교할 게 없다"는 뜻이라, 다운로드 실패·스캔본
+    // 같은 진짜 실패와 구분해서 보여줘야 한다. 그래도 "지금 PDF가 뭔지"
+    // 링크는 여전히 줄 수 있다 — 이 리비전에서 안 바뀌었을 뿐 마지막으로
+    // 알려진 PDF(lastKnownPdfUrl)는 그대로 유효하다.
+    if (pdf) {
+      lastKnownPdfUrl = pdf.after_url ?? lastKnownPdfUrl;
+    }
     return {
       label: r.kind_label, date: r.date,
       text: body ? reconstruct(body.segments, 'after') : null,
       segments: body ? body.segments : null,
       mediaByLabel,
       mediaByDeleted,
-      pdfLinks: { beforeUrl: pdf?.before_url ?? null, afterUrl: pdf?.after_url ?? null },
-      // attach_body_diffs는 field="pdf" FieldChange가 있는 리비전에서만
-      // body diff를 계산한다(revisions.py) — 이 리비전이 제목·초록 등만
-      // 고치고 PDF 파일 자체는 안 바꿨으면 pdf 항목 자체가 없어 body도
-      // 당연히 없다. 이건 실패가 아니라 "비교할 게 없다"는 뜻이라, 다운로드
-      // 실패·스캔본 같은 진짜 실패와 구분해서 보여줘야 한다.
+      pdfLinks: pdf
+        ? { beforeUrl: pdf.before_url ?? null, afterUrl: pdf.after_url ?? null }
+        : { beforeUrl: null, afterUrl: lastKnownPdfUrl },
       noPdfChange: !pdf,
     };
   });

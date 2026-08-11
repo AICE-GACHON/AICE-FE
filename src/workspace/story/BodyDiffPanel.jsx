@@ -172,7 +172,9 @@ export default function BodyDiffPanel({ paperId }) {
                   )}
                   {current.pdfLinks.afterUrl && (
                     <a href={current.pdfLinks.afterUrl} target="_blank" rel="noopener noreferrer">
-                      v{selected + 1} 원문 PDF 열기 ↗
+                      {current.noPdfChange
+                        ? '현재 PDF 열기 (이 리비전에서는 안 바뀜) ↗'
+                        : `v${selected + 1} 원문 PDF 열기 ↗`}
                     </a>
                   )}
                 </div>
