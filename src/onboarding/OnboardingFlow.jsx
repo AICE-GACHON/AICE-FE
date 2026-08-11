@@ -7,20 +7,9 @@ import StepCriteria from './steps/StepCriteria';
 import StepPreview from './steps/StepPreview';
 import { loadAnswers, saveAnswers } from './sessionState';
 import { saveOnboardingProfile } from '../api/onboarding';
-import { buildResultOrder } from './onboardingData';
-
-// AICE-BE의 OnboardingCreate 스키마(app/schemas/onboarding.py)는 snake_case를 그대로 받는다.
-function buildOnboardingPayload(answers) {
-  return {
-    user_type: answers.userType,
-    experience: answers.experience,
-    purposes: answers.purposes,
-    fields: answers.fields.map((f) => (f === 'custom' ? answers.fieldCustom : f)).filter(Boolean),
-    stage: answers.stage,
-    venue: answers.venue === 'custom' ? answers.venueCustom : answers.venue,
-    result_order: buildResultOrder(answers.purposes),
-  };
-}
+// 되읽기(answersFromProfile)와 짝이라 profileMapping.js에 함께 둔다 — 한쪽만
+// 고치면 값이 조용히 다른 값으로 되살아난다.
+import { toOnboardingPayload } from './profileMapping';
 
 export default function OnboardingFlow({ onExit, onGoToSignup, onGoToLogin }) {
   const [step, setStep] = useState(1);
@@ -41,7 +30,7 @@ export default function OnboardingFlow({ onExit, onGoToSignup, onGoToLogin }) {
     if (step === 3) {
       setSaving(true);
       try {
-        const result = await saveOnboardingProfile(buildOnboardingPayload(answers));
+        const result = await saveOnboardingProfile(toOnboardingPayload(answers));
         if (result?.onboarding_id) update({ onboardingId: result.onboarding_id });
       } catch (err) {
         // rate limit(429) 등으로 저장이 안 되도 온보딩 연결 없이 회원가입은 계속 진행한다

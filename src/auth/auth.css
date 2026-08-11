@@ -29,6 +29,14 @@
   font-size:13px;color:var(--red);background:#fbeceb;border-radius:8px;padding:10px 12px;
 }
 
+/* 비밀번호 입력칸 바로 아래, 로그인 버튼 위에 오른쪽 정렬로 붙는다. */
+.auth-forgot{margin-top:-4px;text-align:right;}
+.auth-forgot button{
+  border:none;background:none;cursor:pointer;font-family:inherit;
+  font-size:13px;font-weight:600;color:var(--muted);padding:0;
+}
+.auth-forgot button:hover{color:var(--teal-deep);text-decoration:underline;}
+
 .auth-switch{margin-top:22px;text-align:center;font-size:13.5px;color:var(--muted);}
 .auth-switch button{border:none;background:none;cursor:pointer;font-family:inherit;font-weight:700;color:var(--teal-deep);font-size:13.5px;}
 .auth-switch button:hover{text-decoration:underline;}

@@ -14,7 +14,7 @@ function validate({ email, password }) {
   return errors;
 }
 
-export default function LoginPage({ onExit, onSwitchToSignup, onSuccess }) {
+export default function LoginPage({ onExit, onSwitchToSignup, onForgotPassword, onSuccess }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -36,8 +36,10 @@ export default function LoginPage({ onExit, onSwitchToSignup, onSuccess }) {
     setSubmitting(true);
     setSubmitError('');
     try {
-      const res = await login({ email: form.email.trim(), password: form.password });
-      onSuccess(res.user ?? { email: form.email.trim() });
+      // login()은 UserResponse를 그대로 돌려준다 ({user: ...}로 감싸지 않는다).
+      // /me 조회가 실패한 경우에도 { email, nickname: null }을 돌려주므로 항상 객체다.
+      const user = await login({ email: form.email.trim(), password: form.password });
+      onSuccess(user);
     } catch (err) {
       setSubmitError(err.message || '로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.');
     } finally {
@@ -131,6 +133,10 @@ export default function LoginPage({ onExit, onSwitchToSignup, onSuccess }) {
               onChange={(e) => update({ password: e.target.value })}
               error={errors.password}
             />
+
+            <div className="auth-forgot">
+              <button type="button" onClick={onForgotPassword}>비밀번호를 잊으셨나요?</button>
+            </div>
 
             {submitError && <div className="auth-submit-error">{submitError}</div>}
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import ReviewBlock from './ReviewBlock';
 
 // 이 화면의 본론. LLM이 고른 논문과 **그 논문이 실제로 받은 리뷰**를 보여준다.
 //
@@ -16,55 +16,6 @@ const CONFIDENCE_LABEL = {
 };
 
 const isAccept = (decision) => (decision || '').startsWith('accept');
-
-function ReviewBlock({ review, index }) {
-  const [open, setOpen] = useState(false);
-  const score = review.rating != null ? `${review.rating}점` : '점수 없음';
-
-  return (
-    <div className="wr-review">
-      <button type="button" className="wr-review-head" onClick={() => setOpen((v) => !v)}>
-        <span className="wr-review-no">리뷰 {index + 1}</span>
-        <span className="wr-review-score">{review.rating_raw || score}</span>
-        {review.is_unsplit && (
-          <span className="wr-split-badge" title="이 학회는 강점/약점을 나눠 받지 않아서 리뷰 본문 전체가 들어 있어요">
-            본문 전체
-          </span>
-        )}
-        <span className="wr-review-toggle">{open ? '접기' : '펼치기'}</span>
-      </button>
-      {open && (
-        <div className="wr-review-body">
-          {review.summary && (
-            <div className="wr-review-part">
-              <div className="wr-review-part-label">요약</div>
-              <p>{review.summary}</p>
-            </div>
-          )}
-          {/* 미분리 리뷰는 weaknesses가 본문 전체다 — '약점'이라 부르지 않는다. */}
-          {review.weaknesses && (
-            <div className="wr-review-part">
-              <div className="wr-review-part-label">{review.is_unsplit ? '리뷰 본문' : '지적받은 점'}</div>
-              <p>{review.weaknesses}</p>
-            </div>
-          )}
-          {!review.is_unsplit && review.strengths && (
-            <div className="wr-review-part">
-              <div className="wr-review-part-label">좋게 본 점</div>
-              <p>{review.strengths}</p>
-            </div>
-          )}
-          {review.questions && (
-            <div className="wr-review-part">
-              <div className="wr-review-part-label">질문</div>
-              <p>{review.questions}</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function PaperCard({ paper, onOpenStory }) {
   const conf = CONFIDENCE_LABEL[paper.confidence] ?? CONFIDENCE_LABEL.low;
