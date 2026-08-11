@@ -12,14 +12,16 @@ export const mediaChangesOf = (r) => r?.changes.filter((c) => c.kind === 'image'
 // after_url이 그 리비전에서 실제 바뀐 PDF 파일 링크다.
 export const pdfChangeOf = (r) => r?.changes.find((c) => c.field === 'pdf' && c.kind === 'file');
 
-// "v1, v2, v3..." 대신 서비스 톤에 맞는 서수 이름. n은 1부터 시작하는 순번
-// (몇 번째로 게시된 버전인지)이다. 10번째 이후로는 흔치 않아(실측 코퍼스
-// 최대 6개) 순수 숫자로만 자연스럽게 내려간다.
-const KOREAN_ORDINALS = [null, null, '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
-export function versionLabel(n) {
-  if (n === 1) return '최초 게시본';
-  const word = KOREAN_ORDINALS[n];
-  return word ? `${word} 번째 게시본` : `${n}번째 게시본`;
+// "v1, v2, v3..." 대신 서비스 톤에 맞는 이름. n은 1부터 시작하는 순번
+// (몇 번째로 게시된 버전인지), total은 이 논문의 전체 버전 개수다. n=1은
+// 리뷰를 받기 전 원본이라 "제출본", 마지막 버전은 몇 차 수정이었는지보다
+// "이게 마지막"이라는 사실이 더 중요해서 "최종 수정본"으로 부른다. 그
+// 사이는 "N차 수정본" — OpenReview 화면에서 저자들이 흔히 쓰는 표현이라
+// 사용자에게 더 익숙하다.
+export function versionLabel(n, total) {
+  if (n === 1) return '최초 제출본';
+  if (total != null && n === total) return '최종 수정본';
+  return `${n - 1}차 수정본`;
 }
 
 // _paragraph_diff가 만드는 segment는 문단 끝에만 "\n\n"이 이미 붙어 있고, 그 안의
@@ -116,6 +118,67 @@ function mediaByDeletedLabel(source) {
     out[m.label] = { label: m.label, before: m.before_image, after: null };
   }
   return out;
+}
+
+export const MEDIA_KIND_LABELS = { figure: '그림', table: '표', algorithm: '알고리즘', equation: '수식', box: '박스' };
+
+// 본문 렌더링(VersionText)과 요약 카운트(summarizeChanges), 변경 위치 이동
+// 버튼(BodyDiffPanel)이 전부 "같은 조각을 같은 기준으로 묶은 것"을 봐야
+// 서로 숫자가 어긋나지 않는다 — 그래서 조각을 그룹으로 묶는 로직을 여기
+// 한 곳에만 둔다. 단어 단위로 쪼개진 연속 조각(예: 한 문장이 insert 조각
+// 5개로 나뉘는 경우)을 낱개로 세면 숫자가 실제 "변경 지점"보다 훨씬 부풀어
+// 보이므로, 텍스트는 같은 op가 연달아 나오는 구간을 하나로 묶는다(그림·표
+// 같은 미디어는 이미 한 덩어리라 묶을 필요 없이 하나씩 그대로 센다).
+// 반환하는 groupIndexOfPiece[i]는 pieces[i]가 속한 그룹 번호(equal이면
+// -1) — "변경 위치로 이동" 버튼이 DOM에서 그 그룹의 첫 조각을 찾아
+// scrollIntoView 하는 데 쓴다.
+export function computeChangeGroups(block) {
+  const segs = block.segments ? withSpacing(block.segments) : [{ op: 'equal', text: block.text ?? '' }];
+  const pieces = splitSegmentsWithMedia(segs);
+  const groupIndexOfPiece = new Array(pieces.length).fill(-1);
+  const groups = [];
+
+  let i = 0;
+  while (i < pieces.length) {
+    const p = pieces[i];
+    if (p.op === 'equal') { i += 1; continue; }
+    const groupIdx = groups.length;
+    if (p.kind !== 'text') {
+      groupIndexOfPiece[i] = groupIdx;
+      groups.push({ kind: p.kind, op: p.op });
+      i += 1;
+      continue;
+    }
+    let j = i;
+    while (j < pieces.length && pieces[j].kind === 'text' && pieces[j].op === p.op) {
+      groupIndexOfPiece[j] = groupIdx;
+      j += 1;
+    }
+    groups.push({ kind: 'text', op: p.op });
+    i = j;
+  }
+
+  return { pieces, groupIndexOfPiece, groups };
+}
+
+// 버전 카드 목록만 보고도 "이 버전에서 대충 뭐가 얼마나 바뀌었는지" 감이
+// 오게 하는 요약 카운트 — computeChangeGroups의 groups를 op/kind별로 집계만 한다.
+export function summarizeChanges(block) {
+  if (!block.segments) return null;
+  const { groups } = computeChangeGroups(block);
+  const text = { insert: 0, delete: 0, moved: 0 };
+  const media = {};
+
+  for (const g of groups) {
+    if (g.kind === 'text') {
+      if (g.op in text) text[g.op] += 1;
+      continue;
+    }
+    const bucket = media[g.kind] || (media[g.kind] = { insert: 0, delete: 0, moved: 0 });
+    if (g.op in bucket) bucket[g.op] += 1;
+  }
+
+  return { text, media };
 }
 
 // revisions[]를 "버전 하나당 블록 하나"로 편다. revisions.length가 N이면
