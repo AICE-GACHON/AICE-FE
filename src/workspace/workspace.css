@@ -167,6 +167,8 @@
   padding:11px 14px;font-size:12.5px;line-height:1.65;
 }
 .bodydiff-callout b{font-weight:800;}
+.bodydiff-callout p{margin:0 0 6px;}
+.bodydiff-callout p:last-child{margin-bottom:0;}
 .bodydiff-warn{color:var(--amber);font-size:13.5px;}
 
 .bodydiff-timeline{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 16px;}
