@@ -54,6 +54,9 @@ const OP_TITLE = {
 
 function VersionText({ block }) {
   if (block.text == null) {
+    if (block.noPdfChange) {
+      return <p style={{ color: '#888' }}>이 버전에서는 본문 PDF가 바뀌지 않았습니다 (제목·초록 등 다른 항목만 수정됨).</p>;
+    }
     return <p style={{ color: '#a60' }}>이 버전은 본문을 비교할 수 없습니다 (다운로드 실패·스캔본·페이지 상한 등).</p>;
   }
   const segs = block.segments ? withSpacing(block.segments) : [{ op: 'equal', text: block.text }];

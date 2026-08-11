@@ -148,6 +148,12 @@ export function buildVersionBlocks(revisions) {
       mediaByLabel,
       mediaByDeleted,
       pdfLinks: { beforeUrl: pdf?.before_url ?? null, afterUrl: pdf?.after_url ?? null },
+      // attach_body_diffs는 field="pdf" FieldChange가 있는 리비전에서만
+      // body diff를 계산한다(revisions.py) — 이 리비전이 제목·초록 등만
+      // 고치고 PDF 파일 자체는 안 바꿨으면 pdf 항목 자체가 없어 body도
+      // 당연히 없다. 이건 실패가 아니라 "비교할 게 없다"는 뜻이라, 다운로드
+      // 실패·스캔본 같은 진짜 실패와 구분해서 보여줘야 한다.
+      noPdfChange: !pdf,
     };
   });
 }

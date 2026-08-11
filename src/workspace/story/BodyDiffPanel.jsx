@@ -55,6 +55,9 @@ function MediaPiece({ piece, mediaByLabel, mediaByDeleted }) {
 
 function VersionText({ block }) {
   if (block.text == null) {
+    if (block.noPdfChange) {
+      return <p className="wr-muted">이 버전에서는 본문 PDF가 바뀌지 않았어요 (제목·초록 등 다른 항목만 수정됨).</p>;
+    }
     return <p className="bodydiff-warn">이 버전은 본문을 비교할 수 없어요 (다운로드 실패·스캔본·페이지 상한 등).</p>;
   }
   const segs = block.segments ? withSpacing(block.segments) : [{ op: 'equal', text: block.text }];
