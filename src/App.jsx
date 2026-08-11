@@ -16,8 +16,7 @@ import ForgotPasswordPage from './auth/ForgotPasswordPage';
 import ResetPasswordPage from './auth/ResetPasswordPage';
 import Workspace from './workspace/Workspace';
 import BodyDiffTest from './dev/BodyDiffTest';
-import { logout } from './api/auth';
-import { syncAnswersFromServer } from './onboarding/profileMapping';
+import { useAuth } from './auth/authContext';
 import './onboarding/onboarding.css';
 import './auth/auth.css';
 import './workspace/workspace.css';
@@ -41,7 +40,7 @@ function initialRoute() {
 export default function App() {
   const [route] = useState(initialRoute);
   const [view, setView] = useState(route.view);
-  const [user, setUser] = useState(null);
+  const { user, signIn, signOut } = useAuth();
 
   // 재설정 화면을 벗어나면 주소창의 ?token=...도 지운다. 남겨두면 새로고침할 때
   // 이미 써버린 토큰으로 다시 들어가 "만료됐어요"를 보게 된다.
@@ -58,18 +57,14 @@ export default function App() {
   const goToLogin = () => leaveResetPage('login');
   const goToForgotPassword = () => leaveResetPage('forgot-password');
 
+  // 사용자 정보 저장과 온보딩 답변 동기화는 AuthContext가 맡는다 — 여기서는 화면만 넘긴다.
   const handleAuthSuccess = async (loggedInUser) => {
-    setUser(loggedInUser);
-    // 온보딩 답변은 sessionStorage에만 있어서 탭을 닫으면 사라진다. 로그인 직후
-    // 서버에 저장된 답변으로 채워두지 않으면, 분명히 답했는데도 업로드의 분야
-    // 기본값이 빈 채로 넘어간다. 실패해도 로그인은 그대로 진행한다.
-    await syncAnswersFromServer();
+    await signIn(loggedInUser);
     setView('workspace');
   };
 
   const handleLogout = async () => {
-    await logout();
-    setUser(null);
+    await signOut();
     setView('landing');
   };
 

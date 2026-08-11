@@ -1,0 +1,114 @@
+# CI — PR과 main push마다 린트·빌드를 돌린다.
+#
+# 잡 구성의 의도:
+#   lint   (~40초)  eslint. 독립적으로 돈다.
+#   build  (~40초)  vite build. **FE에서 실패의 대부분을 잡는 잡이다.**
+#                   테스트 러너가 없는 지금, 없는 export·깨진 import 경로·문법 오류를
+#                   걸러내는 유일한 그물이다.
+#   audit  (~30초)  의존성 취약점. 머지를 막지는 않는다 (아래 continue-on-error 참고).
+#
+# BE 저장소(AICE-BE)의 CI와 달리 잡 사이에 의존관계를 두지 않았다. 여기서는
+# 제일 무거운 단계가 `npm ci`(수십 초)라, 순서를 세워 아끼는 시간보다 셋을 동시에
+# 돌려 아끼는 시간이 크다.
+#
+# 테스트 잡이 없는 이유: package.json에 test 스크립트가 없다. vitest를 붙이면
+# lint와 같은 모양으로 잡을 하나 더 추가하면 된다.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# 같은 브랜치에 연달아 push하면 이전 실행을 취소한다.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # 개발 환경과 같은 메이저를 쓴다. package.json에 engines가 없어서 "지원하는 최저
+  # 버전"이라는 게 아직 정해져 있지 않기 때문이다 — BE CI가 최저 버전(3.13)을 지키는
+  # 것과는 사정이 다르다.
+  # 낮은 쪽을 지키고 싶어지면 package.json에 engines를 먼저 적고 이 값을 그 버전으로
+  # 내릴 것. 참고로 vite 8의 하한은 Node ^20.19 || >=22.12다.
+  NODE_VERSION: "24"
+
+jobs:
+  lint:
+    name: eslint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # `npm install`이 아니라 `npm ci`. lock 파일 그대로 설치하고, package.json과
+      # 어긋나 있으면 조용히 맞추는 대신 실패한다 — 그 어긋남 자체가 잡아야 할 버그다.
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: eslint
+        run: npm run lint
+
+  build:
+    name: vite build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      # vite.config.js의 빌드 가드 때문에 **반드시 있어야 한다.** 비우면 빌드가
+      # 에러로 죽는다 (src/api/*.js가 통째로 mock 폴백으로 넘어가는 번들을 막는 장치다).
+      #
+      # 비밀이 아니다 — 배포 도메인이고, vite.config.js 주석에도 같은 값이 적혀 있다.
+      #
+      # ⚠️ VITE_ALLOW_MOCK_BUILD=1로 가드를 우회하지 말 것. 그러면 CI가 배포와 다른
+      #    경로를 타게 되고, 가드가 깨져도 여기서는 초록불이 뜬다. 실제 배포용 값으로
+      #    빌드해야 가드까지 함께 검증된다.
+      VITE_API_BASE_URL: https://paperaireview.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci
+
+      # 산출물(dist)은 버리고 성공 여부만 본다. 배포는 이 워크플로가 하지 않는다.
+      - name: 빌드
+        run: npm run build
+
+  audit:
+    name: 의존성 취약점 (npm audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # BE의 audit 잡과 같은 이유로 머지를 막지 않는다. npm 생태계는 transitive 의존성
+    # 경고가 특히 잦아서, 막아 두면 무관한 PR이 남의 CVE에 걸려 서고 결국 아무도
+    # 이 잡을 안 보게 된다. 막고 싶어지면 이 줄을 지우면 된다.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci
+
+      # high 미만(low/moderate)은 걸러낸다. 기준을 낮추면 devDependency 경고가
+      # 수십 개씩 쌓여 로그를 읽지 않게 된다.
+      - name: npm audit
+        run: npm audit --audit-level=high
