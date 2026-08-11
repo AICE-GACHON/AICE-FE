@@ -12,6 +12,16 @@ export const mediaChangesOf = (r) => r?.changes.filter((c) => c.kind === 'image'
 // after_url이 그 리비전에서 실제 바뀐 PDF 파일 링크다.
 export const pdfChangeOf = (r) => r?.changes.find((c) => c.field === 'pdf' && c.kind === 'file');
 
+// "v1, v2, v3..." 대신 서비스 톤에 맞는 서수 이름. n은 1부터 시작하는 순번
+// (몇 번째로 게시된 버전인지)이다. 10번째 이후로는 흔치 않아(실측 코퍼스
+// 최대 6개) 순수 숫자로만 자연스럽게 내려간다.
+const KOREAN_ORDINALS = [null, null, '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
+export function versionLabel(n) {
+  if (n === 1) return '최초 게시본';
+  const word = KOREAN_ORDINALS[n];
+  return word ? `${word} 번째 게시본` : `${n}번째 게시본`;
+}
+
 // _paragraph_diff가 만드는 segment는 문단 끝에만 "\n\n"이 이미 붙어 있고, 그 안의
 // 단어 단위 조각들(_word_diff 결과) 사이에는 구분자가 없다 — "across"+"16" 처럼
 // 그냥 이어 붙이면 붙어버린다. 앞 조각이 이미 공백/줄바꿈으로 끝났을 때만 건너뛰고,

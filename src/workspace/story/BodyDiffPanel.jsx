@@ -6,7 +6,7 @@
 // 공유한다 — 같은 문단·미디어 매칭 규칙을 두 곳에서 따로 구현하면 어긋나기 쉽다.
 import { useEffect, useMemo, useState } from 'react';
 import { getPaperRevisionsBodyDiff } from '../../api/papers';
-import { buildVersionBlocks, splitSegmentsWithMedia, withSpacing } from './bodyDiff';
+import { buildVersionBlocks, splitSegmentsWithMedia, versionLabel, withSpacing } from './bodyDiff';
 
 const OP_CLASS = {
   insert: 'diff-ins', delete: 'diff-del', moved: 'diff-moved',
@@ -114,7 +114,12 @@ export default function BodyDiffPanel({ paperId }) {
     <div className="bodydiff-panel" onClick={(e) => e.stopPropagation()}>
       <div className="bodydiff-head">
         <div className="bodydiff-head-title">📄 본문 변경 이력</div>
-        <div className="wr-hint">리비전마다 문장·그림·표·알고리즘·수식이 실제로 어떻게 바뀌었는지 보여줘요.</div>
+        <div className="bodydiff-callout">
+          리비전마다 문장·그림·표·알고리즘·수식이 실제로 어떻게 바뀌었는지 자동으로
+          비교해서 보여줘요. OpenReview에 남아있는, <b>관측 가능한 리비전</b>만
+          대상으로 하는 자동 분석이라 완벽하지 않을 수 있어요 — 더 정확히
+          확인하고 싶으면 아래 각 버전의 <b>PDF 원문</b> 링크로 직접 열어보세요.
+        </div>
       </div>
 
       {phase === 'loading' && (
@@ -148,7 +153,7 @@ export default function BodyDiffPanel({ paperId }) {
                 className={`bodydiff-version-btn${i === selected ? ' is-active' : ''}`}
                 onClick={() => setSelected(i)}
               >
-                <div className="bodydiff-version-no">v{i + 1}{i === 0 && ' (수정 전 원문)'}</div>
+                <div className="bodydiff-version-no">{versionLabel(i + 1)}</div>
                 <div className="bodydiff-version-meta">{b.label} · {b.date}</div>
               </button>
             ))}
@@ -157,8 +162,17 @@ export default function BodyDiffPanel({ paperId }) {
           {current && (
             <div className="bodydiff-body">
               <div className="bodydiff-body-head">
-                v{selected + 1} · {current.label} · {current.date}
-                {selected > 0 && <span className="wr-muted"> — 이전 버전 대비 변경(초록=추가, 빨강=삭제)</span>}
+                <div>
+                  <span className="bodydiff-body-head-title">{versionLabel(selected + 1)}</span>
+                  <span className="wr-muted"> · {current.label} · {current.date}</span>
+                </div>
+                {selected > 0 && (
+                  <div className="bodydiff-legend">
+                    <span className="bodydiff-legend-item"><span className="diff-ins">추가</span></span>
+                    <span className="bodydiff-legend-item"><span className="diff-del">삭제</span></span>
+                    <span className="bodydiff-legend-item"><span className="diff-moved">위치 이동</span></span>
+                  </div>
+                )}
               </div>
 
               {/* 이 diff가 못 미더울 때를 위한 보험 — 실제 PDF 원문을 새 탭에서
@@ -166,15 +180,15 @@ export default function BodyDiffPanel({ paperId }) {
               {(current.pdfLinks?.beforeUrl || current.pdfLinks?.afterUrl) && (
                 <div className="bodydiff-pdf-links">
                   {current.pdfLinks.beforeUrl && (
-                    <a href={current.pdfLinks.beforeUrl} target="_blank" rel="noopener noreferrer">
-                      v{selected} 원문 PDF 열기 ↗
+                    <a className="bodydiff-pdf-link" href={current.pdfLinks.beforeUrl} target="_blank" rel="noopener noreferrer">
+                      {versionLabel(selected)} PDF 원문 ↗
                     </a>
                   )}
                   {current.pdfLinks.afterUrl && (
-                    <a href={current.pdfLinks.afterUrl} target="_blank" rel="noopener noreferrer">
+                    <a className="bodydiff-pdf-link" href={current.pdfLinks.afterUrl} target="_blank" rel="noopener noreferrer">
                       {current.noPdfChange
-                        ? '현재 PDF 열기 (이 리비전에서는 안 바뀜) ↗'
-                        : `v${selected + 1} 원문 PDF 열기 ↗`}
+                        ? '현재 PDF 원문 (이 버전에서는 안 바뀜) ↗'
+                        : `${versionLabel(selected + 1)} PDF 원문 ↗`}
                     </a>
                   )}
                 </div>
