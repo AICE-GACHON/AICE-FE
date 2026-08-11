@@ -15,6 +15,7 @@ import LoginPage from './auth/LoginPage';
 import ForgotPasswordPage from './auth/ForgotPasswordPage';
 import ResetPasswordPage from './auth/ResetPasswordPage';
 import Workspace from './workspace/Workspace';
+import BodyDiffTest from './dev/BodyDiffTest';
 import { logout } from './api/auth';
 import { syncAnswersFromServer } from './onboarding/profileMapping';
 import './onboarding/onboarding.css';
@@ -71,6 +72,12 @@ export default function App() {
     setUser(null);
     setView('landing');
   };
+
+  // 임시 테스트 진입점 — /?dev=body-diff. 정식 라우팅에 넣지 않고 쿼리스트링으로만
+  // 접근한다. 검증이 끝나면 이 분기와 src/dev/BodyDiffTest.jsx를 함께 지운다.
+  if (new URLSearchParams(window.location.search).get('dev') === 'body-diff') {
+    return <BodyDiffTest />;
+  }
 
   if (view === 'onboarding') {
     return <OnboardingFlow onExit={goToLanding} onGoToSignup={goToSignup} onGoToLogin={goToLogin} />;

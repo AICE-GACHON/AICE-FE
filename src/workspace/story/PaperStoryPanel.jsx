@@ -3,6 +3,7 @@ import { getPaperStory } from '../../api/papers';
 import JourneyBadge from './JourneyBadge';
 import NarrativeCard from './NarrativeCard';
 import Timeline from './Timeline';
+import BodyDiffPanel from './BodyDiffPanel';
 
 const isAccept = (decision) => (decision || '').startsWith('accept');
 
@@ -39,6 +40,8 @@ export default function PaperStoryPanel({ paperId, onClose }) {
 
   return (
     <div className="story-overlay" onClick={onClose}>
+      <BodyDiffPanel paperId={paperId} />
+
       <div className="story-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <button type="button" className="story-close" onClick={onClose} aria-label="닫기">✕</button>
 
