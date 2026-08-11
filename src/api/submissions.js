@@ -64,12 +64,24 @@ export async function getAnalysis(submissionId) {
   return authorizedFetch(`/api/submissions/${submissionId}/analysis`);
 }
 
-/** status가 done/failed가 될 때까지 폴링한다. onTick으로 pending/running 중간 상태를 알려준다. */
-export async function pollAnalysis(submissionId, { intervalMs = 3000, onTick } = {}) {
+/**
+ * status가 done/failed가 될 때까지 폴링한다. onTick으로 pending/running 중간 상태를 알려준다.
+ *
+ * signal은 이 루프를 멈출 유일한 수단이다. 끝 조건이 서버 응답뿐이라, 결과를 받을
+ * 화면이 사라진 뒤에도(워크스페이스를 떠남) 3초마다 계속 서버를 두드린다.
+ *
+ * @param {{intervalMs?: number, onTick?: (data: object) => void, signal?: AbortSignal}} [options]
+ */
+export async function pollAnalysis(submissionId, { intervalMs = 3000, onTick, signal } = {}) {
   for (;;) {
+    signal?.throwIfAborted();
     const data = await getAnalysis(submissionId);
     onTick?.(data);
     if (data.status === 'done' || data.status === 'failed') return data;
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    // 대기 중에도 끊길 수 있어야 한다 — 안 그러면 멈추라고 한 뒤에도 마지막 한 번을 더 기다린다.
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(resolve, intervalMs);
+      signal?.addEventListener('abort', () => { clearTimeout(timer); reject(signal.reason); }, { once: true });
+    });
   }
 }

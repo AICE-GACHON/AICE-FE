@@ -6,7 +6,7 @@ import { loadAnswers } from '../onboarding/sessionState';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function validate({ nickname, email, password, confirm, openreviewId, agree }) {
+function validate({ nickname, email, password, confirm, inviteCode, agree }) {
   const errors = {};
   if (!nickname.trim()) errors.nickname = '닉네임을 입력해 주세요.';
   else if (nickname.trim().length > 50) errors.nickname = '닉네임은 50자 이내로 입력해 주세요.';
@@ -15,15 +15,17 @@ function validate({ nickname, email, password, confirm, openreviewId, agree }) {
   if (!password) errors.password = '비밀번호를 입력해 주세요.';
   else if (password.length < 8) errors.password = '비밀번호는 8자 이상이어야 해요.';
   if (confirm !== password) errors.confirm = '비밀번호가 일치하지 않아요.';
-  if (!openreviewId.trim()) errors.openreviewId = 'OpenReview ID를 입력해 주세요.';
-  else if (openreviewId.trim().length > 100) errors.openreviewId = 'OpenReview ID가 너무 길어요.';
+  // 서버는 코드가 틀리면 403을 준다. 여기서 막는 것은 "비어 있음"까지다 —
+  // 코드가 맞는지는 서버만 안다.
+  if (!inviteCode.trim()) errors.inviteCode = '초대 코드를 입력해 주세요.';
+  else if (inviteCode.trim().length > 200) errors.inviteCode = '초대 코드가 너무 길어요.';
   if (!agree) errors.agree = '이용약관과 개인정보처리방침에 동의해 주세요.';
   return errors;
 }
 
 export default function SignupPage({ onExit, onSwitchToLogin, onSuccess }) {
   const [form, setForm] = useState({
-    nickname: '', email: '', password: '', confirm: '', openreviewId: '', agree: false,
+    nickname: '', email: '', password: '', confirm: '', inviteCode: '', agree: false,
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -39,7 +41,6 @@ export default function SignupPage({ onExit, onSwitchToLogin, onSuccess }) {
 
     const email = form.email.trim();
     const nickname = form.nickname.trim();
-    const openreviewId = form.openreviewId.trim();
     // 온보딩 3단계에서 저장된 onboarding_id가 있으면 이번 가입 요청에 실어 보내
     // 서버가 그 답변을 이 계정에 연결하게 한다 (app/routers/auth.py signup).
     const onboardingId = loadAnswers().onboardingId || undefined;
@@ -47,7 +48,12 @@ export default function SignupPage({ onExit, onSwitchToLogin, onSuccess }) {
     setSubmitting(true);
     setSubmitError('');
     try {
-      await signup({ email, password: form.password, nickname, openreviewId, onboardingId });
+      // 베타에서는 OpenReview ID를 받지 않는다 — 서버가 자리표시자를 넣고,
+      // 나중에 프로필에서 진짜 ID로 바꿀 수 있다.
+      await signup({
+        email, password: form.password, nickname,
+        inviteCode: form.inviteCode.trim(), onboardingId,
+      });
       // 회원가입 API는 토큰을 주지 않으므로, 가입 직후 같은 자격증명으로 바로 로그인해서 이어준다.
       const user = await login({ email, password: form.password });
       onSuccess(user);
@@ -98,15 +104,15 @@ export default function SignupPage({ onExit, onSwitchToLogin, onSuccess }) {
           error={errors.confirm}
         />
         <Field
-          label="OpenReview ID"
+          label="초대 코드"
           type="text"
-          placeholder="openreview.net 계정 아이디"
-          value={form.openreviewId}
-          onChange={(e) => update({ openreviewId: e.target.value })}
-          error={errors.openreviewId}
+          placeholder="초대받은 코드를 입력해 주세요"
+          value={form.inviteCode}
+          onChange={(e) => update({ inviteCode: e.target.value })}
+          error={errors.inviteCode}
         />
         <p className="fine" style={{ marginTop: -8 }}>
-          계정이 없으신가요? <a href="https://openreview.net/signup" target="_blank" rel="noopener noreferrer">openreview.net에서 무료로 만들 수 있어요</a>.
+          지금은 초대받은 분만 가입할 수 있어요.
         </p>
 
         <label className="auth-checkbox">

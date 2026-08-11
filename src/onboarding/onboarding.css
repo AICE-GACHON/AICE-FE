@@ -86,6 +86,11 @@
 .onboard-panel-art::after{width:220px;height:220px;background:var(--teal-bright);filter:blur(70px);bottom:-40px;left:-40px;opacity:0.3;}
 @media (max-width:900px){ .onboard-panel-art{display:none;} }
 
+/* 랜딩의 .float-panel을 쓰던 카드 — 랜딩 쇼케이스 개편으로 그 규칙이 사라져서
+   여기로 옮겨왔다. */
+.onboard-art-card.float-panel{
+  background:#fff;border-radius:12px;box-shadow:0 20px 40px -12px rgba(0,0,0,0.35);
+}
 .onboard-art-card{position:relative;max-width:360px;width:100%;padding:22px 24px;}
 .onboard-art-example{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
 .onboard-art-example-label{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:4px;}
