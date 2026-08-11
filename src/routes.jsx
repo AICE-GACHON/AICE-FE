@@ -4,7 +4,8 @@
 // 화면 컴포넌트들은 그대로 둔다. onExit·onSwitchToLogin 같은 콜백 prop을 받는
 // 순수한 화면으로 남기고, 여기 얇은 래퍼가 useNavigate로 그 콜백을 채워 넣는다.
 // 화면이 라우터를 몰라야 나중에 어디에 갖다 붙여도 그대로 동작한다.
-import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useCallback } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import LandingPage from './LandingPage';
 import OnboardingFlow from './onboarding/OnboardingFlow';
@@ -18,11 +19,31 @@ import MyPage from './workspace/MyPage';
 import BodyDiffTest from './dev/BodyDiffTest';
 import { RequireAuth, RedirectIfAuthed } from './auth/guards';
 import { useAuth } from './auth/authContext';
+import { parseStep } from './onboarding/steps';
 
+// 온보딩은 단계마다 주소가 있다(/onboarding/1..4). 3단계에서 뒤로가기를 눌렀을 때
+// 앱을 벗어나는 대신 2단계로 가야 하기 때문이다.
+//
+// 단계가 바뀌어도 이 컴포넌트는 언마운트되지 않는다 — 같은 라우트의 파라미터만
+// 바뀌므로 React가 자리를 유지한다. 그래서 답변 state가 단계 사이에 살아남는다.
 function OnboardingRoute() {
   const navigate = useNavigate();
+  const { step: rawStep } = useParams();
+
+  // OnboardingFlow가 매 렌더마다 새 함수를 받지 않도록 고정한다.
+  const handleStepChange = useCallback(
+    (next, options) => navigate(`/onboarding/${next}`, options),
+    [navigate],
+  );
+
+  // 'abc', '99', '-1' 같은 값 — 주소를 직접 고쳐 넣은 경우다. 1단계로 되돌린다.
+  const step = parseStep(rawStep);
+  if (step === null) return <Navigate to="/onboarding/1" replace />;
+
   return (
     <OnboardingFlow
+      step={step}
+      onStepChange={handleStepChange}
       onExit={() => navigate('/')}
       onGoToSignup={() => navigate('/signup')}
       onGoToLogin={() => navigate('/login')}
@@ -96,7 +117,9 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/onboarding" element={<OnboardingRoute />} />
+      {/* 랜딩의 "시작하기"는 /onboarding으로 온다. replace라서 1단계에서 뒤로가면 랜딩이다. */}
+      <Route path="/onboarding" element={<Navigate to="/onboarding/1" replace />} />
+      <Route path="/onboarding/:step" element={<OnboardingRoute />} />
 
       <Route path="/signup" element={<RedirectIfAuthed><SignupRoute /></RedirectIfAuthed>} />
       <Route path="/login" element={<RedirectIfAuthed><LoginRoute /></RedirectIfAuthed>} />
