@@ -6,7 +6,9 @@
 // 공유한다 — 같은 문단·미디어 매칭 규칙을 두 곳에서 따로 구현하면 어긋나기 쉽다.
 import { useEffect, useMemo, useState } from 'react';
 import { getPaperRevisionsBodyDiff } from '../../api/papers';
-import { buildVersionBlocks, splitSegmentsWithMedia, versionLabel, withSpacing } from './bodyDiff';
+import {
+  MEDIA_KIND_LABELS, buildVersionBlocks, computeChangeGroups, summarizeChanges, versionLabel,
+} from './bodyDiff';
 
 const OP_CLASS = {
   insert: 'diff-ins', delete: 'diff-del', moved: 'diff-moved',
@@ -39,16 +41,49 @@ function MediaImage({ media }) {
   );
 }
 
-function MediaPiece({ piece, mediaByLabel, mediaByDeleted }) {
+function MediaPiece({ piece, mediaByLabel, mediaByDeleted, changeIdx }) {
   const media = piece.op === 'delete' ? mediaByDeleted[piece.label] : mediaByLabel[piece.label];
   if (!media) return null; // 캡션은 있는데 크롭 실패한 드문 경우 — 조용히 생략
   return (
-    <div className="bodydiff-media-block">
+    <div className="bodydiff-media-block" data-change-idx={changeIdx >= 0 ? changeIdx : undefined}>
       <div className="bodydiff-media-title">
         {piece.label}
         {piece.op === 'moved' && <span className="diff-moved bodydiff-moved-badge">위치 이동됨</span>}
       </div>
       <MediaImage media={media} />
+    </div>
+  );
+}
+
+// "표 1"만 봐서는 추가된 건지 삭제된 건지 알 수 없다 — 개수가 1이든
+// 여럿이든 항상 추가/삭제/이동으로 방향을 밝히고, 여러 종류가 섞였으면
+// "/"로 구분한다.
+function mediaChipLabel(kind, c) {
+  const label = MEDIA_KIND_LABELS[kind] ?? kind;
+  const parts = [];
+  if (c.insert) parts.push(`추가${c.insert}`);
+  if (c.delete) parts.push(`삭제${c.delete}`);
+  if (c.moved) parts.push(`이동${c.moved}`);
+  return `${label} ${parts.join(' / ')}`;
+}
+
+function ChangeSummary({ summary }) {
+  const { text, media } = summary;
+  const mediaEntries = Object.entries(media).filter(([, c]) => c.insert + c.delete + c.moved > 0);
+  const hasAny = text.insert || text.delete || text.moved || mediaEntries.length > 0;
+  if (!hasAny) {
+    return <p className="wr-muted bodydiff-summary-empty">이 버전에서 감지된 변경이 없어요.</p>;
+  }
+  return (
+    <div className="bodydiff-summary">
+      {text.insert > 0 && <span className="bodydiff-legend-item"><span className="diff-ins">추가 {text.insert}</span></span>}
+      {text.delete > 0 && <span className="bodydiff-legend-item"><span className="diff-del">삭제 {text.delete}</span></span>}
+      {text.moved > 0 && <span className="bodydiff-legend-item"><span className="diff-moved">이동 {text.moved}</span></span>}
+      {mediaEntries.map(([kind, c]) => (
+        <span key={kind} className="bodydiff-legend-item">
+          <span className="diff-media">{mediaChipLabel(kind, c)}</span>
+        </span>
+      ))}
     </div>
   );
 }
@@ -66,15 +101,30 @@ function VersionText({ block }) {
     }
     return <p className="bodydiff-warn">이 버전은 본문을 비교할 수 없어요 (다운로드 실패·스캔본·페이지 상한 등).</p>;
   }
-  const segs = block.segments ? withSpacing(block.segments) : [{ op: 'equal', text: block.text }];
-  const pieces = splitSegmentsWithMedia(segs);
+  const { pieces, groupIndexOfPiece } = computeChangeGroups(block);
   return (
     <div className="bodydiff-text">
-      {pieces.map((p, i) => (
-        p.kind === 'text'
-          ? <span key={i} className={OP_CLASS[p.op]} title={OP_TITLE[p.op]}>{p.text}</span>
-          : <MediaPiece key={i} piece={p} mediaByLabel={block.mediaByLabel} mediaByDeleted={block.mediaByDeleted} />
-      ))}
+      {pieces.map((p, i) => {
+        const changeIdx = groupIndexOfPiece[i];
+        return p.kind === 'text'
+          ? (
+            <span
+              key={i}
+              className={OP_CLASS[p.op]}
+              title={OP_TITLE[p.op]}
+              data-change-idx={changeIdx >= 0 ? changeIdx : undefined}
+            >{p.text}</span>
+          )
+          : (
+            <MediaPiece
+              key={i}
+              piece={p}
+              mediaByLabel={block.mediaByLabel}
+              mediaByDeleted={block.mediaByDeleted}
+              changeIdx={changeIdx}
+            />
+          );
+      })}
     </div>
   );
 }
@@ -109,6 +159,40 @@ export default function BodyDiffPanel({ paperId }) {
     [data],
   );
   const current = versionBlocks[selected];
+  const summary = useMemo(() => (selected > 0 && current ? summarizeChanges(current) : null), [selected, current]);
+  const changeCount = useMemo(
+    () => (selected > 0 && current ? computeChangeGroups(current).groups.length : 0),
+    [selected, current],
+  );
+
+  // 버전을 바꾸면 그 버전의 변경 목록도 처음(아직 아무 데도 안 가본 상태)부터
+  // 다시 훑어야 하니 -1로 되돌린다 — "N / M" 표시는 changePos+1로 계산한다.
+  // effect 대신 렌더 중에 조건부로 리셋한다(React가 권장하는 "prop이 바뀌면
+  // state를 되돌리는" 패턴 — PaperStoryPanel.jsx의 key={paperId} 리마운트와
+  // 달리 selected는 이 컴포넌트 내부 state라 리마운트로 해결할 수 없다).
+  const [changePos, setChangePos] = useState(-1);
+  const [changePosVersion, setChangePosVersion] = useState(selected);
+  if (selected !== changePosVersion) {
+    setChangePosVersion(selected);
+    setChangePos(-1);
+  }
+
+  // 업데이터 함수는 다음 위치 번호만 계산하는 순수 함수로 둔다(StrictMode가
+  // 개발 모드에서 이 함수를 두 번 호출하므로, 여기서 스크롤 같은 부수효과를
+  // 하면 두 번 실행된다) — 실제 스크롤 이동은 changePos가 바뀐 뒤 아래
+  // effect에서 한다.
+  const goPrevChange = () => setChangePos((prev) => (prev <= 0 ? changeCount - 1 : prev - 1));
+  const goNextChange = () => setChangePos((prev) => (prev < 0 || prev >= changeCount - 1 ? 0 : prev + 1));
+
+  useEffect(() => {
+    if (changePos < 0) return undefined;
+    const target = document.querySelector(`[data-change-idx="${changePos}"]`);
+    if (!target) return undefined;
+    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    target.classList.add('bodydiff-change-focus');
+    const timer = setTimeout(() => target.classList.remove('bodydiff-change-focus'), 1200);
+    return () => clearTimeout(timer);
+  }, [changePos]);
 
   return (
     <div className="bodydiff-panel" onClick={(e) => e.stopPropagation()}>
@@ -118,10 +202,10 @@ export default function BodyDiffPanel({ paperId }) {
           <p>논문 수정 버전마다 문장·그림·표·알고리즘·수식이 어떻게 달라졌는지
             자동으로 비교해 보여줍니다.</p>
           <p>분석은 OpenReview에 공개된 수정 버전을 기준으로 하며, 자동 분석
-            특성상 일부 변경 사항이 정확히 감지되지 않을 수 있습니다. 특히
-            표·수식·그림은 PDF 내 위치를 기반으로 비교하므로 오차가 발생할 수
-            있습니다. 결과가 이상하거나 세부 확인이 필요한 경우, 각 버전의{' '}
-            <b>PDF 원문</b>을 직접 확인해 주세요.</p>
+            특성상 일부 변경 사항이 정확히 감지되지 않을 수 있습니다.{' '}
+            <b>특히 표·수식·그림은 PDF 내 위치를 기반으로 비교하므로 오차가
+            발생할 수 있습니다.</b> 결과가 이상하거나 세부 확인이 필요한 경우,
+            각 버전의 <b>PDF 원문</b>을 직접 확인해 주세요.</p>
         </div>
       </div>
 
@@ -156,7 +240,7 @@ export default function BodyDiffPanel({ paperId }) {
                 className={`bodydiff-version-btn${i === selected ? ' is-active' : ''}`}
                 onClick={() => setSelected(i)}
               >
-                <div className="bodydiff-version-no">{versionLabel(i + 1)}</div>
+                <div className="bodydiff-version-no">{versionLabel(i + 1, versionBlocks.length)}</div>
                 <div className="bodydiff-version-meta">{b.label} · {b.date}</div>
               </button>
             ))}
@@ -165,9 +249,30 @@ export default function BodyDiffPanel({ paperId }) {
           {current && (
             <div className="bodydiff-body">
               <div className="bodydiff-body-head">
-                <div>
-                  <span className="bodydiff-body-head-title">{versionLabel(selected + 1)}</span>
-                  <span className="wr-muted"> · {current.label} · {current.date}</span>
+                <div className="bodydiff-body-head-left">
+                  <div>
+                    <span className="bodydiff-body-head-title">{versionLabel(selected + 1, versionBlocks.length)}</span>
+                    <span className="wr-muted"> · {current.label} · {current.date}</span>
+                  </div>
+
+                  {/* 이 diff가 못 미더울 때를 위한 보험 — 실제 PDF 원문을 새 탭에서
+                      바로 열어 눈으로 대조할 수 있게 한다. */}
+                  {(current.pdfLinks?.beforeUrl || current.pdfLinks?.afterUrl) && (
+                    <div className="bodydiff-pdf-links">
+                      {current.pdfLinks.beforeUrl && (
+                        <a className="bodydiff-pdf-link" href={current.pdfLinks.beforeUrl} target="_blank" rel="noopener noreferrer">
+                          {versionLabel(selected, versionBlocks.length)} PDF 원문 ↗
+                        </a>
+                      )}
+                      {current.pdfLinks.afterUrl && (
+                        <a className="bodydiff-pdf-link" href={current.pdfLinks.afterUrl} target="_blank" rel="noopener noreferrer">
+                          {current.noPdfChange
+                            ? '현재 PDF 원문 (이 버전에서는 안 바뀜) ↗'
+                            : `${versionLabel(selected + 1, versionBlocks.length)} PDF 원문 ↗`}
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {selected > 0 && (
                   <div className="bodydiff-legend">
@@ -178,22 +283,13 @@ export default function BodyDiffPanel({ paperId }) {
                 )}
               </div>
 
-              {/* 이 diff가 못 미더울 때를 위한 보험 — 실제 PDF 원문을 새 탭에서
-                  바로 열어 눈으로 대조할 수 있게 한다. */}
-              {(current.pdfLinks?.beforeUrl || current.pdfLinks?.afterUrl) && (
-                <div className="bodydiff-pdf-links">
-                  {current.pdfLinks.beforeUrl && (
-                    <a className="bodydiff-pdf-link" href={current.pdfLinks.beforeUrl} target="_blank" rel="noopener noreferrer">
-                      {versionLabel(selected)} PDF 원문 ↗
-                    </a>
-                  )}
-                  {current.pdfLinks.afterUrl && (
-                    <a className="bodydiff-pdf-link" href={current.pdfLinks.afterUrl} target="_blank" rel="noopener noreferrer">
-                      {current.noPdfChange
-                        ? '현재 PDF 원문 (이 버전에서는 안 바뀜) ↗'
-                        : `${versionLabel(selected + 1)} PDF 원문 ↗`}
-                    </a>
-                  )}
+              {summary && <ChangeSummary summary={summary} />}
+
+              {changeCount > 0 && (
+                <div className="bodydiff-change-nav" aria-label="변경 위치 이동">
+                  <button type="button" className="bodydiff-change-nav-btn" onClick={goPrevChange}>◀ 이전 변경</button>
+                  <span className="bodydiff-change-nav-pos">{changePos >= 0 ? changePos + 1 : '-'} / {changeCount}</span>
+                  <button type="button" className="bodydiff-change-nav-btn" onClick={goNextChange}>다음 변경 ▶</button>
                 </div>
               )}
 
