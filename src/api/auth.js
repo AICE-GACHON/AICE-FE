@@ -139,8 +139,12 @@ export async function loginWithGoogle(idToken, openreviewId, inviteCode) {
   }
 }
 
-/** refresh_token으로 access_token을 재발급받는다 (refresh_token도 함께 회전). */
-export async function refreshAccessToken() {
+/**
+ * refresh_token으로 access_token을 재발급받는다 (refresh_token도 함께 회전).
+ * @param {{signal?: AbortSignal}} [options] 호출부가 건 타임아웃이 재발급 왕복까지
+ *   덮게 하려면 같은 signal을 넘겨야 한다 — 안 그러면 여기서 다시 무한정 기다린다.
+ */
+export async function refreshAccessToken({ signal } = {}) {
   const refresh_token = loadRefreshToken();
   if (!refresh_token) throw new Error('로그인이 필요해요.');
 
@@ -148,6 +152,7 @@ export async function refreshAccessToken() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token }),
+    signal,
   });
   const tokens = await unwrap(res);
   saveTokens(tokens);
@@ -175,7 +180,7 @@ export async function authorizedFetch(path, options = {}, _retried = false) {
 
   if (res.status === 401 && !_retried) {
     try {
-      await refreshAccessToken();
+      await refreshAccessToken({ signal: options.signal });
     } catch {
       clearTokens();
       throw new Error('로그인이 만료됐어요. 다시 로그인해 주세요.');
@@ -185,9 +190,13 @@ export async function authorizedFetch(path, options = {}, _retried = false) {
   return unwrap(res);
 }
 
-/** GET /api/user/me */
-export function fetchMe() {
-  return authorizedFetch('/api/user/me');
+/**
+ * GET /api/user/me
+ * @param {RequestInit} [options] 앱 시작 시 세션 복원처럼 무한정 기다릴 수 없는
+ *   호출을 위해 signal 등을 넘길 수 있게 열어둔다.
+ */
+export function fetchMe(options) {
+  return authorizedFetch('/api/user/me', options);
 }
 
 /**
