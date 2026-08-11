@@ -8,8 +8,10 @@
 // signup/login 등과 같은 IP rate limit(5/분)이 걸려 있어 실패해도(429 포함) 온보딩 자체를
 // 막지 않고 그냥 온보딩 연결 없이 계속 진행한다 (OnboardingFlow.jsx에서 처리).
 //
-//   GET   /api/user/me/onboarding (인증 필요) -> OnboardingResponse | 404
-//   PATCH /api/user/me/onboarding (인증 필요) -> OnboardingResponse (보낸 필드만 갱신, upsert)
+//   GET /api/user/me/onboarding (인증 필요) -> OnboardingResponse | 404
+//
+// 수정 API는 아직 없다. 백엔드에 PATCH /api/user/me/onboarding(upsert)를 요청해 둔
+// 상태라, 지금 마이페이지는 조회만 한다.
 import { authorizedFetch } from './auth';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -56,29 +58,4 @@ export async function fetchMyOnboarding() {
     if (err.status === 404) return null;
     throw err;
   }
-}
-
-/**
- * 온보딩 답변을 고친다. **보낸 필드만 갱신된다** (서버가 exclude_unset으로 처리).
- *
- * 답변이 아예 없는 계정(위 fetchMyOnboarding이 null을 준 경우)이어도 404가 아니라
- * 새로 만들어진다 — upsert다. 온보딩은 가입 전에만 지나가는 흐름이라 "먼저
- * 만들고 오세요"가 성립하지 않기 때문이다.
- *
- * ⚠️ 리스트 항목(purposes/fields/result_order)에 null을 보내면 **무시된다.**
- * 비우려는 의도라면 빈 배열 []을 보내야 한다 — 서버 쪽 컬럼이 not null이라
- * null과 "안 보냄"을 같이 취급한다.
- *
- * @param {object} payload - OnboardingCreate와 같은 snake_case 키. 고칠 것만 담는다.
- * @returns {Promise<object>} 갱신된 OnboardingResponse
- */
-export async function updateMyOnboarding(payload) {
-  if (!BASE_URL) {
-    console.info('[onboarding] VITE_API_BASE_URL 미설정 — 수정 mock 처리:', payload);
-    return { onboarding_id: null, ...payload };
-  }
-  return authorizedFetch('/api/user/me/onboarding', {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  });
 }

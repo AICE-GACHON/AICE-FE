@@ -154,33 +154,6 @@
   .mypage-key{flex:none;}
 }
 
-/* 섹션 머리 — 제목·설명 왼쪽, '수정' 버튼 오른쪽 */
-.mypage-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
-.mypage-edit-btn{
-  flex:none;border:1.5px solid var(--line);border-radius:999px;
-  padding:6px 16px;font-size:13px;font-weight:700;color:var(--teal-deep);
-}
-.mypage-edit-btn:hover{border-color:var(--teal);background:var(--teal-soft);}
-
-/* 온보딩 답변 인라인 수정 */
-.mypage-edit-group{margin-top:20px;}
-.mypage-edit-group:first-child{margin-top:0;}
-.mypage-edit-label{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:10px;}
-.mypage-edit-options{display:flex;flex-direction:column;gap:8px;}
-.mypage-custom-input{margin-top:10px;}
-
-.mypage-edit-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
-.mypage-edit-actions .pill{min-width:96px;justify-content:center;}
-.mypage-edit-actions .pill.ghost{border:1.5px solid var(--line);}
-
-/* 되돌릴 수 없는 동작 — 서비스의 teal 계열과 확실히 구분되어야 한다 */
-.mypage-danger-btn{
-  border:1.5px solid var(--red);color:var(--red);background:#fff;
-  border-radius:999px;padding:10px 20px;font-size:14px;font-weight:700;
-}
-.mypage-danger-btn:hover:not(:disabled){background:var(--red);color:#fff;}
-.mypage-danger-btn:disabled{opacity:0.45;cursor:not-allowed;}
-
 /* ---------- report cards (wr = workspace report) ---------- */
 .wr-stack{display:flex;flex-direction:column;gap:16px;margin-top:8px;}
 .wr-card{

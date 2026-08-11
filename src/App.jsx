@@ -17,7 +17,6 @@ import ResetPasswordPage from './auth/ResetPasswordPage';
 import Workspace from './workspace/Workspace';
 import BodyDiffTest from './dev/BodyDiffTest';
 import { logout } from './api/auth';
-import { clearTokens } from './api/tokenStorage';
 import { syncAnswersFromServer } from './onboarding/profileMapping';
 import './onboarding/onboarding.css';
 import './auth/auth.css';
@@ -74,15 +73,6 @@ export default function App() {
     setView('landing');
   };
 
-  // 탈퇴 직후. logout()을 쓰지 않는 이유는 그 안의 POST /api/auth/logout이 이미
-  // 사라진 계정의 토큰으로 나가 반드시 실패하기 때문이다 — 결과는 같지만
-  // 실패할 걸 알면서 요청을 보내는 꼴이라, 토큰만 지운다.
-  const handleAccountDeleted = () => {
-    clearTokens();
-    setUser(null);
-    setView('landing');
-  };
-
   // 임시 테스트 진입점 — /?dev=body-diff. 정식 라우팅에 넣지 않고 쿼리스트링으로만
   // 접근한다. 검증이 끝나면 이 분기와 src/dev/BodyDiffTest.jsx를 함께 지운다.
   if (new URLSearchParams(window.location.search).get('dev') === 'body-diff') {
@@ -124,16 +114,7 @@ export default function App() {
   }
 
   if (view === 'workspace') {
-    // onUserChange가 필요한 이유: user가 로그인 시점에 한 번 잡히고 끝이라,
-    // 마이페이지에서 닉네임을 바꿔도 상단바의 "OO 님"이 옛 이름 그대로 남는다.
-    return (
-      <Workspace
-        user={user}
-        onUserChange={setUser}
-        onLogout={handleLogout}
-        onAccountDeleted={handleAccountDeleted}
-      />
-    );
+    return <Workspace user={user} onLogout={handleLogout} />;
   }
 
   return (
