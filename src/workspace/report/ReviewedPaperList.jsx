@@ -9,19 +9,14 @@ const CONFIDENCE_LABEL = {
   low: ['참고', '느슨하게 관련됨'],
 };
 
-const isAccept = (decision) => (decision || '').startsWith('accept');
-
 export default function ReviewedPaperList({ papers, summary, onOpen }) {
   if (!papers?.length) return null;
 
   return (
-    <div className="wr-stack">
+    <div className="rp-result-grid">
       {summary && (
         <div className="wr-card">
-          <div className="wr-card-title">📝 총 리뷰 요약</div>
-          <div className="wr-hint">
-            아래 {papers.length}편이 실제로 받은 리뷰를 종합한 내용이에요.
-          </div>
+          <div className="wr-card-title">총 리뷰 요약</div>
           <div className="wr-summary">{summary}</div>
 
         </div>
@@ -29,11 +24,7 @@ export default function ReviewedPaperList({ papers, summary, onOpen }) {
 
       <div className="wr-card">
         <div className="wr-card-title">
-          📄 비슷한 논문 <span className="wr-pill">{papers.length}편</span>
-        </div>
-        <div className="wr-hint">
-          올리신 논문의 본문·참고문헌까지 대조해 고른 논문들이에요.
-          <b> 제목을 누르면</b> 그 논문이 리뷰를 받고 무엇을 고쳤는지 볼 수 있어요.
+          비슷한 논문 <span className="wr-pill">{papers.length}편</span>
         </div>
 
         <ol className="rp-list">
@@ -58,8 +49,11 @@ export default function ReviewedPaperList({ papers, summary, onOpen }) {
                       )}
                     </span>
                   </span>
-                  <span className={`wr-decision${isAccept(p.decision) ? ' accept' : ''}`}>
-                    {p.decision}
+                  <span className="wr-decision-result">
+                    <span className="wr-decision-caption">최종 결과</span>
+                    <span className={`wr-decision ${decisionTone(p.decision)}`}>
+                      {decisionLabel(p.decision)}
+                    </span>
                   </span>
                   <span className="rp-chev" aria-hidden="true">›</span>
                 </button>
@@ -71,3 +65,4 @@ export default function ReviewedPaperList({ papers, summary, onOpen }) {
     </div>
   );
 }
+import { decisionLabel, decisionTone } from './decision';

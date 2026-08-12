@@ -1,17 +1,50 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // 리뷰 한 건 — 접힌 채로 점수만 보이고, 펼치면 본문이 나온다.
 // 목록 화면(SelectedPapers, 랜딩 시뮬레이터)과 상세 화면(PaperDetail)이 함께 쓴다.
 //
 // is_unsplit 리뷰는 강/약점이 분리되지 않아 weaknesses에 **본문 전체**가 들어 있다.
 // '약점'이라고 라벨을 붙이면 안 되고 '리뷰 본문' 한 덩어리로 보여준다.
-export default function ReviewBlock({ review, index }) {
-  const [open, setOpen] = useState(false);
+export default function ReviewBlock({ review, index, detailMode = false, open: controlledOpen, onToggle }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const itemRef = useRef(null);
+  const open = controlledOpen ?? internalOpen;
   const score = review.rating != null ? `${review.rating}점` : '점수 없음';
 
+  useEffect(() => {
+    if (!detailMode || !open) return undefined;
+
+    const frame = requestAnimationFrame(() => {
+      const item = itemRef.current;
+      if (!item) return;
+      const rect = item.getBoundingClientRect();
+      const viewportGap = 16;
+      const isClipped = rect.top < viewportGap || rect.bottom > window.innerHeight - viewportGap;
+      if (!isClipped) return;
+
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollBy({
+        top: rect.top - viewportGap,
+        behavior: reduceMotion ? 'auto' : 'smooth',
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [detailMode, open]);
+
+  const toggle = () => {
+    if (onToggle) onToggle();
+    else setInternalOpen((value) => !value);
+  };
+
   return (
-    <div className="wr-review">
-      <button type="button" className="wr-review-head" onClick={() => setOpen((v) => !v)}>
+    <div ref={itemRef} className={`wr-review${detailMode ? ' is-detail' : ''}${open ? ' is-open' : ''}`}>
+      <button
+        type="button"
+        className="wr-review-head"
+        aria-expanded={open}
+        onClick={toggle}
+      >
         <span className="wr-review-no">리뷰 {index + 1}</span>
         <span className="wr-review-score">{review.rating_raw || score}</span>
         {review.is_unsplit && (
@@ -20,7 +53,9 @@ export default function ReviewBlock({ review, index }) {
             본문 전체
           </span>
         )}
-        <span className="wr-review-toggle">{open ? '접기' : '펼치기'}</span>
+        <span className="wr-review-toggle" aria-hidden={detailMode ? 'true' : undefined}>
+          {detailMode ? (open ? '−' : '+') : (open ? '접기' : '펼치기')}
+        </span>
       </button>
       {open && (
         <div className="wr-review-body">

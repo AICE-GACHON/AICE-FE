@@ -12,7 +12,7 @@ import { MOCK_SELECTED_PAPERS } from './report/mockSelectedPapers';
 //
 // 리뷰 원문을 목록에 펼쳐두지 않는 이유: 5편 × 리뷰 4건이면 한 화면에 스무 덩어리가
 // 쌓여 무엇부터 읽어야 할지 알 수 없다. 목록은 "어느 논문을 볼지" 고르는 자리다.
-export default function ResultReport({ report }) {
+export default function ResultReport({ report, onReset }) {
   const [openPaperId, setOpenPaperId] = useState(null);
   // 백엔드가 아직 selected_papers를 못 내려줄 때 골격을 확인하기 위한 미리보기.
   // **자동으로 켜지지 않는다** — 빈 결과를 가짜로 채우면 "비슷한 논문의 리뷰"라는
@@ -29,15 +29,23 @@ export default function ResultReport({ report }) {
     return (
       <>
         {preview && <PreviewBanner onOff={() => { setPreview(false); setOpenPaperId(null); }} />}
-        <PaperDetail paper={openPaper} useMock={preview} onBack={() => setOpenPaperId(null)} />
+        <PaperDetail
+          paper={openPaper}
+          useMock={preview}
+          onBack={() => setOpenPaperId(null)}
+          onReset={onReset}
+        />
       </>
     );
   }
 
   return (
-    <div className="wr-stack">
-      <div className="wr-card">
-        <div className="wr-card-title">🔍 올리신 논문</div>
+    <div className="wr-stack rp-report-wide">
+      {onReset && (
+        <button type="button" className="onboard-back" onClick={onReset}>← 새 논문 분석하기</button>
+      )}
+      <div className="wr-card rp-query-card">
+        <div className="wr-card-title">올리신 논문</div>
         <div className="wr-query-title">{report.query_title || <span className="wr-muted">제목 없음</span>}</div>
         <div className="wr-muted" style={{ marginTop: 6 }}>
           {(report.query_abstract || '').slice(0, 300)}
@@ -68,7 +76,6 @@ export default function ResultReport({ report }) {
         </div>
       )}
 
-      {!preview && <Summary markdown={report.summary_markdown} />}
       <CandidatePool
         candidates={report.similar_papers}
         selectedIds={real.map((p) => p.paper_id)}
