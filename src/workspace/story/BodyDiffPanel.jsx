@@ -94,9 +94,7 @@ function VersionText({ block }) {
     if (block.noPdfChange) {
       return (
         <p className="wr-muted">
-          이 리비전은 PDF 파일을 다시 올리지 않고 제목·초록 같은 메타데이터만
-          고쳤어요 — PDF 자체는 그대로라 본문에서 비교할 게 없어요. 이 변경
-          내용은 오른쪽 심사 서사 패널의 타임라인에서 확인할 수 있어요.
+          메타데이터만 고쳤어요. PDF 본문은 변경사항이 없습니다.
         </p>
       );
     }
@@ -302,7 +300,7 @@ export default function BodyDiffPanel({ paperId, layout = 'modal' }) {
       )}
 
       {phase === 'done' && data?.supported && versionBlocks.length === 0 && (
-        <p className="wr-muted">공개된 리비전이 없어요.</p>
+        <p className="wr-muted">이 논문은 제출된 뒤로 한 번도 수정되지 않았어요.</p>
       )}
 
       {phase === 'done' && versionBlocks.length > 0 && (
