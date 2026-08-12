@@ -40,12 +40,12 @@ export default function ResultReport({ report, onReset }) {
   }
 
   return (
-    <div className="wr-stack">
+    <div className="wr-stack rp-report-wide">
       {onReset && (
         <button type="button" className="onboard-back" onClick={onReset}>← 새 논문 분석하기</button>
       )}
-      <div className="wr-card">
-        <div className="wr-card-title">🔍 올리신 논문</div>
+      <div className="wr-card rp-query-card">
+        <div className="wr-card-title">올리신 논문</div>
         <div className="wr-query-title">{report.query_title || <span className="wr-muted">제목 없음</span>}</div>
         <div className="wr-muted" style={{ marginTop: 6 }}>
           {(report.query_abstract || '').slice(0, 300)}
@@ -76,7 +76,6 @@ export default function ResultReport({ report, onReset }) {
         </div>
       )}
 
-      {!preview && <Summary markdown={report.summary_markdown} />}
       <CandidatePool
         candidates={report.similar_papers}
         selectedIds={real.map((p) => p.paper_id)}

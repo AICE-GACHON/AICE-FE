@@ -27,16 +27,12 @@ export default function CandidatePool({ candidates, selectedIds }) {
         onClick={() => setOpen((v) => !v)}
       >
         <span className="wr-card-title" style={{ margin: 0 }}>
-          🔎 검색이 찾은 후보 {candidates.length}편
+          검색이 찾은 후보 {candidates.length}편
         </span>
         <span className="wr-section-toggle">{open ? '접기' : '펼치기'}</span>
       </button>
       {open && (
         <>
-          <div className="wr-hint">
-            제목·초록 임베딩으로 뽑은 후보예요. 이 중에서 본문까지 대조해 위의 논문들을 골랐어요 —
-            <b> 여기 있다고 비슷한 논문은 아니에요.</b>
-          </div>
           {candidates.map((c) => {
             const match = MATCH_LABEL[c.match_type];
             return (

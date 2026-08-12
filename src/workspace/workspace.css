@@ -14,6 +14,31 @@
 
 .workspace-body{max-width:720px;margin:0 auto;padding:40px 24px 80px;}
 
+/* 분석 결과 목록은 요약과 논문 목차를 함께 비교하는 화면이므로 넓은 작업 폭을 쓴다. */
+.rp-report-wide{
+  width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
+  padding:0 max(24px, calc((100vw - 1280px) / 2));box-sizing:border-box;
+}
+.rp-report-wide > .onboard-back{align-self:flex-start;}
+.rp-report-wide .wr-card-title{
+  font-size:16px;line-height:1.4;letter-spacing:-.01em;
+}
+.rp-query-card .wr-muted{max-width:920px;line-height:1.65;}
+.rp-result-grid{
+  display:grid;grid-template-columns:minmax(0,3fr) minmax(380px,2fr);
+  align-items:stretch;gap:24px;
+}
+.rp-result-grid > .wr-card{min-width:0;height:100%;box-sizing:border-box;}
+
+@media (max-width:960px){
+  .rp-result-grid{grid-template-columns:minmax(0,1fr);gap:16px;}
+  .rp-result-grid > .wr-card{height:auto;}
+}
+
+@media (max-width:640px){
+  .rp-report-wide{padding:0 16px;}
+}
+
 .upload-card{padding:32px clamp(20px,4vw,40px);}
 .upload-textarea{min-height:120px;resize:vertical;}
 .upload-pdf-head{
@@ -245,8 +270,23 @@
 .wr-paper-main{flex:1;min-width:0;}
 .wr-paper-top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;}
 .wr-paper-title{font-weight:700;font-size:14.5px;flex:1;}
-.wr-decision{font-size:12.5px;font-weight:700;color:var(--red);}
+.wr-decision-result{
+  flex:0 0 auto;display:inline-flex;flex-direction:column;align-items:flex-end;gap:1px;
+  white-space:nowrap;
+}
+.wr-decision-result.is-inline{margin-left:10px;vertical-align:middle;}
+.wr-decision-caption{font-size:10.5px;font-weight:600;line-height:1.1;color:var(--muted);}
+.wr-decision{font-size:12.5px;font-weight:700;color:var(--ink);}
 .wr-decision.accept{color:var(--teal-deep);}
+.wr-decision.reject{color:var(--red);}
+.wr-decision.withdrawn{color:#a35b12;}
+.pd-final-decision{
+  display:inline-flex;align-items:center;margin-left:10px;padding:3px 8px;border-radius:999px;
+  background:#f2f3f1;color:var(--ink);font-size:11.5px;font-weight:700;line-height:1.2;
+}
+.pd-final-decision.accept{background:var(--teal-soft);color:var(--teal-deep);}
+.pd-final-decision.reject{background:#fdeceb;color:var(--red);}
+.pd-final-decision.withdrawn{background:#fdf0e3;color:#a35b12;}
 .wr-paper-meta{font-size:12.5px;color:var(--muted);margin-top:3px;}
 .wr-match-badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:var(--teal-soft);color:var(--teal-deep);margin-left:6px;cursor:help;}
 .wr-split-badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:#fdf0e3;color:#a35b12;margin-left:6px;}

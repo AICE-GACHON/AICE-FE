@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import ResultReport from './ResultReport';
 import { useAnalysis } from './analysisContext';
+import { MOCK_REPORT } from './mockReport';
 
 // 서버의 _WARN_PAGE_COUNT와 같다. 서버는 이 값을 강제하지 않고 page_count만 내려주며,
 // "논문이 맞는지" 확인은 여기서 한다 — 경고는 UX이고 거부는 안전장치라 자리가 다르다.
@@ -31,6 +32,14 @@ export default function UploadPage() {
   const fileInputRef = useRef(null);
 
   const busy = phase === 'working';
+  const showMockReport = import.meta.env.DEV
+    && new URLSearchParams(window.location.search).get('mockReport') === '1';
+
+  const closeMockReport = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('mockReport');
+    window.location.assign(url);
+  };
 
   const handlePdfChange = (e) => {
     acceptFile(e.target.files?.[0] ?? null);
@@ -72,6 +81,10 @@ export default function UploadPage() {
 
   const pageCount = submission?.page_count;
   const isLongDocument = pageCount != null && pageCount > WARN_PAGE_COUNT;
+
+  if (showMockReport) {
+    return <ResultReport report={MOCK_REPORT} onReset={closeMockReport} />;
+  }
 
   return (
     <>

@@ -5,12 +5,11 @@ import Timeline from '../story/Timeline';
 import BodyDiffPanel from '../story/BodyDiffPanel';
 import ReviewBlock from './ReviewBlock';
 import { mockStoryFor } from './mockSelectedPapers';
+import { decisionLabel, decisionTone } from './decision';
 
 // 상세 화면 — 논문 하나가 리뷰를 받고 무엇을 고쳤는지.
 //   제목 → 수정 전/후 대조 → 리뷰 요약 → 심사 타임라인
 // 순서가 곧 읽는 순서다: 무엇이 바뀌었는지 먼저 보고, 왜 바뀌었는지(리뷰)를 뒤에 읽는다.
-
-const isAccept = (decision) => (decision || '').startsWith('accept');
 
 export default function PaperDetail({ paper, useMock, onBack, onReset }) {
   const [phase, setPhase] = useState(useMock ? 'done' : 'loading');
@@ -43,8 +42,8 @@ export default function PaperDetail({ paper, useMock, onBack, onReset }) {
           <div>
             <div className="wr-paper-meta" style={{ marginBottom: 6 }}>
               {paper.venue}
-              <span className={`wr-decision${isAccept(paper.decision) ? ' accept' : ''}`}>
-                {paper.decision}
+              <span className={`pd-final-decision ${decisionTone(paper.decision)}`}>
+                최종 결과 · {decisionLabel(paper.decision)}
               </span>
             </div>
             <h2 className="rp-detail-title">{paper.title}</h2>
