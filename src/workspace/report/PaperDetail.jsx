@@ -83,6 +83,7 @@ export default function PaperDetail({ paper, useMock, onBack, onReset }) {
                       key={index}
                       review={review}
                       index={index}
+                      detailMode
                       open={openReviewIndex === index}
                       onToggle={() => setOpenReviewIndex((current) => (current === index ? null : index))}
                     />

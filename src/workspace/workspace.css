@@ -554,29 +554,44 @@
 .wr-meta-review{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--bg);}
 .wr-meta-review p{margin:4px 0 0;font-size:13px;line-height:1.65;color:var(--muted);}
 
-.wr-reviews{margin-top:10px;}
-.wr-review-part-label{font-size:13.5px;font-weight:800;color:var(--teal-deep);letter-spacing:.01em;}
+.wr-reviews{margin-top:14px;}
+.wr-review-part-label{font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.02em;}
 
 .wr-review{border-top:1px solid var(--line);}
 .wr-review-head{
-  display:flex;align-items:center;gap:10px;width:100%;padding:10px 8px 10px 0;margin:0;
-  background:none;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;
-  transition:background .15s ease;
+  display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;
+  background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;
 }
-.wr-review-head:hover{background:#f7f8f6;}
-.wr-review.is-open .wr-review-head{background:var(--teal-soft);}
 .wr-review-no{font-size:12.5px;font-weight:700;}
 .wr-review-score{font-size:12.5px;color:var(--muted);}
-.wr-review-toggle{
-  margin-left:auto;flex:0 0 22px;width:22px;height:22px;
+.wr-review-toggle{margin-left:auto;color:var(--teal-deep);font-size:12px;font-weight:600;white-space:nowrap;}
+.wr-review-body{padding:0 0 12px;}
+.wr-review-part{margin-top:10px;}
+.wr-review-part p{margin:4px 0 0;font-size:13px;line-height:1.7;white-space:pre-wrap;}
+
+.wr-review.is-detail .wr-review-head{
+  padding:10px 8px 10px 0;border-radius:8px;transition:background .15s ease;
+}
+.wr-review.is-detail .wr-review-head:hover{background:#f7f8f6;}
+.wr-review.is-detail.is-open .wr-review-head{background:var(--teal-soft);}
+.wr-review.is-detail .wr-review-toggle{
+  flex:0 0 22px;width:22px;height:22px;
   display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--teal-deep);
   font-size:15px;font-weight:500;line-height:1;
 }
-.wr-review.is-open .wr-review-toggle{border-color:var(--teal-deep);}
-.wr-review-body{padding:0 0 12px;}
-.wr-review-part{margin-top:10px;}
-.wr-review-part p{margin:5px 0 0;font-size:13.5px;line-height:1.75;white-space:pre-wrap;}
+.wr-review.is-detail.is-open .wr-review-toggle{border-color:var(--teal-deep);}
+.wr-review.is-detail .wr-review-part-label{font-size:13.5px;color:var(--teal-deep);letter-spacing:.01em;}
+.wr-review.is-detail .wr-review-part p{margin-top:5px;font-size:13.5px;line-height:1.75;}
+.pd-right .wr-reviews{margin-top:10px;}
+
+.wr-section-head{
+  display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;
+  background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;
+}
+.wr-section-toggle{
+  margin-left:auto;color:var(--teal-deep);font-size:12px;font-weight:700;white-space:nowrap;
+}
 
 .wr-paper-links{
   display:flex;align-items:center;gap:14px;margin-top:14px;

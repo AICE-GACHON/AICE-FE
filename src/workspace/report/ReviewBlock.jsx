@@ -5,14 +5,14 @@ import { useEffect, useRef, useState } from 'react';
 //
 // is_unsplit 리뷰는 강/약점이 분리되지 않아 weaknesses에 **본문 전체**가 들어 있다.
 // '약점'이라고 라벨을 붙이면 안 되고 '리뷰 본문' 한 덩어리로 보여준다.
-export default function ReviewBlock({ review, index, open: controlledOpen, onToggle }) {
+export default function ReviewBlock({ review, index, detailMode = false, open: controlledOpen, onToggle }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const itemRef = useRef(null);
   const open = controlledOpen ?? internalOpen;
   const score = review.rating != null ? `${review.rating}점` : '점수 없음';
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!detailMode || !open) return undefined;
 
     const frame = requestAnimationFrame(() => {
       const item = itemRef.current;
@@ -30,7 +30,7 @@ export default function ReviewBlock({ review, index, open: controlledOpen, onTog
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [open]);
+  }, [detailMode, open]);
 
   const toggle = () => {
     if (onToggle) onToggle();
@@ -38,7 +38,7 @@ export default function ReviewBlock({ review, index, open: controlledOpen, onTog
   };
 
   return (
-    <div ref={itemRef} className={`wr-review${open ? ' is-open' : ''}`}>
+    <div ref={itemRef} className={`wr-review${detailMode ? ' is-detail' : ''}${open ? ' is-open' : ''}`}>
       <button
         type="button"
         className="wr-review-head"
@@ -53,7 +53,9 @@ export default function ReviewBlock({ review, index, open: controlledOpen, onTog
             본문 전체
           </span>
         )}
-        <span className="wr-review-toggle" aria-hidden="true">{open ? '−' : '+'}</span>
+        <span className="wr-review-toggle" aria-hidden={detailMode ? 'true' : undefined}>
+          {detailMode ? (open ? '−' : '+') : (open ? '접기' : '펼치기')}
+        </span>
       </button>
       {open && (
         <div className="wr-review-body">

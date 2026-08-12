@@ -20,11 +20,16 @@ export default function CandidatePool({ candidates, selectedIds }) {
 
   return (
     <div className="wr-card">
-      <button type="button" className="wr-review-head" onClick={() => setOpen((v) => !v)}>
+      <button
+        type="button"
+        className="wr-section-head"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
         <span className="wr-card-title" style={{ margin: 0 }}>
           🔎 검색이 찾은 후보 {candidates.length}편
         </span>
-        <span className="wr-review-toggle">{open ? '접기' : '펼치기'}</span>
+        <span className="wr-section-toggle">{open ? '접기' : '펼치기'}</span>
       </button>
       {open && (
         <>
