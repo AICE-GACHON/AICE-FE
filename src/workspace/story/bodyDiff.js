@@ -184,12 +184,21 @@ export function summarizeChanges(block) {
 // revisions[]를 "버전 하나당 블록 하나"로 편다. revisions.length가 N이면
 // 버전은 N개(baseline 1 + 그 뒤 N-1)다 — diff는 N-1개지만 블록은 N개가 맞다.
 export function buildVersionBlocks(revisions) {
+  // baseline 자신은 diff가 없어(changes=[]) 자기 그림·PDF 링크가 없다 —
+  // "PDF가 실제로 처음 바뀐 리비전"의 before쪽을 빌려와야 한다. 무조건
+  // revisions[1](바로 다음 리비전)을 쓰면 안 된다 — 저자가 제목·초록만
+  // 고친 리비전(PDF 안 바뀜)이 먼저 끼어 있으면 거기엔 그림 데이터 자체가
+  // 없어서 baseline이 그림을 하나도 못 찾아온다(실측: Lotus 논문 — PDF는
+  // 그대로 두고 초록만 두 번 고친 뒤에야 새 PDF를 올림). PDF 변경 자체가
+  // 한 번도 없는 논문이면 undefined — 그때는 예전처럼 그림도 링크도 없다.
+  const firstPdfRevision = revisions.slice(1).find((rev) => pdfChangeOf(rev));
+
   // PDF가 안 바뀐 리비전(noPdfChange)에서도 "지금 이 시점의 PDF가 뭔지"는
   // 알 수 있다 — 마지막으로 실제 바뀐 시점의 after_url을 그대로 들고
   // 있으면 된다. 순서대로 훑으면서 pdf FieldChange를 만날 때마다 갱신한다.
   let lastKnownPdfUrl = null;
   return revisions.map((r, i) => {
-    const mediaSource = i === 0 ? revisions[1] : r;
+    const mediaSource = i === 0 ? firstPdfRevision : r;
     const side = i === 0 ? 'before' : 'after';
     const single = i === 0;
     const mediaByLabel = Object.fromEntries(Object.entries(mediaByLabelForSide(mediaSource, side)).map((
@@ -204,9 +213,7 @@ export function buildVersionBlocks(revisions) {
       // 문단 순서가 실제 v1 원본과 어긋나는 문제가 있었다(실측: Figure 2가
       // 엉뚱한 문단 뒤로 밀림).
       const ownBody = bodyChangeOf(r);
-      // baseline(v1) 자신은 diff가 없어(changes=[]) 자기 pdf 링크가 없다 —
-      // 바로 다음 리비전(v1→v2)의 before_url이 곧 v1 원문 파일이다.
-      const nextPdf = pdfChangeOf(revisions[1]);
+      const nextPdf = pdfChangeOf(firstPdfRevision);
       lastKnownPdfUrl = nextPdf?.before_url ?? null;
       return {
         label: `${r.kind_label} (baseline)`, date: r.date,
@@ -215,6 +222,12 @@ export function buildVersionBlocks(revisions) {
         mediaByLabel,
         mediaByDeleted,
         pdfLinks: { beforeUrl: null, afterUrl: lastKnownPdfUrl },
+        // ownBody가 없는 이유가 둘로 갈린다 — ①PDF가 정말 한 번도 안 바뀐
+        // 논문(firstPdfRevision 자체가 없음, 이때가 noPdfChange)과 ②PDF는
+        // 바뀌었는데 baseline 원문 추출이 실패한 경우(스캔본·다운로드 실패
+        // 등, 이때는 firstPdfRevision은 있지만 ownBody가 없다 — noPdfChange
+        // 아님, VersionText의 일반 경고문이 맞다).
+        noPdfChange: !firstPdfRevision,
       };
     }
     const body = bodyChangeOf(r);
