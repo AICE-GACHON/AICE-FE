@@ -16,6 +16,7 @@ export default function PaperDetail({ paper, useMock, onBack, onReset }) {
   const [phase, setPhase] = useState(useMock ? 'done' : 'loading');
   const [story, setStory] = useState(useMock ? mockStoryFor(paper) : null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [openReviewIndex, setOpenReviewIndex] = useState(null);
 
   useEffect(() => {
     if (useMock) return;
@@ -69,16 +70,23 @@ export default function PaperDetail({ paper, useMock, onBack, onReset }) {
           <BodyDiffPanel paperId={paper.paper_id} layout="inline" />
 
           <div className="wr-stack pd-right">
-            <NarrativeCard narrative={story.narrative} />
+            <NarrativeCard narrative={story.narrative} collapsible />
 
             {/* 요약은 서버가 추린 문장이고, 이건 리뷰어가 실제로 쓴 원문이다.
                 둘 다 필요하다 — 요약만 보고 판단하면 근거를 확인할 수 없다. */}
             {paper.reviews?.length > 0 && (
               <div className="wr-card">
-                <div className="wr-card-title">💬 이 논문이 받은 리뷰 {paper.reviews.length}건</div>
-                <div className="wr-hint">점수 옆 <b>펼치기</b>를 누르면 리뷰 원문이 나와요.</div>
+                <div className="wr-card-title">이 논문이 받은 리뷰 {paper.reviews.length}건</div>
                 <div className="wr-reviews">
-                  {paper.reviews.map((r, i) => <ReviewBlock key={i} review={r} index={i} />)}
+                  {paper.reviews.map((review, index) => (
+                    <ReviewBlock
+                      key={index}
+                      review={review}
+                      index={index}
+                      open={openReviewIndex === index}
+                      onToggle={() => setOpenReviewIndex((current) => (current === index ? null : index))}
+                    />
+                  ))}
                 </div>
               </div>
             )}
