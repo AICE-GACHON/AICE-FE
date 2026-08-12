@@ -139,8 +139,12 @@ export async function loginWithGoogle(idToken, openreviewId, inviteCode) {
   }
 }
 
-/** refresh_token으로 access_token을 재발급받는다 (refresh_token도 함께 회전). */
-export async function refreshAccessToken() {
+/**
+ * refresh_token으로 access_token을 재발급받는다 (refresh_token도 함께 회전).
+ * @param {{signal?: AbortSignal}} [options] 호출부가 건 타임아웃이 재발급 왕복까지
+ *   덮게 하려면 같은 signal을 넘겨야 한다 — 안 그러면 여기서 다시 무한정 기다린다.
+ */
+export async function refreshAccessToken({ signal } = {}) {
   const refresh_token = loadRefreshToken();
   if (!refresh_token) throw new Error('로그인이 필요해요.');
 
@@ -148,6 +152,7 @@ export async function refreshAccessToken() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token }),
+    signal,
   });
   const tokens = await unwrap(res);
   saveTokens(tokens);
@@ -175,7 +180,7 @@ export async function authorizedFetch(path, options = {}, _retried = false) {
 
   if (res.status === 401 && !_retried) {
     try {
-      await refreshAccessToken();
+      await refreshAccessToken({ signal: options.signal });
     } catch {
       clearTokens();
       throw new Error('로그인이 만료됐어요. 다시 로그인해 주세요.');
@@ -185,9 +190,69 @@ export async function authorizedFetch(path, options = {}, _retried = false) {
   return unwrap(res);
 }
 
-/** GET /api/user/me */
-export function fetchMe() {
-  return authorizedFetch('/api/user/me');
+/**
+ * GET /api/user/me
+ * @param {RequestInit} [options] 앱 시작 시 세션 복원처럼 무한정 기다릴 수 없는
+ *   호출을 위해 signal 등을 넘길 수 있게 열어둔다.
+ */
+export function fetchMe(options) {
+  return authorizedFetch('/api/user/me', options);
+}
+
+/**
+ * PATCH /api/user/me — 보낸 필드만 갱신한다.
+ *
+ * 비밀번호는 currentPassword와 newPassword를 **함께** 보내야 바뀐다. 하나만
+ * 보내면 서버가 422로 막는다(스키마 단계). 현재 비밀번호를 확인하는 이유는
+ * 탈취된 access_token 하나로 계정을 통째로 빼앗지 못하게 하기 위해서다.
+ *
+ * ⚠️ **비밀번호를 바꾸면 서버가 기존 refresh_token을 전부 폐기한다**(token_version
+ * 증가). 지금 쓰는 access_token은 만료 전까지 살아 있지만, 만료 뒤 자동 재발급이
+ * 실패해 로그아웃된다. 화면에서 그 사실을 알려야 한다.
+ *
+ * 409는 openreview_id 중복이다 — 사용자가 고칠 수 있는 입력 오류라 필드 옆에
+ * 붙일 수 있게 err.duplicateOpenreviewId로 표시한다. 401은 현재 비밀번호가 틀린
+ * 것이고, 400은 구글 전용 계정이 비밀번호를 설정하려 한 경우다.
+ *
+ * @param {{nickname?: string, openreviewId?: string|null, currentPassword?: string, newPassword?: string}} payload
+ */
+export async function updateMe({ nickname, openreviewId, currentPassword, newPassword }) {
+  const body = {
+    ...(nickname !== undefined ? { nickname } : {}),
+    ...(openreviewId !== undefined ? { openreview_id: openreviewId } : {}),
+    ...(currentPassword !== undefined ? { current_password: currentPassword } : {}),
+    ...(newPassword !== undefined ? { new_password: newPassword } : {}),
+  };
+
+  try {
+    return await authorizedFetch('/api/user/me', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    if (err.status === 409) err.duplicateOpenreviewId = true;
+    throw err;
+  }
+}
+
+/**
+ * DELETE /api/user/me — 되돌릴 수 없다.
+ *
+ * ⚠️ **비밀번호가 있는 계정(has_password=true)은 password가 필수다.** 안 보내면
+ * 400이다. 구글 전용 계정은 대조할 비밀번호가 없어 없이 보내야 한다 — 요구하면
+ * 그 계정은 영영 탈퇴할 수 없다.
+ *
+ * 성공하면 계정이 사라지므로 남은 토큰은 아무 데도 쓸 수 없다. 호출부가 반드시
+ * 토큰을 지우고 로그아웃 화면으로 보내야 한다.
+ *
+ * @param {{password?: string}} payload
+ */
+export function deleteMe({ password } = {}) {
+  return authorizedFetch('/api/user/me', {
+    method: 'DELETE',
+    // 구글 전용 계정은 body 자체를 안 보낸다 (서버가 Body(default=None)로 받는다).
+    ...(password ? { body: JSON.stringify({ password }) } : {}),
+  });
 }
 
 /**

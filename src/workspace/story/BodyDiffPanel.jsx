@@ -4,7 +4,8 @@
 //
 // 렌더링 로직은 src/dev/BodyDiffTest.jsx(검증용 단독 페이지)와 bodyDiff.js를
 // 공유한다 — 같은 문단·미디어 매칭 규칙을 두 곳에서 따로 구현하면 어긋나기 쉽다.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { getPaperRevisionsBodyDiff } from '../../api/papers';
 import {
   MEDIA_KIND_LABELS, buildVersionBlocks, computeChangeGroups, summarizeChanges, versionLabel,
@@ -129,11 +130,22 @@ function VersionText({ block }) {
   );
 }
 
-export default function BodyDiffPanel({ paperId }) {
+// layout='modal': PaperStoryPanel의 오버레이 왼쪽에 붙는 형태 — 고정 높이,
+// 자체 스크롤, 999px 이하에서 숨김(모달은 좁은 화면에서 오른쪽 패널만으로도
+// 충분하다고 판단).
+// layout='inline': PaperDetail처럼 페이지 안에 카드 하나로 놓이는 형태 —
+// 높이를 페이지 흐름에 맡기고, 좁은 화면에서도 숨기지 않는다(메인 콘텐츠라
+// 숨기면 기능 자체가 사라진다). bodyDiff.js 계산 로직·마크업은 완전히 같다.
+export default function BodyDiffPanel({ paperId, layout = 'modal' }) {
   const [phase, setPhase] = useState('loading'); // loading | done | error
   const [data, setData] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [selected, setSelected] = useState(0);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [fullViewOpen, setFullViewOpen] = useState(false);
+  const scrollRef = useRef(null);
+  const fullViewScrollRef = useRef(null);
+  const savedScrollTopRef = useRef(0);
 
   useEffect(() => {
     // paperId가 바뀌면 부모(PaperStoryPanel)가 key={paperId}로 통째로 다시
@@ -184,29 +196,92 @@ export default function BodyDiffPanel({ paperId }) {
   const goPrevChange = () => setChangePos((prev) => (prev <= 0 ? changeCount - 1 : prev - 1));
   const goNextChange = () => setChangePos((prev) => (prev < 0 || prev >= changeCount - 1 ? 0 : prev + 1));
 
+  const openFullView = () => {
+    savedScrollTopRef.current = scrollRef.current?.scrollTop || 0;
+    setFullViewOpen(true);
+  };
+
+  const closeFullView = () => {
+    savedScrollTopRef.current = fullViewScrollRef.current?.scrollTop || savedScrollTopRef.current;
+    setFullViewOpen(false);
+    requestAnimationFrame(() => {
+      if (scrollRef.current) scrollRef.current.scrollTop = savedScrollTopRef.current;
+    });
+  };
+
+  useEffect(() => {
+    if (!fullViewOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const frame = requestAnimationFrame(() => {
+      if (fullViewScrollRef.current) {
+        fullViewScrollRef.current.scrollTop = savedScrollTopRef.current;
+      }
+    });
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') closeFullView();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [fullViewOpen]);
+
   useEffect(() => {
     if (changePos < 0) return undefined;
-    const target = document.querySelector(`[data-change-idx="${changePos}"]`);
-    if (!target) return undefined;
-    target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const scrollContainer = fullViewOpen ? fullViewScrollRef.current : scrollRef.current;
+    const target = scrollContainer?.querySelector(`[data-change-idx="${changePos}"]`);
+    if (!scrollContainer || !target) return undefined;
+
+    // scrollIntoView는 페이지까지 함께 움직일 수 있다. 변경 이동은 논문 본문
+    // 스크롤 안에서만 처리해 오른쪽 리뷰의 현재 위치를 그대로 보존한다.
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const targetTop = scrollContainer.scrollTop
+      + targetRect.top
+      - containerRect.top
+      - (scrollContainer.clientHeight - targetRect.height) / 2;
+    scrollContainer.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
     target.classList.add('bodydiff-change-focus');
     const timer = setTimeout(() => target.classList.remove('bodydiff-change-focus'), 1200);
-    return () => clearTimeout(timer);
-  }, [changePos]);
+    return () => {
+      clearTimeout(timer);
+      target.classList.remove('bodydiff-change-focus');
+    };
+  }, [changePos, fullViewOpen]);
 
+  const panelClass = layout === 'inline' ? 'bodydiff-panel bodydiff-panel--inline' : 'bodydiff-panel';
   return (
-    <div className="bodydiff-panel" onClick={(e) => e.stopPropagation()}>
+    <div className={panelClass} onClick={(e) => e.stopPropagation()}>
+      {/* 콜아웃 + 버전 탭은 스크롤 밖(항상 보임) — 실제로 길어서 스크롤이
+          필요한 건 아래 본문 텍스트뿐이다. */}
       <div className="bodydiff-head">
-        <div className="bodydiff-head-title">📄 본문 변경 이력</div>
-        <div className="bodydiff-callout">
-          <p>논문 수정 버전마다 문장·그림·표·알고리즘·수식이 어떻게 달라졌는지
-            자동으로 비교해 보여줍니다.</p>
-          <p>분석은 OpenReview에 공개된 수정 버전을 기준으로 하며, 자동 분석
-            특성상 일부 변경 사항이 정확히 감지되지 않을 수 있습니다.{' '}
-            <b>특히 표·수식·그림은 PDF 내 위치를 기반으로 비교하므로 오차가
-            발생할 수 있습니다.</b> 결과가 이상하거나 세부 확인이 필요한 경우,
-            각 버전의 <b>PDF 원문</b>을 직접 확인해 주세요.</p>
+        <div className="bodydiff-head-row">
+          <div className="bodydiff-head-title">본문 변경 이력</div>
+          <button
+            type="button"
+            className="bodydiff-guide-toggle"
+            aria-expanded={guideOpen}
+            onClick={() => setGuideOpen((open) => !open)}
+          >
+            {guideOpen ? '안내 접기' : '분석 안내 보기'}
+          </button>
         </div>
+        {guideOpen && (
+          <div className="bodydiff-callout">
+            <p>논문 수정 버전마다 문장·그림·표·알고리즘·수식이 어떻게 달라졌는지
+              자동으로 비교해 보여줍니다.</p>
+            <p>분석은 OpenReview에 공개된 수정 버전을 기준으로 하며, 자동 분석
+              특성상 일부 변경 사항이 정확히 감지되지 않을 수 있습니다.{' '}
+              <b>특히 표·수식·그림은 PDF 내 위치를 기반으로 비교하므로 오차가
+              발생할 수 있습니다.</b> 결과가 이상하거나 세부 확인이 필요한 경우,
+              각 버전의 <b>PDF 원문</b>을 직접 확인해 주세요.</p>
+          </div>
+        )}
       </div>
 
       {phase === 'loading' && (
@@ -274,30 +349,84 @@ export default function BodyDiffPanel({ paperId }) {
                     </div>
                   )}
                 </div>
-                {selected > 0 && (
-                  <div className="bodydiff-legend">
-                    <span className="bodydiff-legend-item"><span className="diff-ins">추가</span></span>
-                    <span className="bodydiff-legend-item"><span className="diff-del">삭제</span></span>
-                    <span className="bodydiff-legend-item"><span className="diff-moved">위치 이동</span></span>
-                  </div>
-                )}
+                <div className="bodydiff-body-tools">
+                  {summary && <ChangeSummary summary={summary} />}
+                  <button type="button" className="bodydiff-fullview-open" onClick={openFullView}>
+                    ⛶ 크게 보기
+                  </button>
+                </div>
               </div>
 
-              {summary && <ChangeSummary summary={summary} />}
-
-              {changeCount > 0 && (
-                <div className="bodydiff-change-nav" aria-label="변경 위치 이동">
-                  <button type="button" className="bodydiff-change-nav-btn" onClick={goPrevChange}>◀ 이전 변경</button>
-                  <span className="bodydiff-change-nav-pos">{changePos >= 0 ? changePos + 1 : '-'} / {changeCount}</span>
-                  <button type="button" className="bodydiff-change-nav-btn" onClick={goNextChange}>다음 변경 ▶</button>
-                </div>
-              )}
-
-              <VersionText block={current} />
+              {/* 버전 헤더·PDF 링크·범례·요약은 늘 보이고, 실제로 길어서
+                  스크롤이 필요한 diff 본문만 이 안에서 스크롤한다. */}
+              <div className="bodydiff-scroll" ref={scrollRef}>
+                <VersionText block={current} />
+              </div>
             </div>
           )}
         </>
       )}
+
+      {changeCount > 0 && (
+        <div className="bodydiff-change-nav" aria-label="변경 위치 이동">
+          <button type="button" className="bodydiff-change-nav-btn" onClick={goPrevChange}>◀ 이전 변경</button>
+          <span className="bodydiff-change-nav-pos">{changePos >= 0 ? changePos + 1 : '-'} / {changeCount}</span>
+          <button type="button" className="bodydiff-change-nav-btn" onClick={goNextChange}>다음 변경 ▶</button>
+        </div>
+      )}
+
+      {fullViewOpen && current && createPortal((
+        <div className="bodydiff-fullview-backdrop" role="presentation" onMouseDown={closeFullView}>
+          <section
+            className="bodydiff-fullview"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${versionLabel(selected + 1, versionBlocks.length)} 본문 크게 보기`}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <header className="bodydiff-fullview-head">
+              <div className="bodydiff-body-head-left">
+                <div>
+                  <span className="bodydiff-body-head-title">{versionLabel(selected + 1, versionBlocks.length)}</span>
+                  <span className="wr-muted"> · {current.label} · {current.date}</span>
+                </div>
+                {(current.pdfLinks?.beforeUrl || current.pdfLinks?.afterUrl) && (
+                  <div className="bodydiff-pdf-links">
+                    {current.pdfLinks.beforeUrl && (
+                      <a className="bodydiff-pdf-link" href={current.pdfLinks.beforeUrl} target="_blank" rel="noopener noreferrer">
+                        {versionLabel(selected, versionBlocks.length)} PDF 원문 ↗
+                      </a>
+                    )}
+                    {current.pdfLinks.afterUrl && (
+                      <a className="bodydiff-pdf-link" href={current.pdfLinks.afterUrl} target="_blank" rel="noopener noreferrer">
+                        {current.noPdfChange
+                          ? '현재 PDF 원문 (이 버전에서는 안 바뀜) ↗'
+                          : `${versionLabel(selected + 1, versionBlocks.length)} PDF 원문 ↗`}
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="bodydiff-fullview-head-actions">
+                {summary && <ChangeSummary summary={summary} />}
+                <button type="button" className="bodydiff-fullview-close" onClick={closeFullView} aria-label="크게 보기 닫기">×</button>
+              </div>
+            </header>
+
+            <div className="bodydiff-fullview-scroll" ref={fullViewScrollRef}>
+              <VersionText block={current} />
+            </div>
+
+            {changeCount > 0 && (
+              <div className="bodydiff-change-nav bodydiff-fullview-nav" aria-label="변경 위치 이동">
+                <button type="button" className="bodydiff-change-nav-btn" onClick={goPrevChange}>◀ 이전 변경</button>
+                <span className="bodydiff-change-nav-pos">{changePos >= 0 ? changePos + 1 : '-'} / {changeCount}</span>
+                <button type="button" className="bodydiff-change-nav-btn" onClick={goNextChange}>다음 변경 ▶</button>
+              </div>
+            )}
+          </section>
+        </div>
+      ), document.body)}
     </div>
   );
 }

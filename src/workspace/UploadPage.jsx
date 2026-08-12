@@ -1,32 +1,11 @@
 import { useRef, useState } from 'react';
-import { createSubmissionFromPdf, startAnalysis, pollAnalysis } from '../api/submissions';
-import { loadAnswers } from '../onboarding/sessionState';
-import { fieldLabel } from '../onboarding/onboardingData';
 import ResultReport from './ResultReport';
+import { useAnalysis } from './analysisContext';
+import { MOCK_REPORT } from './mockReport';
 
-// 온보딩에서 고른 연구 분야가 있으면 업로드 시 field 기본값으로 이어 쓴다.
-// sessionStorage는 로그인 직후 서버 답변으로 다시 채워진다(profileMapping.js의
-// syncAnswersFromServer) — 그전에는 탭을 닫을 때마다 이 기본값이 비었다.
-function defaultField() {
-  const answers = loadAnswers();
-  if (!answers.fields?.length) return null;
-  return answers.fields
-    .map((f) => (f === 'custom' && answers.fieldCustom ? answers.fieldCustom : fieldLabel(f)))
-    .filter(Boolean)
-    .join(', ') || null;
-}
-
-const STATUS_LABEL = { pending: '대기 중', running: '분석 중' };
-// 서버와 같은 값이어야 한다 (app/routers/submissions.py). 미리 걸러 업로드를 아낀다.
-const MAX_PDF_BYTES = 20 * 1024 * 1024;
 // 서버의 _WARN_PAGE_COUNT와 같다. 서버는 이 값을 강제하지 않고 page_count만 내려주며,
 // "논문이 맞는지" 확인은 여기서 한다 — 경고는 UX이고 거부는 안전장치라 자리가 다르다.
 const WARN_PAGE_COUNT = 15;
-
-// 드래그로 넣은 파일은 <input accept>를 거치지 않으므로 여기서 직접 걸러야 한다.
-// 브라우저가 type을 못 알아보는 경우가 있어 확장자도 같이 본다.
-const isPdf = (file) =>
-  file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
 function UploadIcon() {
   return (
@@ -40,37 +19,26 @@ function UploadIcon() {
   );
 }
 
-// phase: form(업로드) → review(추출 확인) → working(분석) → done | error
+// 분석 상태는 AnalysisProvider가 들고 있다 — 내 정보 화면에 다녀와도 진행 중인
+// 분석이 날아가지 않아야 하기 때문이다. 여기 남은 state는 이 화면이 살아 있는
+// 동안에만 뜻이 있는 것들뿐이다: 드래그 중인지, 그리고 <input type=file> 엘리먼트.
 // 상단바는 WorkspaceShell이 그린다 (내 정보 화면과 공유).
 export default function UploadPage() {
-  const [pdfFile, setPdfFile] = useState(null);
-  const [pdfError, setPdfError] = useState('');
+  const {
+    pdfFile, pdfError, submission, phase, statusText, report, errorMsg,
+    acceptFile, clearFile, upload, analyze, reset,
+  } = useAnalysis();
   const [dragging, setDragging] = useState(false);
-  const [submission, setSubmission] = useState(null);
-  const [phase, setPhase] = useState('form');
-  const [statusText, setStatusText] = useState('');
-  const [report, setReport] = useState(null);
-  const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef(null);
 
   const busy = phase === 'working';
+  const showMockReport = import.meta.env.DEV
+    && new URLSearchParams(window.location.search).get('mockReport') === '1';
 
-  // 파일 선택과 드롭이 같은 검사를 타야 한다 — 한쪽만 통과하면 서버가 400으로
-  // 돌려보내고, 그 왕복은 사용자 입장에서 그냥 "업로드가 안 되는" 것으로 보인다.
-  const acceptFile = (file) => {
-    setPdfError('');
-    if (!file) { setPdfFile(null); return; }
-    if (!isPdf(file)) {
-      setPdfError('PDF 파일만 올릴 수 있어요.');
-      setPdfFile(null);
-      return;
-    }
-    if (file.size > MAX_PDF_BYTES) {
-      setPdfError('PDF 용량이 너무 커요 (20MB 이하만 가능해요).');
-      setPdfFile(null);
-      return;
-    }
-    setPdfFile(file);
+  const closeMockReport = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('mockReport');
+    window.location.assign(url);
   };
 
   const handlePdfChange = (e) => {
@@ -79,10 +47,20 @@ export default function UploadPage() {
     e.target.value = '';
   };
 
-  const clearFile = () => {
-    setPdfFile(null);
-    setPdfError('');
+  // 파일 선택을 지우는 일은 두 군데에 걸쳐 있다 — 상태는 컨텍스트에, 엘리먼트의
+  // value는 이 화면의 DOM에. 후자는 여기서만 닿을 수 있다.
+  const resetInputElement = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleClearFile = () => {
+    clearFile();
+    resetInputElement();
+  };
+
+  const handleReset = () => {
+    reset();
+    resetInputElement();
   };
 
   const openPicker = () => {
@@ -96,56 +74,17 @@ export default function UploadPage() {
     acceptFile(e.dataTransfer.files?.[0] ?? null);
   };
 
-  // 1단계: 업로드하고 서버가 뽑아낸 제목·초록을 확인받는다.
-  const handleUpload = async (e) => {
+  const handleUpload = (e) => {
     e.preventDefault();
-    if (!pdfFile) return;
-    setPhase('working');
-    setErrorMsg('');
-    setStatusText('업로드 중');
-    try {
-      const created = await createSubmissionFromPdf({ file: pdfFile, field: defaultField() });
-      setSubmission(created);
-      setPhase('review');
-    } catch (err) {
-      setErrorMsg(err.message || '업로드에 실패했어요. 잠시 후 다시 시도해 주세요.');
-      setPhase('error');
-    }
-  };
-
-  // 2단계: 확인을 마치면 분석을 시작한다.
-  const handleAnalyze = async () => {
-    setPhase('working');
-    setErrorMsg('');
-    setStatusText('분석 대기 중');
-    try {
-      await startAnalysis(submission.submission_id);
-      const result = await pollAnalysis(submission.submission_id, {
-        onTick: (data) => setStatusText(STATUS_LABEL[data.status] ?? data.status),
-      });
-      if (result.status === 'failed') {
-        setErrorMsg(result.error || '분석에 실패했어요. 잠시 후 다시 시도해 주세요.');
-        setPhase('error');
-        return;
-      }
-      setReport(result.report);
-      setPhase('done');
-    } catch (err) {
-      setErrorMsg(err.message || '요청에 실패했어요. 잠시 후 다시 시도해 주세요.');
-      setPhase('error');
-    }
-  };
-
-  const reset = () => {
-    clearFile();
-    setSubmission(null);
-    setReport(null);
-    setErrorMsg('');
-    setPhase('form');
+    upload();
   };
 
   const pageCount = submission?.page_count;
   const isLongDocument = pageCount != null && pageCount > WARN_PAGE_COUNT;
+
+  if (showMockReport) {
+    return <ResultReport report={MOCK_REPORT} onReset={closeMockReport} />;
+  }
 
   return (
     <>
@@ -197,7 +136,7 @@ export default function UploadPage() {
                       <button type="button" className="upload-pdf-clear" onClick={openPicker} disabled={busy}>
                         바꾸기
                       </button>
-                      <button type="button" className="upload-pdf-clear" onClick={clearFile} disabled={busy}>
+                      <button type="button" className="upload-pdf-clear" onClick={handleClearFile} disabled={busy}>
                         제거
                       </button>
                     </div>
@@ -263,8 +202,8 @@ export default function UploadPage() {
             </div>
 
             <div className="upload-review-actions">
-              <button type="button" className="onboard-back" onClick={reset}>← 다시 올리기</button>
-              <button type="button" className="pill btn-lg" onClick={handleAnalyze}>분석 시작</button>
+              <button type="button" className="onboard-back" onClick={handleReset}>← 다시 올리기</button>
+              <button type="button" className="pill btn-lg" onClick={analyze}>분석 시작</button>
             </div>
           </div>
         )}
@@ -284,20 +223,13 @@ export default function UploadPage() {
             <div className="wr-card-title">분석에 실패했어요</div>
             <div className="auth-submit-error" style={{ marginTop: 12 }}>{errorMsg}</div>
             <div className="upload-review-actions">
-              <button type="button" className="onboard-back" onClick={reset}>← 처음부터</button>
-              <button type="button" className="pill btn-lg" onClick={handleAnalyze}>다시 시도</button>
+              <button type="button" className="onboard-back" onClick={handleReset}>← 처음부터</button>
+              <button type="button" className="pill btn-lg" onClick={analyze}>다시 시도</button>
             </div>
           </div>
         )}
 
-        {phase === 'done' && (
-          <>
-            <button type="button" className="onboard-back" style={{ marginBottom: 12 }} onClick={reset}>
-              ← 새 논문 분석하기
-            </button>
-            <ResultReport report={report} />
-          </>
-        )}
+        {phase === 'done' && <ResultReport report={report} onReset={handleReset} />}
     </>
   );
 }

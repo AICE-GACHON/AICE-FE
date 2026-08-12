@@ -1,6 +1,7 @@
+import { Link } from 'react-router-dom';
 import BrandMark from './BrandMark';
 
-export default function Header({ onGetStarted, onLogin }) {
+export default function Header() {
   return (
     <header>
       <nav>
@@ -12,9 +13,10 @@ export default function Header({ onGetStarted, onLogin }) {
           <a href="#pricing">Pricing</a>
           <a href="#simulator">Resources <span className="chev">▾</span></a>
         </div>
+        {/* 버튼이 아니라 링크다 — 가운데 클릭·새 탭·주소 복사가 되어야 한다. */}
         <div className="navright">
-          <button type="button" className="txt-link" onClick={onLogin}>Log in</button>
-          <button type="button" className="pill" onClick={onGetStarted}>Get started free <span>→</span></button>
+          <Link to="/login" className="txt-link">Log in</Link>
+          <Link to="/onboarding" className="pill">Get started free <span>→</span></Link>
         </div>
       </nav>
     </header>

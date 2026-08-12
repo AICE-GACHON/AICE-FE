@@ -1,4 +1,6 @@
-export default function Hero({ onGetStarted, onLogin }) {
+import { Link } from 'react-router-dom';
+
+export default function Hero() {
   return (
     <section className="hero">
       <h1>Read the reviews <span className="accent">papers like yours got.</span></h1>
@@ -7,8 +9,8 @@ export default function Hero({ onGetStarted, onLogin }) {
         that are genuinely closest to it, then show you the reviews those papers actually received, in full.
       </p>
       <div className="hero-actions">
-        <button type="button" className="pill btn-lg" onClick={onGetStarted}>Get started free <span>→</span></button>
-        <button type="button" className="pill ghost btn-lg" onClick={onLogin}>Log in</button>
+        <Link to="/onboarding" className="pill btn-lg">Get started free <span>→</span></Link>
+        <Link to="/login" className="pill ghost btn-lg">Log in</Link>
       </div>
       <p className="fine">
         By signing up you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.<br />

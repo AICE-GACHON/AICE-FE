@@ -10,8 +10,8 @@
 // 재구성한다. 그림/표도 마찬가지로 baseline엔 diff가 없으니 v2 transition의
 // before쪽만 단독으로 보여준다.
 //
-// 접근: 개발 서버에서 /?dev=body-diff 로 열면 App.jsx가 이 화면을 띄운다.
-// 프로덕션 라우팅에는 넣지 않는다 — 검증이 끝나면 이 파일과 App.jsx의 분기를 지운다.
+// 접근: 개발 서버에서 /dev/body-diff. 이 라우트는 routes.jsx에서 import.meta.env.DEV로
+// 감싸 두어 배포 번들에는 들어가지 않는다 — 검증이 끝나면 이 파일과 그 라우트를 함께 지운다.
 //
 // 문단·미디어 매칭 로직은 실 서비스 통합판(BodyDiffPanel.jsx)과
 // bodyDiff.js 하나를 공유한다 — 같은 규칙을 두 곳에서 따로 구현하면 어긋나기 쉽다.
