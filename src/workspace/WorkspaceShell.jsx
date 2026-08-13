@@ -14,12 +14,12 @@ export default function WorkspaceShell({ user, active, onGoUpload, onGoMyPage, o
           {user?.nickname && <span className="workspace-user">{user.nickname} 님</span>}
           <button
             type="button"
-            className="onboard-exit"
+            className="txt-link"
             onClick={onMyPage ? onGoUpload : onGoMyPage}
           >
             {onMyPage ? '논문 분석' : '내 정보'}
           </button>
-          <button type="button" className="onboard-exit" onClick={onLogout}>로그아웃</button>
+          <button type="button" className="txt-link" onClick={onLogout}>로그아웃</button>
         </div>
       </div>
       <div className="workspace-body">{children}</div>
