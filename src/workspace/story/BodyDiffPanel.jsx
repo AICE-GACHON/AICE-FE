@@ -175,8 +175,10 @@ export default function BodyDiffPanel({ paperId, layout = 'modal' }) {
     [selected, current],
   );
 
-  // 버전을 바꾸면 그 버전의 변경 목록도 처음(아직 아무 데도 안 가본 상태)부터
-  // 다시 훑어야 하니 -1로 되돌린다 — "N / M" 표시는 changePos+1로 계산한다.
+  // 버전을 바꿨을 때 이 버전에 실제로 바뀐 부분이 있으면 바로 그 첫 변경으로
+  // 이동한다 — 안 그러면 스크롤이 맨 위(본문 시작)에 그대로 있어서, 바뀐 게
+  // 없는 것처럼 보인다("다음 변경"을 눌러야만 바뀐 걸 알게 된다는 사용자
+  // 피드백). 변경이 없는 버전(baseline 등)이면 예전처럼 -1(아무 데도 안 감).
   // effect 대신 렌더 중에 조건부로 리셋한다(React가 권장하는 "prop이 바뀌면
   // state를 되돌리는" 패턴 — PaperStoryPanel.jsx의 key={paperId} 리마운트와
   // 달리 selected는 이 컴포넌트 내부 state라 리마운트로 해결할 수 없다).
@@ -184,7 +186,7 @@ export default function BodyDiffPanel({ paperId, layout = 'modal' }) {
   const [changePosVersion, setChangePosVersion] = useState(selected);
   if (selected !== changePosVersion) {
     setChangePosVersion(selected);
-    setChangePos(-1);
+    setChangePos(changeCount > 0 ? 0 : -1);
   }
 
   // 업데이터 함수는 다음 위치 번호만 계산하는 순수 함수로 둔다(StrictMode가
@@ -250,7 +252,11 @@ export default function BodyDiffPanel({ paperId, layout = 'modal' }) {
       clearTimeout(timer);
       target.classList.remove('bodydiff-change-focus');
     };
-  }, [changePos, fullViewOpen]);
+    // selected도 deps에 넣는다 — 버전을 바꿔도 changePos 값 자체는 (둘 다 첫
+    // 변경이라) 0으로 똑같을 때가 많아서, changePos만 보면 "값이 안 바뀌었다"고
+    // React가 판단해 이 effect를 다시 안 돌린다(1차→2차→1차→4차처럼 연속으로
+    // 다른 버전을 눌러도 두 번째 클릭부터 스크롤이 안 움직이는 버그).
+  }, [changePos, fullViewOpen, selected]);
 
   const panelClass = layout === 'inline' ? 'bodydiff-panel bodydiff-panel--inline' : 'bodydiff-panel';
   return (
