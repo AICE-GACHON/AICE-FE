@@ -29,10 +29,29 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1
 a{color:inherit;text-decoration:none;}
 button{font-family:inherit;}
 .pill,.txt-link{border:none;background:none;cursor:pointer;font-family:inherit;}
+/* 어느 컨테이너 안에 있든(랜딩 헤더든 워크스페이스 상단바든) 같은 글씨체로
+   보이도록 폰트 속성을 여기서 직접 갖는다 — 부모의 font-size에 기대지 않는다. */
+.txt-link{font-size:14.5px;font-weight:600;color:var(--ink);}
 .pill.ghost{background:#fff;}
 ::selection{background:var(--teal-soft);color:var(--teal-deep);}
 .wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
 img,svg{display:block;}
+
+/* ---------- 로그인 상태 랜딩 재방문 시 "바로 앱으로" 배너 ---------- */
+.skip-landing-banner{
+  display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;
+  padding:10px 32px;background:var(--teal-soft);color:var(--teal-deep);
+  font-size:13.5px;font-weight:600;text-align:center;
+}
+.skip-landing-actions{display:flex;align-items:center;gap:10px;flex:0 0 auto;}
+.skip-landing-actions .txt-link{font-weight:700;text-decoration:underline;text-underline-offset:2px;}
+.skip-landing-close{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;
+  color:var(--teal-deep);font-size:12px;opacity:0.65;
+  transition:background .15s,opacity .15s;
+}
+.skip-landing-close:hover{opacity:1;background:rgba(11,110,87,0.14);}
 
 /* ---------- NAV ---------- */
 header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
@@ -43,7 +62,7 @@ nav{display:flex;align-items:center;gap:36px;padding:16px 32px;max-width:1180px;
 .navlinks a{display:flex;align-items:center;gap:4px;padding:8px 2px;color:#22271f;}
 .navlinks a:hover{color:var(--teal-deep);}
 .chev{font-size:10px;color:var(--muted);margin-top:1px;}
-.navright{display:flex;align-items:center;gap:22px;font-size:14.5px;font-weight:600;}
+.navright{display:flex;align-items:center;gap:22px;}
 .navright .txt-link:hover{color:var(--teal-deep);}
 .pill{
   background:var(--teal-deep);color:#fff;padding:11px 20px;border-radius:999px;font-weight:700;

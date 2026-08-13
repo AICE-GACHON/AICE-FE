@@ -15,7 +15,9 @@ import ForgotPasswordPage from './auth/ForgotPasswordPage';
 import ResetPasswordPage from './auth/ResetPasswordPage';
 import WorkspaceLayout from './workspace/WorkspaceLayout';
 import UploadPage from './workspace/UploadPage';
+import ResultReport from './workspace/ResultReport';
 import MyPage from './workspace/MyPage';
+import { useAnalysis } from './workspace/analysisContext';
 import BodyDiffTest from './dev/BodyDiffTest';
 import { RequireAuth, RedirectIfAuthed } from './auth/guards';
 import { useAuth } from './auth/authContext';
@@ -137,6 +139,29 @@ function MyPageRoute() {
   return <MyPage user={user} onUserChange={setUser} onAccountDeleted={leaveAfterAccountDeleted} />;
 }
 
+// 결과 목록(/app/upload/report)과 상세(/app/upload/report/:paperId)를 같은 화면
+// 컴포넌트(ResultReport)에 연결한다 — 열려있는 논문이 곧 주소라, 뒤로가기를 누르면
+// 상세→목록→업로드 폼 순으로 그대로 되짚어 간다(예전엔 이 셋이 전부 /app/upload
+// 하나의 내부 state였다). report가 없으면(새로고침·직접 주소 진입·리셋 직후)
+// 업로드 폼으로 되돌린다 — 이 화면들은 방금 분석한 결과가 메모리에 있을 때만 뜻이 있다.
+function ReportRoute() {
+  const navigate = useNavigate();
+  const { report, reset } = useAnalysis();
+  const { paperId } = useParams();
+
+  if (!report) return <Navigate to="/app/upload" replace />;
+
+  return (
+    <ResultReport
+      report={report}
+      paperId={paperId != null ? Number(paperId) : null}
+      onOpenPaper={(id) => navigate(`/app/upload/report/${id}`)}
+      onClosePaper={() => navigate('/app/upload/report')}
+      onReset={() => { reset(); navigate('/app/upload'); }}
+    />
+  );
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -154,6 +179,8 @@ export default function AppRoutes() {
       <Route path="/app" element={<RequireAuth><WorkspaceLayout /></RequireAuth>}>
         <Route index element={<Navigate to="/app/upload" replace />} />
         <Route path="upload" element={<UploadPage />} />
+        <Route path="upload/report" element={<ReportRoute />} />
+        <Route path="upload/report/:paperId" element={<ReportRoute />} />
         <Route path="mypage" element={<MyPageRoute />} />
       </Route>
 

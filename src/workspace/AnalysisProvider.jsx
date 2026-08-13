@@ -8,6 +8,7 @@
 // 폴링 루프의 수명도 여기서 책임진다 — 워크스페이스를 떠나면 결과를 받을 곳이
 // 없으므로 멈춰야 한다. 그 경계가 곧 이 Provider의 경계다.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createSubmissionFromPdf, startAnalysis, pollAnalysis } from '../api/submissions';
 import { loadAnswers } from '../onboarding/sessionState';
 import { fieldLabel } from '../onboarding/onboardingData';
@@ -36,6 +37,7 @@ const isPdf = (file) =>
 
 // phase: form(업로드) → review(추출 확인) → working(분석) → done | error
 export function AnalysisProvider({ children }) {
+  const navigate = useNavigate();
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfError, setPdfError] = useState('');
   const [submission, setSubmission] = useState(null);
@@ -111,13 +113,17 @@ export function AnalysisProvider({ children }) {
       }
       setReport(result.report);
       setPhase('done');
+      // 결과를 별도 주소(/app/upload/report)로 옮겨야 뒤로가기가 이 화면
+      // 하나(업로드 폼)로 돌아간다 — 그전엔 목록/상세가 전부 /app/upload
+      // 하나의 state 전환이라 브라우저 히스토리에 아무 기록도 안 남았다.
+      navigate('/app/upload/report');
     } catch (err) {
       // 우리가 끊은 것 — 워크스페이스를 떠났다는 뜻이라 보여줄 화면도 이미 없다.
       if (err.name === 'AbortError') return;
       setErrorMsg(err.message || '요청에 실패했어요. 잠시 후 다시 시도해 주세요.');
       setPhase('error');
     }
-  }, [submission]);
+  }, [submission, navigate]);
 
   const reset = useCallback(() => {
     pollAbortRef.current?.abort();

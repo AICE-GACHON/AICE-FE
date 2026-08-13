@@ -6,6 +6,9 @@
 const isInternalPath = (path) =>
   typeof path === 'string' && path.startsWith('/') && !path.startsWith('//');
 
-export function safeNextPath(next, fallback = '/app') {
+// 기본값이 '/app'이 아니라 '/'인 이유 — 랜딩이 로그인 여부와 상관없이
+// 메인 화면 역할을 한다(LandingPage.jsx). ?next= 없이 그냥 로그인만 했으면
+// (즉 특정 보호 페이지를 보려다 온 게 아니면) 그 메인 화면으로 보낸다.
+export function safeNextPath(next, fallback = '/') {
   return isInternalPath(next) ? next : fallback;
 }
