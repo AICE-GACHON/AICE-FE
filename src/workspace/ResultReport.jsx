@@ -12,8 +12,19 @@ import { MOCK_SELECTED_PAPERS } from './report/mockSelectedPapers';
 //
 // 리뷰 원문을 목록에 펼쳐두지 않는 이유: 5편 × 리뷰 4건이면 한 화면에 스무 덩어리가
 // 쌓여 무엇부터 읽어야 할지 알 수 없다. 목록은 "어느 논문을 볼지" 고르는 자리다.
-export default function ResultReport({ report, onReset }) {
-  const [openPaperId, setOpenPaperId] = useState(null);
+//
+// 목록 ↔ 상세 전환은 openPaperId·onOpenPaper·onClosePaper로 "제어"할 수 있다 —
+// 실 서비스에서는 routes.jsx의 ReportRoute가 이걸 URL(/app/upload/report/:paperId)에
+// 묶어서 브라우저 뒤로가기가 되게 한다. 이 prop들을 안 주면(개발용 더미 데이터 미리보기 등)
+// 예전처럼 컴포넌트 안 state로만 돌아간다 — 그런 곳까지 라우팅에 묶을 필요는 없어서다.
+export default function ResultReport({
+  report, onReset, paperId: controlledPaperId, onOpenPaper, onClosePaper,
+}) {
+  const isControlled = onOpenPaper != null;
+  const [localOpenId, setLocalOpenId] = useState(null);
+  const openPaperId = isControlled ? controlledPaperId : localOpenId;
+  const openPaperById = isControlled ? onOpenPaper : setLocalOpenId;
+  const closePaper = isControlled ? onClosePaper : () => setLocalOpenId(null);
   // 백엔드가 아직 selected_papers를 못 내려줄 때 골격을 확인하기 위한 미리보기.
   // **자동으로 켜지지 않는다** — 빈 결과를 가짜로 채우면 "비슷한 논문의 리뷰"라는
   // 약속이 거짓이 되므로, 사용자가 직접 누를 때만 켜지고 경고가 계속 떠 있는다.
@@ -28,11 +39,11 @@ export default function ResultReport({ report, onReset }) {
   if (openPaper) {
     return (
       <>
-        {preview && <PreviewBanner onOff={() => { setPreview(false); setOpenPaperId(null); }} />}
+        {preview && <PreviewBanner onOff={() => { setPreview(false); closePaper(); }} />}
         <PaperDetail
           paper={openPaper}
           useMock={preview}
-          onBack={() => setOpenPaperId(null)}
+          onBack={closePaper}
           onReset={onReset}
         />
       </>
@@ -60,7 +71,7 @@ export default function ResultReport({ report, onReset }) {
         <ReviewedPaperList
           papers={papers}
           summary={<Summary.Body markdown={report.summary_markdown} />}
-          onOpen={setOpenPaperId}
+          onOpen={openPaperById}
         />
       ) : (
         <div className="wr-card">

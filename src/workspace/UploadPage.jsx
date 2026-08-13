@@ -25,7 +25,7 @@ function UploadIcon() {
 // 상단바는 WorkspaceShell이 그린다 (내 정보 화면과 공유).
 export default function UploadPage() {
   const {
-    pdfFile, pdfError, submission, phase, statusText, report, errorMsg,
+    pdfFile, pdfError, submission, phase, statusText, errorMsg,
     acceptFile, clearFile, upload, analyze, reset,
   } = useAnalysis();
   const [dragging, setDragging] = useState(false);
@@ -88,7 +88,13 @@ export default function UploadPage() {
 
   return (
     <>
-        {(phase === 'form' || (phase === 'error' && !submission) || (phase === 'working' && !submission)) && (
+        {/* phase==='done'도 여기서 폼을 보여준다 — 결과 화면은 이제 별도 주소
+            (/app/upload/report)라, 뒤로가기나 "논문 분석" 재클릭으로 이 화면에
+            돌아왔을 때 phase만 'done'으로 남아있는 경우가 생긴다. report는
+            그대로 컨텍스트에 남아있으니 이후 forward로 다시 접근할 수 있다 —
+            여기선 그냥 새로 올릴 폼을 보여주면 된다(리셋할 필요 없음). */}
+        {(phase === 'form' || phase === 'done'
+          || (phase === 'error' && !submission) || (phase === 'working' && !submission)) && (
           <div className="wr-card upload-card">
             <div className="wr-card-title">논문 분석</div>
             <p className="onboard-desc">
@@ -228,8 +234,6 @@ export default function UploadPage() {
             </div>
           </div>
         )}
-
-        {phase === 'done' && <ResultReport report={report} onReset={handleReset} />}
     </>
   );
 }
