@@ -20,6 +20,7 @@
   padding:0 max(24px, calc((100vw - 1280px) / 2));box-sizing:border-box;
 }
 .rp-report-wide > .onboard-back{align-self:flex-start;}
+.papers-page > .onboard-back{align-self:flex-start;}
 .rp-report-wide .wr-card-title{
   font-size:16px;line-height:1.4;letter-spacing:-.01em;
 }
@@ -121,6 +122,28 @@
 .rp-item:hover .rp-title{color:var(--teal-deep);}
 .rp-chev{flex:0 0 auto;color:var(--muted);font-size:18px;line-height:1;padding-top:2px;}
 .rp-detail-title{font-size:20px;font-weight:800;line-height:1.35;letter-spacing:-0.01em;}
+
+/* ---------- 분석 이력 (PapersPage) — 열기 버튼 + 삭제 버튼이 나란히 온다 */
+.papers-list{list-style:none;margin:0;padding:0;}
+.papers-item{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);}
+.papers-list li:first-child{border-top:none;}
+.papers-item .rp-item{border-top:none;flex:1;}
+.papers-delete-btn{
+  flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;
+  padding:6px 14px;font-size:12.5px;font-weight:600;color:#8f2f28;
+  cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;
+}
+.papers-delete-btn:hover{background:#fdeceb;border-color:#f2c9c5;}
+.papers-confirm{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 4px;font-size:13.5px;color:#8f2f28;flex-wrap:wrap;
+}
+.papers-confirm-actions{display:flex;gap:8px;flex:none;}
+.papers-delete-confirm-btn{
+  border:none;background:#c0392b;color:#fff;border-radius:999px;
+  padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+}
+.papers-delete-confirm-btn:disabled{opacity:.6;cursor:default;}
 
 /* 더미 데이터 미리보기 — 실제 결과로 오해할 수 없게 계속 눈에 띄어야 한다. */
 .rp-preview-btn{

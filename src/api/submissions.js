@@ -4,7 +4,8 @@
 //   POST /api/submissions/pdf           multipart(title?, abstract?, field?, pdf)     -> SubmissionResponse (201)
 //   POST /api/submissions/{id}/analysis -> 202, AnalysisStartResponse (status: pending)
 //   GET  /api/submissions/{id}/analysis -> AnalysisResponse (status: pending|running|done|failed, report)
-// 넷 다 인증 필요(Authorization: Bearer). report 스키마는 paper_assistant/schemas.py의 Report 그대로라
+//   GET  /api/submissions               -> SubmissionSummary[] (submission_id, title, field, created_at — 초록 없음)
+// 다섯 다 인증 필요(Authorization: Bearer). report 스키마는 paper_assistant/schemas.py의 Report 그대로라
 // http://127.0.0.1:8000/api/analyze(데모 서버)로 실측한 응답과 필드가 동일하다.
 //
 // PDF 업로드: title/abstract를 비워서 보내면 서버가 paper_assistant의 추출기로 채운다.
@@ -62,6 +63,21 @@ export async function getAnalysis(submissionId) {
     return { submission_id: submissionId, status: 'done', report: MOCK_REPORT, explanation_source: 'stub' };
   }
   return authorizedFetch(`/api/submissions/${submissionId}/analysis`);
+}
+
+/** 내가 올린 논문 목록 — "내 논문" 화면용. 초록·리포트는 안 실려 있어 가볍다. */
+export async function listSubmissions() {
+  if (!BASE_URL) {
+    console.info('[submissions] VITE_API_BASE_URL 미설정 — 내 논문 목록 mock 처리(빈 목록)');
+    return [];
+  }
+  return authorizedFetch('/api/submissions');
+}
+
+/** 논문 초안 + 그에 딸린 분석 결과를 함께 지운다 (서버가 FK CASCADE로 처리). */
+export async function deleteSubmission(submissionId) {
+  if (!BASE_URL) return;
+  await authorizedFetch(`/api/submissions/${submissionId}`, { method: 'DELETE' });
 }
 
 /**
