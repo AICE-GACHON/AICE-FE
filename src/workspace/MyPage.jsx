@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchMyOnboarding } from '../api/onboarding';
 import { answersFromProfile } from '../onboarding/profileMapping';
 import AccountSection from './mypage/AccountSection';
@@ -6,6 +7,7 @@ import OnboardingSection from './mypage/OnboardingSection';
 import DeleteAccountSection from './mypage/DeleteAccountSection';
 
 export default function MyPage({ user, onUserChange, onAccountDeleted }) {
+  const navigate = useNavigate();
   const [state, setState] = useState({ status: 'loading', answers: null, error: '' });
 
   useEffect(() => {
@@ -26,6 +28,10 @@ export default function MyPage({ user, onUserChange, onAccountDeleted }) {
 
   return (
     <>
+      <button type="button" className="onboard-back" onClick={() => navigate(-1)} style={{ marginBottom: 16 }}>
+        ← 돌아가기
+      </button>
+
       <AccountSection user={user} onUserChange={onUserChange} />
 
       <OnboardingSection

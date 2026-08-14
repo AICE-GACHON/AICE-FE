@@ -113,10 +113,11 @@ export function AnalysisProvider({ children }) {
       }
       setReport(result.report);
       setPhase('done');
-      // 결과를 별도 주소(/app/upload/report)로 옮겨야 뒤로가기가 이 화면
-      // 하나(업로드 폼)로 돌아간다 — 그전엔 목록/상세가 전부 /app/upload
-      // 하나의 state 전환이라 브라우저 히스토리에 아무 기록도 안 남았다.
-      navigate('/app/upload/report');
+      // 결과를 별도 주소(/app/report)로 옮겨야 뒤로가기가 이 화면(업로드 폼)로
+      // 돌아간다 — 그전엔 목록/상세가 전부 /app/upload 하나의 state 전환이라
+      // 브라우저 히스토리에 아무 기록도 안 남았다. /app/upload 밑이 아니라
+      // 별도 경로인 이유는 routes.jsx의 ReportRoute 주석 참고.
+      navigate('/app/report');
     } catch (err) {
       // 우리가 끊은 것 — 워크스페이스를 떠났다는 뜻이라 보여줄 화면도 이미 없다.
       if (err.name === 'AbortError') return;

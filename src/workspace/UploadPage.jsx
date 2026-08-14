@@ -89,7 +89,7 @@ export default function UploadPage() {
   return (
     <>
         {/* phase==='done'도 여기서 폼을 보여준다 — 결과 화면은 이제 별도 주소
-            (/app/upload/report)라, 뒤로가기나 "논문 분석" 재클릭으로 이 화면에
+            (/app/report)라, 뒤로가기나 "논문 분석" 재클릭으로 이 화면에
             돌아왔을 때 phase만 'done'으로 남아있는 경우가 생긴다. report는
             그대로 컨텍스트에 남아있으니 이후 forward로 다시 접근할 수 있다 —
             여기선 그냥 새로 올릴 폼을 보여주면 된다(리셋할 필요 없음). */}

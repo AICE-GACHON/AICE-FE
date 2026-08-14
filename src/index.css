@@ -32,6 +32,9 @@ button{font-family:inherit;}
 /* 어느 컨테이너 안에 있든(랜딩 헤더든 워크스페이스 상단바든) 같은 글씨체로
    보이도록 폰트 속성을 여기서 직접 갖는다 — 부모의 font-size에 기대지 않는다. */
 .txt-link{font-size:14.5px;font-weight:600;color:var(--ink);}
+/* 워크스페이스 상단바에서 지금 보고 있는 화면 표시 — 새 색 대신 이미 강조용으로
+   쓰던 브랜드 색을 그대로 재사용한다(.navright .txt-link:hover 등과 동일). */
+.txt-link-active{color:var(--teal-deep);cursor:default;}
 .pill.ghost{background:#fff;}
 ::selection{background:var(--teal-soft);color:var(--teal-deep);}
 .wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
