@@ -1,36 +1,25 @@
 import BrandMark from '../../components/BrandMark';
 import {
-  buildResultOrder,
-  purposeLabel,
+  userTypeLabel,
   fieldLabel,
-  stageLabel,
+  similarityFocusLabel,
+  recencyBiasLabel,
   venueLabel,
-  EXPERIENCE_TONE,
 } from '../onboardingData';
 
 export default function StepPreview({ answers, onExit, onCreateAccount, onLogin }) {
-  const resultOrder = buildResultOrder(answers.purposes);
+  const roleText = answers.userType ? userTypeLabel(answers.userType) : '설정 안 함';
 
-  const purposeText = answers.purposes.length
-    ? answers.purposes.map(purposeLabel).join(' · ')
-    : '기본 설정';
+  const fieldNames = answers.fields
+    .map((f) => (f === 'custom' ? answers.fieldCustom : fieldLabel(f)))
+    .filter(Boolean);
 
-  const fieldText = answers.fields.length
-    ? answers.fields
-        .map((f) => (f === 'custom' && answers.fieldCustom ? answers.fieldCustom : fieldLabel(f)))
-        .filter(Boolean)
-        .join(' · ')
+  const focusText = answers.similarityFocus ? similarityFocusLabel(answers.similarityFocus) : '균형있게';
+  const recencyText = answers.recencyBias ? recencyBiasLabel(answers.recencyBias) : '균형있게';
+
+  const venueText = answers.venues.length
+    ? answers.venues.map((v) => (v === 'custom' ? answers.venueCustom : venueLabel(v))).filter(Boolean).join(' · ')
     : '설정 안 함';
-
-  const stageText = answers.stage ? stageLabel(answers.stage) : '설정 안 함';
-
-  const venueText = answers.venue
-    ? answers.venue === 'custom' && answers.venueCustom
-      ? answers.venueCustom
-      : venueLabel(answers.venue)
-    : '설정 안 함';
-
-  const tone = EXPERIENCE_TONE[answers.experience];
 
   return (
     <div className="onboard-preview-shell">
@@ -48,31 +37,28 @@ export default function StepPreview({ answers, onExit, onCreateAccount, onLogin 
 
           <div className="onboard-summary-grid">
             <div>
-              <span className="onboard-summary-key">사용 목적</span>
-              <span className="onboard-summary-val">{purposeText}</span>
+              <span className="onboard-summary-key">역할</span>
+              <span className="onboard-summary-val">{roleText}</span>
             </div>
             <div>
-              <span className="onboard-summary-key">연구 분야</span>
-              <span className="onboard-summary-val">{fieldText}</span>
+              <span className="onboard-summary-key">전공 분야</span>
+              {fieldNames.length ? (
+                fieldNames.map((name) => (
+                  <span key={name} className="onboard-summary-val" style={{ display: 'block' }}>{name}</span>
+                ))
+              ) : (
+                <span className="onboard-summary-val">설정 안 함</span>
+              )}
             </div>
             <div>
-              <span className="onboard-summary-key">현재 단계</span>
-              <span className="onboard-summary-val">{stageText}</span>
+              <span className="onboard-summary-key">검색 우선순위</span>
+              <span className="onboard-summary-val">{focusText} · {recencyText}</span>
             </div>
             <div>
-              <span className="onboard-summary-key">분석 기준</span>
-              <span className="onboard-summary-val">{venueText} 데이터를 우선 참고</span>
+              <span className="onboard-summary-key">목표 학회</span>
+              <span className="onboard-summary-val">{venueText}</span>
             </div>
           </div>
-
-          {tone && <p className="onboard-tone-note">{tone}</p>}
-
-          <h3 className="onboard-subq" style={{ marginTop: 28 }}>제공 예정 기능</h3>
-          <ol className="onboard-result-order">
-            {resultOrder.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ol>
 
           <div className="onboard-preview-actions">
             <button type="button" className="pill btn-lg" onClick={onCreateAccount}>

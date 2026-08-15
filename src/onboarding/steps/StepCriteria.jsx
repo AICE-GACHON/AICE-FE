@@ -1,75 +1,35 @@
 import OptionButton from '../OptionButton';
-import { FIELD_OPTIONS, FIELD_MAX_SELECT, STAGE_OPTIONS, VENUE_OPTIONS } from '../onboardingData';
+import { VENUE_OPTIONS } from '../onboardingData';
 
+// 관심 분야·진행 단계 질문은 뺐다 — 실제 분석 결과에 반영되지 않는 값이었다
+// (분야는 코퍼스에 태그가 없어 검색에 못 쓰고, 단계는 어디에도 안 쓰였다).
+// 목표 학회(venue)만 남긴다 — 코퍼스를 다른 학회로 확장할 계획이 있어서다.
 export default function StepCriteria({ answers, update }) {
-  const toggleField = (value) => {
-    const has = answers.fields.includes(value);
-    if (has) {
-      update({ fields: answers.fields.filter((v) => v !== value) });
-      return;
-    }
-    if (answers.fields.length >= FIELD_MAX_SELECT) return;
-    update({ fields: [...answers.fields, value] });
+  const toggleVenue = (value) => {
+    const has = answers.venues.includes(value);
+    update({
+      venues: has ? answers.venues.filter((v) => v !== value) : [...answers.venues, value],
+    });
   };
 
   return (
     <>
-      <h2>어떤 기준으로 논문을 분석할까요?</h2>
-      <p className="onboard-desc">정확한 유사 논문과 리뷰를 찾기 위해 논문의 분야와 현재 단계를 알려주세요.</p>
+      <h2>어느 학회·저널을 목표로 하고 있나요?</h2>
+      <p className="onboard-desc" style={{ whiteSpace: 'nowrap' }}>유사 논문을 찾을 때 목표 학회 논문이 검색 결과에 뽑힐 확률을 살짝 높여드려요.</p>
 
-      <h3 className="onboard-subq">주요 연구 분야를 선택해 주세요 (최대 {FIELD_MAX_SELECT}개)</h3>
-      <div className="onboard-options">
-        {FIELD_OPTIONS.map((opt) => {
-          const selected = answers.fields.includes(opt.value);
-          const atLimit = !selected && answers.fields.length >= FIELD_MAX_SELECT;
-          return (
-            <OptionButton
-              key={opt.value}
-              multi
-              label={opt.label}
-              selected={selected}
-              disabled={atLimit}
-              onClick={() => toggleField(opt.value)}
-            />
-          );
-        })}
-      </div>
-      {answers.fields.includes('custom') && (
-        <input
-          type="text"
-          className="onboard-input"
-          placeholder="연구 분야를 직접 입력해 주세요"
-          value={answers.fieldCustom}
-          onChange={(e) => update({ fieldCustom: e.target.value })}
-        />
-      )}
-
-      <h3 className="onboard-subq" style={{ marginTop: 32 }}>논문은 현재 어느 단계인가요?</h3>
-      <div className="onboard-options">
-        {STAGE_OPTIONS.map((opt) => (
-          <OptionButton
-            key={opt.value}
-            label={opt.label}
-            selected={answers.stage === opt.value}
-            onClick={() => update({ stage: opt.value })}
-          />
-        ))}
-      </div>
-
-      <h3 className="onboard-subq" style={{ marginTop: 32 }}>
-        생각하고 있는 학회나 저널이 있나요? <span className="onboard-optional">(선택사항)</span>
-      </h3>
-      <div className="onboard-options">
+      <div className="onboard-options" style={{ marginTop: 28 }}>
         {VENUE_OPTIONS.map((opt) => (
           <OptionButton
             key={opt.value}
+            multi
+            round
             label={opt.label}
-            selected={answers.venue === opt.value}
-            onClick={() => update({ venue: answers.venue === opt.value ? null : opt.value })}
+            selected={answers.venues.includes(opt.value)}
+            onClick={() => toggleVenue(opt.value)}
           />
         ))}
       </div>
-      {answers.venue === 'custom' && (
+      {answers.venues.includes('custom') && (
         <input
           type="text"
           className="onboard-input"

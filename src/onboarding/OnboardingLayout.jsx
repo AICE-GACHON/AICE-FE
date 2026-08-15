@@ -1,6 +1,6 @@
 import BrandMark from '../components/BrandMark';
 
-const STEP_LABELS = ['사용자 유형', '이용 목적', '분석 기준'];
+const STEP_LABELS = ['사용자 유형', '검색 우선순위', '목표 학회'];
 
 export default function OnboardingLayout({
   step,

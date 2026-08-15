@@ -4,9 +4,9 @@ import { updateMyOnboarding } from '../../api/onboarding';
 import { toOnboardingPayload, answersFromProfile } from '../../onboarding/profileMapping';
 import { saveAnswers } from '../../onboarding/sessionState';
 import {
-  USER_TYPE_OPTIONS, EXPERIENCE_OPTIONS, PURPOSE_OPTIONS, PURPOSE_MAX_SELECT,
+  USER_TYPE_OPTIONS,
   FIELD_OPTIONS, FIELD_MAX_SELECT, STAGE_OPTIONS, VENUE_OPTIONS,
-  userTypeLabel, experienceLabel, purposeLabel, fieldLabel, stageLabel, venueLabel,
+  userTypeLabel, fieldLabel, stageLabel, venueLabel,
 } from '../../onboarding/onboardingData';
 
 const Blank = () => <span className="mypage-blank">답하지 않음</span>;
@@ -129,8 +129,9 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
   const fieldNames = (shown?.fields ?? [])
     .map((f) => (f === 'custom' ? shown.fieldCustom : fieldLabel(f)))
     .filter(Boolean);
-  const purposeNames = (shown?.purposes ?? []).map(purposeLabel).filter(Boolean);
-  const venueName = shown?.venue === 'custom' ? shown.venueCustom : venueLabel(shown?.venue);
+  // 서버가 venue를 하나만 들고 있어서(profileMapping.js) 화면도 첫 항목만 다룬다.
+  const firstVenue = shown?.venues?.[0] ?? null;
+  const venueName = firstVenue === 'custom' ? shown.venueCustom : venueLabel(firstVenue);
 
   return (
     <div className="wr-card upload-card" style={{ marginTop: 16 }}>
@@ -166,8 +167,6 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
       {!editing && status === 'ready' && (
         <div className="mypage-list" style={{ marginTop: 12 }}>
           <Row label="사용자 유형">{userTypeLabel(shown.userType) || <Blank />}</Row>
-          <Row label="논문 경험">{experienceLabel(shown.experience) || <Blank />}</Row>
-          <Row label="이용 목적"><Tags values={purposeNames} /></Row>
           <Row label="관심 분야"><Tags values={fieldNames} /></Row>
           <Row label="진행 단계">{stageLabel(shown.stage) || <Blank />}</Row>
           <Row label="목표 학회">{venueName || <Blank />}</Row>
@@ -181,15 +180,6 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
             label="사용자 유형" options={USER_TYPE_OPTIONS}
             value={draft.userType} onChange={(v) => patch({ userType: v })}
           />
-          <SingleChoice
-            label="논문 경험" options={EXPERIENCE_OPTIONS}
-            value={draft.experience} onChange={(v) => patch({ experience: v })}
-          />
-          <MultiChoice
-            label="이용 목적" options={PURPOSE_OPTIONS} max={PURPOSE_MAX_SELECT}
-            values={draft.purposes} onChange={(v) => patch({ purposes: v })}
-          />
-
           <MultiChoice
             label="관심 분야" options={FIELD_OPTIONS} max={FIELD_MAX_SELECT}
             values={draft.fields} onChange={(v) => patch({ fields: v })}
@@ -211,9 +201,9 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
 
           <SingleChoice
             label="목표 학회" options={VENUE_OPTIONS}
-            value={draft.venue} onChange={(v) => patch({ venue: v })}
+            value={draft.venues[0] ?? null} onChange={(v) => patch({ venues: v ? [v] : [] })}
           />
-          {draft.venue === 'custom' && (
+          {draft.venues.includes('custom') && (
             <input
               className="auth-input mypage-custom-input"
               value={draft.venueCustom}

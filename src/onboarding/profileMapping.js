@@ -3,23 +3,34 @@
 // 두 방향을 한 파일에 두는 이유는 **서로의 역함수**여야 하기 때문이다. 저장 쪽만
 // 고치고 되읽기 쪽을 안 고치면, 값이 사라지는 게 아니라 조용히 다른 값으로
 // 되살아난다 — 화면에는 뭔가 떠 있으니 알아채기도 어렵다.
-import { FIELD_OPTIONS, VENUE_OPTIONS, buildResultOrder } from './onboardingData';
+import { FIELD_OPTIONS, VENUE_OPTIONS } from './onboardingData';
 import { emptyAnswers, saveAnswers } from './sessionState';
 import { fetchMyOnboarding } from '../api/onboarding';
 
 const isKnownOption = (options, value) => options.some((o) => o.value === value);
 
-/** 화면 답변 → POST /api/onboarding 본문 (OnboardingCreate와 같은 snake_case). */
+/**
+ * 화면 답변 → POST /api/onboarding 본문 (OnboardingCreate와 같은 snake_case).
+ *
+ * similarityFocus·recencyBias는 아직 프론트에서만 받는 값이다 — 백엔드
+ * 스키마(OnboardingCreate)에 대응하는 필드가 없어서 안 보낸다. purposes·
+ * result_order는 서버 쪽이 여전히 기대하는 필드라 빈 값으로 채워 보낸다
+ * (둘 다 default=[]라 비워 보내도 422가 나지 않는다).
+ *
+ * venue도 서버는 아직 문자열 하나만 받는다(OnboardingCreate.venue: str | None).
+ * 화면은 여러 개 고를 수 있게 했지만, 서버에는 **첫 번째로 고른 것만** 보낸다 —
+ * 나머지는 화면(sessionStorage)에는 남아있지만 계정에는 저장되지 않는다.
+ */
 export function toOnboardingPayload(answers) {
+  const firstVenue = answers.venues[0] ?? null;
   return {
     user_type: answers.userType,
-    experience: answers.experience,
-    purposes: answers.purposes,
+    purposes: [],
     // '직접 입력'은 옵션 값이 아니라 사용자가 친 문자열로 바꿔 보낸다.
     fields: answers.fields.map((f) => (f === 'custom' ? answers.fieldCustom : f)).filter(Boolean),
     stage: answers.stage,
-    venue: answers.venue === 'custom' ? answers.venueCustom : answers.venue,
-    result_order: buildResultOrder(answers.purposes),
+    venue: firstVenue === 'custom' ? answers.venueCustom : firstVenue,
+    result_order: [],
   };
 }
 
@@ -35,8 +46,6 @@ export function answersFromProfile(profile) {
   if (!profile) return answers;
 
   answers.userType = profile.user_type ?? null;
-  answers.experience = profile.experience ?? null;
-  answers.purposes = profile.purposes ?? [];
   answers.stage = profile.stage ?? null;
   answers.onboardingId = profile.onboarding_id ?? null;
 
@@ -51,12 +60,13 @@ export function answersFromProfile(profile) {
   }
   answers.fields = fields;
 
+  // 서버는 venue를 하나만 들고 있다 — 여기서는 그 하나를 배열의 첫 항목으로 되읽는다.
   const venue = profile.venue ?? null;
   if (venue && !isKnownOption(VENUE_OPTIONS, venue)) {
-    answers.venue = 'custom';
+    answers.venues = ['custom'];
     answers.venueCustom = venue;
-  } else {
-    answers.venue = venue;
+  } else if (venue) {
+    answers.venues = [venue];
   }
 
   return answers;

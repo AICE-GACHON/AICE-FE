@@ -92,10 +92,15 @@
   background:#fff;border-radius:12px;box-shadow:0 20px 40px -12px rgba(0,0,0,0.35);
 }
 .onboard-art-card{position:relative;max-width:360px;width:100%;padding:22px 24px;}
-.onboard-art-example{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
-.onboard-art-example-label{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:4px;}
-.onboard-art-example-before{font-size:12.5px;color:#4a4f49;line-height:1.55;margin-bottom:8px;}
-.onboard-art-example-after{font-size:12.5px;color:var(--teal-deep);font-weight:700;line-height:1.5;}
+/* .tag·.headline·.quote는 개편 전 랜딩 .float-panel 스타일에 얹혀있던 것들인데,
+   그 규칙이 사라지면서 이것도 같이 스타일이 하나도 안 남아있었다(그냥 기본 검정
+   글씨로 나오고 있었음) — 여기서 새로 잡는다. 이 카드에서는 "왜 물어보나요?"가
+   제목보다 더 큰 1차 헤드라인 역할이라, 제목(.headline)은 그보다 작게 둔다. */
+.onboard-art-card .tag{
+  font-size:21px;font-weight:800;color:var(--teal-deep);margin-bottom:18px;
+}
+.onboard-art-card .headline{font-size:16px;font-weight:800;line-height:1.4;letter-spacing:-0.01em;color:var(--ink);}
+.onboard-art-card .quote{margin-top:10px;font-size:14px;line-height:1.6;color:var(--muted);}
 
 /* ---------- preview / handoff screen ---------- */
 .onboard-preview-body{flex:1;display:flex;align-items:center;justify-content:center;padding:48px 24px;}
@@ -106,14 +111,9 @@
 .onboard-preview-card h2{font-size:clamp(22px,2.6vw,26px);font-weight:800;letter-spacing:-0.01em;margin-top:8px;line-height:1.35;}
 .onboard-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px;margin-top:26px;padding:20px;background:#fafaf8;border-radius:12px;}
 .onboard-summary-grid > div{display:flex;flex-direction:column;gap:4px;}
-.onboard-summary-key{font-family:var(--mono);font-size:10.5px;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+.onboard-summary-key{font-family:var(--mono);font-size:10.5px;letter-spacing:0.05em;text-transform:uppercase;color:var(--teal-deep);font-weight:600;}
 .onboard-summary-val{font-size:14px;font-weight:700;color:var(--ink);}
 @media (max-width:520px){ .onboard-summary-grid{grid-template-columns:1fr;} }
-
-.onboard-tone-note{margin-top:18px;font-size:13.5px;color:var(--teal-deep);background:var(--teal-soft);border-radius:10px;padding:12px 14px;line-height:1.55;}
-
-.onboard-result-order{margin-top:14px;padding-left:22px;display:flex;flex-direction:column;gap:8px;}
-.onboard-result-order li{font-size:14.5px;color:#33372f;font-weight:600;}
 
 .onboard-preview-actions{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:32px;}
 .onboard-preview-actions .pill.btn-lg{width:100%;justify-content:center;}
