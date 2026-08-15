@@ -14,11 +14,11 @@ import { MOCK_SELECTED_PAPERS } from './report/mockSelectedPapers';
 // 쌓여 무엇부터 읽어야 할지 알 수 없다. 목록은 "어느 논문을 볼지" 고르는 자리다.
 //
 // 목록 ↔ 상세 전환은 openPaperId·onOpenPaper·onClosePaper로 "제어"할 수 있다 —
-// 실 서비스에서는 routes.jsx의 ReportRoute가 이걸 URL(/app/upload/report/:paperId)에
+// 실 서비스에서는 routes.jsx의 ReportRoute가 이걸 URL(/app/report/:paperId)에
 // 묶어서 브라우저 뒤로가기가 되게 한다. 이 prop들을 안 주면(개발용 더미 데이터 미리보기 등)
 // 예전처럼 컴포넌트 안 state로만 돌아간다 — 그런 곳까지 라우팅에 묶을 필요는 없어서다.
 export default function ResultReport({
-  report, onReset, paperId: controlledPaperId, onOpenPaper, onClosePaper,
+  report, onReset, resetLabel = '← 새로운 논문 분석하기', paperId: controlledPaperId, onOpenPaper, onClosePaper,
 }) {
   const isControlled = onOpenPaper != null;
   const [localOpenId, setLocalOpenId] = useState(null);
@@ -45,6 +45,7 @@ export default function ResultReport({
           useMock={preview}
           onBack={closePaper}
           onReset={onReset}
+          resetLabel={resetLabel}
         />
       </>
     );
@@ -53,7 +54,7 @@ export default function ResultReport({
   return (
     <div className="wr-stack rp-report-wide">
       {onReset && (
-        <button type="button" className="onboard-back" onClick={onReset}>← 새 논문 분석하기</button>
+        <button type="button" className="onboard-back" onClick={onReset}>{resetLabel}</button>
       )}
       <div className="wr-card rp-query-card">
         <div className="wr-card-title">올리신 논문</div>

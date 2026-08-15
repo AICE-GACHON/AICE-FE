@@ -4,7 +4,7 @@
 // 화면 컴포넌트들은 그대로 둔다. onExit·onSwitchToLogin 같은 콜백 prop을 받는
 // 순수한 화면으로 남기고, 여기 얇은 래퍼가 useNavigate로 그 콜백을 채워 넣는다.
 // 화면이 라우터를 몰라야 나중에 어디에 갖다 붙여도 그대로 동작한다.
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import LandingPage from './LandingPage';
@@ -17,7 +17,9 @@ import WorkspaceLayout from './workspace/WorkspaceLayout';
 import UploadPage from './workspace/UploadPage';
 import ResultReport from './workspace/ResultReport';
 import MyPage from './workspace/MyPage';
+import PapersPage from './workspace/PapersPage';
 import { useAnalysis } from './workspace/analysisContext';
+import { getAnalysis } from './api/submissions';
 import BodyDiffTest from './dev/BodyDiffTest';
 import { RequireAuth, RedirectIfAuthed } from './auth/guards';
 import { useAuth } from './auth/authContext';
@@ -139,14 +141,29 @@ function MyPageRoute() {
   return <MyPage user={user} onUserChange={setUser} onAccountDeleted={leaveAfterAccountDeleted} />;
 }
 
-// 결과 목록(/app/upload/report)과 상세(/app/upload/report/:paperId)를 같은 화면
-// 컴포넌트(ResultReport)에 연결한다 — 열려있는 논문이 곧 주소라, 뒤로가기를 누르면
+// 결과 목록(/app/report)과 상세(/app/report/:paperId)를 같은 화면 컴포넌트
+// (ResultReport)에 연결한다 — 열려있는 논문이 곧 주소라, 뒤로가기를 누르면
 // 상세→목록→업로드 폼 순으로 그대로 되짚어 간다(예전엔 이 셋이 전부 /app/upload
-// 하나의 내부 state였다). report가 없으면(새로고침·직접 주소 진입·리셋 직후)
-// 업로드 폼으로 되돌린다 — 이 화면들은 방금 분석한 결과가 메모리에 있을 때만 뜻이 있다.
+// 하나의 내부 state였다). /app/upload 밑이 아니라 별도 경로인 이유는, 업로드
+// 폼과 "그 결과 화면"은 성격이 다른데 같은 상위 경로에 있으면 active 판단·주소
+// 구조 양쪽에서 계속 "둘이 같은 구역"으로 취급되기 때문이다. report가 없으면
+// (새로고침·직접 주소 진입·리셋 직후) 업로드 폼으로 되돌린다 — 이 화면들은
+// 방금 분석한 결과가 메모리에 있을 때만 뜻이 있다.
+//
+// "← 목록으로"는 navigate(-1)이다 — 상세는 항상 이 목록에서 눌러 들어온
+// 것이므로, 실제 히스토리를 한 칸 되짚는 것과 "목록으로 가는 것"이 정확히
+// 같다. 여기서 navigate(고정주소)를 쓰면(예전 방식) 뒤로가기 한 칸과 이
+// 버튼이 서로 다른 걸 하게 되어, 번갈아 누르면 같은 자리를 왕복하며 못
+// 빠져나가는 문제가 있었다(분석 이력↔상세 무한 왕복 버그).
+//
+// onReset(="← 새로운 논문 분석하기" 화면 안 버튼)은 일부러 안 준다 — 헤더의
+// "새로운 논문 분석하기"가 이제 모든 화면에서 항상 보이므로 완전히 중복이었다.
+// 헤더로 가면 reset()은 안 불리지만 문제없다: UploadPage가 phase==='done'일
+// 때도 폼을 보여주도록 이미 되어 있고(파일이 남아있어도 "제거·바꾸기"로 정리
+// 가능), 다음 분석이 끝나면 이 report/submission은 어차피 덮어써진다.
 function ReportRoute() {
   const navigate = useNavigate();
-  const { report, reset } = useAnalysis();
+  const { report } = useAnalysis();
   const { paperId } = useParams();
 
   if (!report) return <Navigate to="/app/upload" replace />;
@@ -155,9 +172,76 @@ function ReportRoute() {
     <ResultReport
       report={report}
       paperId={paperId != null ? Number(paperId) : null}
-      onOpenPaper={(id) => navigate(`/app/upload/report/${id}`)}
-      onClosePaper={() => navigate('/app/upload/report')}
-      onReset={() => { reset(); navigate('/app/upload'); }}
+      onOpenPaper={(id) => navigate(`/app/report/${id}`)}
+      onClosePaper={() => navigate(-1)}
+    />
+  );
+}
+
+// "분석 이력"(PapersPage)에서 예전 분석을 다시 열 때 쓴다. ReportRoute와
+// 달리 report를 AnalysisProvider가 아니라 그 submission_id로 서버에서 새로
+// 받아온다 — 지금 진행 중인 분석(다른 논문)과 섞이면 안 되고, 애초에 지난
+// 분석은 컨텍스트에 남아있지도 않기 때문이다(새로고침하면 사라짐).
+//
+// "← 목록으로"·"← 분석 이력으로" 둘 다 navigate(-1)이다(ReportRoute와 같은
+// 이유) — 여기 있는 화면들은 전부 papers 목록에서 눌러 들어와야만 도달하는
+// 것들이라, 실제 히스토리를 되짚는 것과 "한 단계 위로"가 항상 같다.
+function PastAnalysisRoute() {
+  const navigate = useNavigate();
+  const { submissionId, paperId } = useParams();
+  const [state, setState] = useState({ status: 'loading', report: null, error: '' });
+  // submissionId가 바뀌었는데 이 컴포넌트가 재사용되는(언마운트 안 되는) 경우
+  // 로딩 상태로 되돌린다 — effect 안에서 setState하면 안 되니 렌더 중에 비교한다.
+  const [loadedFor, setLoadedFor] = useState(submissionId);
+  if (submissionId !== loadedFor) {
+    setLoadedFor(submissionId);
+    setState({ status: 'loading', report: null, error: '' });
+  }
+
+  useEffect(() => {
+    let alive = true;
+    getAnalysis(submissionId)
+      .then((data) => {
+        if (!alive) return;
+        if (data.status !== 'done' || !data.report) {
+          setState({ status: 'unavailable', report: null, error: '' });
+          return;
+        }
+        setState({ status: 'ready', report: data.report, error: '' });
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setState({ status: 'error', report: null, error: err.message || '불러오지 못했어요.' });
+      });
+    return () => { alive = false; };
+  }, [submissionId]);
+
+  if (state.status === 'loading') {
+    return <p className="wr-muted" style={{ marginTop: 24 }}>불러오는 중…</p>;
+  }
+  if (state.status === 'error') {
+    return <div className="auth-submit-error" style={{ marginTop: 24 }}>{state.error}</div>;
+  }
+  if (state.status === 'unavailable') {
+    return (
+      <div className="wr-card" style={{ marginTop: 24 }}>
+        <div className="wr-card-title">이 분석은 결과가 없어요</div>
+        <p className="wr-muted">실패했거나 아직 진행 중인 분석이에요.</p>
+        <button type="button" className="onboard-back" onClick={() => navigate(-1)}>
+          ← 분석 이력으로
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <ResultReport
+      report={state.report}
+      paperId={paperId != null ? Number(paperId) : null}
+      onOpenPaper={(id) => navigate(`/app/papers/${submissionId}/${id}`)}
+      onClosePaper={() => navigate(-1)}
+      onReset={() => navigate(-1)}
+      resetLabel="← 분석 이력으로"
     />
   );
 }
@@ -179,9 +263,12 @@ export default function AppRoutes() {
       <Route path="/app" element={<RequireAuth><WorkspaceLayout /></RequireAuth>}>
         <Route index element={<Navigate to="/app/upload" replace />} />
         <Route path="upload" element={<UploadPage />} />
-        <Route path="upload/report" element={<ReportRoute />} />
-        <Route path="upload/report/:paperId" element={<ReportRoute />} />
+        <Route path="report" element={<ReportRoute />} />
+        <Route path="report/:paperId" element={<ReportRoute />} />
         <Route path="mypage" element={<MyPageRoute />} />
+        <Route path="papers" element={<PapersPage />} />
+        <Route path="papers/:submissionId" element={<PastAnalysisRoute />} />
+        <Route path="papers/:submissionId/:paperId" element={<PastAnalysisRoute />} />
       </Route>
 
       {/* 임시 테스트 진입점. 배포 번들에는 라우트 자체가 없다 —

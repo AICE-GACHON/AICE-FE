@@ -19,6 +19,12 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const mockNicknameByEmail = new Map();
 
 async function unwrap(res) {
+  // 204는 정의상 body가 없다(예: DELETE /api/submissions/{id}) — res.json()이
+  // 빈 문자열을 파싱하다 실패해서 body=null이 되고, 그걸 실패로 오해해 던지게 된다.
+  if (res.status === 204) {
+    if (!res.ok) throw Object.assign(new Error(`요청에 실패했어요 (${res.status})`), { status: res.status });
+    return null;
+  }
   const body = await res.json().catch(() => null);
   if (!res.ok || !body || body.success === false) {
     const err = new Error(body?.error?.message || `요청에 실패했어요 (${res.status})`);
