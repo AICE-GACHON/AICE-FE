@@ -3,6 +3,7 @@ import AuthLayout from './AuthLayout';
 import Field from './Field';
 import GoogleLoginButton from './GoogleLoginButton';
 import { login, loginWithGoogle } from '../api/auth';
+import LegalModal from '../legal/LegalModal';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,9 +22,17 @@ export default function LoginPage({ onExit, onSwitchToSignup, onForgotPassword, 
   const [submitError, setSubmitError] = useState('');
 
   const [googleError, setGoogleError] = useState('');
-  const [pendingIdToken, setPendingIdToken] = useState(null); // 초대 코드를 더 물어봐야 할 때만 채워짐
+  // 신규 가입이라 더 물어봐야 할 때만 채워진다: { idToken, needsInvite }
+  //
+  // needsInvite를 함께 들고 있는 이유 — 서버는 초대 코드를 **먼저** 보고(403),
+  // 통과하면 약관 동의를 본다(400). 초대 코드가 설정되지 않은 서버에서는 403 없이
+  // 곧장 400이 오는데, 그때도 초대 코드 입력을 필수로 요구하면 사용자는 입력할
+  // 값이 없어서 가입을 끝낼 수 없다.
+  const [googleSignup, setGoogleSignup] = useState(null);
   const [googleInviteCode, setGoogleInviteCode] = useState('');
+  const [googleAgree, setGoogleAgree] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const [openDocument, setOpenDocument] = useState(null);
 
   const update = (patch) => setForm((f) => ({ ...f, ...patch }));
 
@@ -47,9 +56,10 @@ export default function LoginPage({ onExit, onSwitchToSignup, onForgotPassword, 
     }
   };
 
-  // 처음 구글로 가입하는 계정이면 백엔드가 초대 코드를 요구한다(403). 그때만
-  // id_token을 잠깐 들고 있다가 코드를 받아 같은 토큰으로 재시도한다.
-  // **이미 가입한 사람은 이 화면을 아예 보지 않는다.**
+  // 처음 구글로 가입하는 계정이면 백엔드가 초대 코드(403)와 약관 동의(400)를
+  // 요구한다. 그때만 id_token을 잠깐 들고 있다가, 필요한 것을 받아 같은 토큰으로
+  // 재시도한다. **이미 가입한 사람은 이 화면을 아예 보지 않는다** — 로그인할 때마다
+  // 약관에 다시 동의시키면 그건 동의가 아니라 확인 버튼이다.
   const handleGoogleCredential = async (idToken) => {
     setGoogleError('');
     setGoogleSubmitting(true);
@@ -57,8 +67,8 @@ export default function LoginPage({ onExit, onSwitchToSignup, onForgotPassword, 
       const user = await loginWithGoogle(idToken);
       onSuccess(user);
     } catch (err) {
-      if (err.needsInvite) {
-        setPendingIdToken(idToken);
+      if (err.needsInvite || err.needsConsent) {
+        setGoogleSignup({ idToken, needsInvite: Boolean(err.needsInvite) });
       } else {
         setGoogleError(err.message || '구글 로그인에 실패했어요.');
       }
@@ -69,12 +79,22 @@ export default function LoginPage({ onExit, onSwitchToSignup, onForgotPassword, 
 
   const submitGoogleSignup = async (e) => {
     e.preventDefault();
-    if (!googleInviteCode.trim()) return;
+    if (googleSignup.needsInvite && !googleInviteCode.trim()) {
+      setGoogleError('초대 코드를 입력해 주세요.');
+      return;
+    }
+    if (!googleAgree) {
+      setGoogleError('이용약관과 개인정보처리방침에 동의해 주세요.');
+      return;
+    }
+
     setGoogleSubmitting(true);
     setGoogleError('');
     try {
       // 베타에서는 OpenReview ID를 받지 않는다 — 서버가 자리표시자를 넣는다.
-      const user = await loginWithGoogle(pendingIdToken, undefined, googleInviteCode.trim());
+      const user = await loginWithGoogle(
+        googleSignup.idToken, undefined, googleInviteCode.trim() || undefined, googleAgree,
+      );
       onSuccess(user);
     } catch (err) {
       setGoogleError(err.message || '구글 로그인에 실패했어요.');
@@ -88,23 +108,44 @@ export default function LoginPage({ onExit, onSwitchToSignup, onForgotPassword, 
       <div className="eyebrow">로그인</div>
       <h2>다시 오신 것을 환영해요</h2>
 
-      {pendingIdToken ? (
+      {googleSignup ? (
         <form className="auth-form" onSubmit={submitGoogleSignup} style={{ marginTop: 20 }}>
           <p className="onboard-desc">
-            처음 구글로 가입하시네요. 초대 코드만 알려주시면 가입이 끝나요.
+            처음 구글로 가입하시네요. 아래만 확인해 주시면 가입이 끝나요.
           </p>
-          <Field
-            label="초대 코드"
-            type="text"
-            placeholder="초대받은 코드를 입력해 주세요"
-            value={googleInviteCode}
-            onChange={(e) => setGoogleInviteCode(e.target.value)}
-          />
+          {googleSignup.needsInvite && (
+            <Field
+              label="초대 코드"
+              type="text"
+              placeholder="초대받은 코드를 입력해 주세요"
+              value={googleInviteCode}
+              onChange={(e) => setGoogleInviteCode(e.target.value)}
+            />
+          )}
+
+          <label className="auth-checkbox">
+            <input
+              type="checkbox"
+              checked={googleAgree}
+              onChange={(e) => setGoogleAgree(e.target.checked)}
+            />
+            <span>
+              <button type="button" className="legal-inline-link" onClick={() => setOpenDocument('terms')}>
+                이용약관
+              </button>
+              과{' '}
+              <button type="button" className="legal-inline-link" onClick={() => setOpenDocument('privacy')}>
+                개인정보처리방침
+              </button>
+              에 동의합니다.
+            </span>
+          </label>
+
           {googleError && <div className="auth-submit-error">{googleError}</div>}
           <button type="submit" className="pill btn-lg" style={{ width: '100%', justifyContent: 'center' }} disabled={googleSubmitting}>
             {googleSubmitting ? '확인 중…' : '계속하기'}
           </button>
-          <button type="button" className="auth-switch" style={{ border: 'none', background: 'none', cursor: 'pointer' }} onClick={() => setPendingIdToken(null)}>
+          <button type="button" className="auth-switch" style={{ border: 'none', background: 'none', cursor: 'pointer' }} onClick={() => setGoogleSignup(null)}>
             취소
           </button>
         </form>
@@ -149,6 +190,10 @@ export default function LoginPage({ onExit, onSwitchToSignup, onForgotPassword, 
             아직 계정이 없으신가요? <button type="button" onClick={onSwitchToSignup}>회원가입</button>
           </p>
         </>
+      )}
+
+      {openDocument && (
+        <LegalModal documentName={openDocument} onClose={() => setOpenDocument(null)} />
       )}
     </AuthLayout>
   );
