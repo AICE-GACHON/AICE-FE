@@ -328,55 +328,74 @@ footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
 /* ---------- 로그인 회원 홈 (ChatGPT식: 왼쪽 사이드바 + 중앙 업로드) ---------- */
 .home-chat{display:flex;min-height:100vh;background:var(--bg);}
 
-/* 왼쪽 사이드바 — 분석 이력 리스트 + 검색 + 접기 + 하단 마이페이지 */
+/* 왼쪽 사이드바 */
 .home-side{
-  flex:0 0 280px;width:280px;display:flex;flex-direction:column;gap:14px;
+  flex:0 0 284px;width:284px;display:flex;flex-direction:column;gap:16px;
   height:100vh;position:sticky;top:0;overflow:hidden;
-  padding:16px 12px;background:#f6f7f5;border-right:1px solid var(--line);
+  padding:18px 14px;background:#f8f9f8;border-right:1px solid var(--line);
 }
 .home-chat.is-collapsed .home-side{display:none;}
 .home-side-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px;}
-.home-side-brand{font-size:17px;}
+.home-side-brand{font-size:17px;letter-spacing:-0.01em;}
 .home-side-toggle,.home-side-open{
   display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
-  border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;transition:background .15s,color .15s;
+  border-radius:9px;color:var(--muted);font-size:16px;cursor:pointer;transition:background .15s,color .15s;
 }
-.home-side-toggle:hover,.home-side-open:hover{background:#e7e9e4;color:var(--ink);}
+.home-side-toggle:hover,.home-side-open:hover{background:#ebedea;color:var(--ink);}
 .home-side-open{position:fixed;top:16px;left:16px;z-index:70;background:#fff;border:1px solid var(--line);
-  box-shadow:0 4px 12px -6px rgba(0,0,0,0.2);}
+  box-shadow:0 6px 18px -8px rgba(0,0,0,0.25);}
+
+/* 검색 (돋보기 아이콘 내장) */
+.home-side-search{position:relative;display:flex;align-items:center;}
+.home-side-search-icon{position:absolute;left:12px;color:var(--muted);pointer-events:none;}
 .home-side-search-input{
-  width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;
-  font-family:inherit;font-size:13.5px;background:#fff;color:var(--ink);
+  width:100%;padding:10px 12px 10px 36px;border:1px solid var(--line);border-radius:12px;
+  font-family:inherit;font-size:13.5px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s;
 }
-.home-side-search-input:focus{outline:none;border-color:var(--teal);}
-.home-side-history{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;padding:0 2px;}
+.home-side-search-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft);}
+
+/* 이력 리스트 */
+.home-side-history{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;}
 .home-side-section{
-  display:flex;align-items:center;justify-content:space-between;padding:2px 6px 8px;
-  font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.02em;
+  display:flex;align-items:center;justify-content:space-between;padding:2px 8px 10px;
+  font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;
 }
-.home-side-all{font-size:12px;font-weight:600;}
+.home-side-all{font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;}
 .home-side-list{list-style:none;display:flex;flex-direction:column;gap:2px;}
 .home-side-item{
-  width:100%;text-align:left;font-family:inherit;font-size:13.5px;color:var(--ink);
-  padding:9px 10px;border-radius:8px;cursor:pointer;
+  width:100%;text-align:left;font-family:inherit;font-size:14px;color:#2c322c;
+  padding:10px 12px;border-radius:9px;cursor:pointer;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .13s;
 }
-.home-side-item:hover{background:#e9ebe6;}
-.home-side-empty{padding:8px;color:var(--muted);font-size:13px;}
-.home-side-foot{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px;}
-.home-side-mypage{
-  width:100%;text-align:left;font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);
-  padding:10px;border-radius:8px;cursor:pointer;transition:background .13s;
-}
-.home-side-mypage:hover{background:#e9ebe6;}
-.home-side-user{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 6px;font-size:13px;}
+.home-side-item:hover{background:#ebedea;}
+.home-side-empty{padding:10px;color:var(--muted);font-size:13px;}
 
-/* 가운데 — 새로운 논문 분석하기(UploadPage) */
-.home-main{flex:1;min-width:0;display:flex;justify-content:center;padding:56px 24px;overflow-y:auto;}
-.home-main-inner{width:100%;max-width:600px;}
-.home-main-title{font-size:26px;font-weight:800;letter-spacing:-0.01em;color:var(--ink);margin-bottom:18px;text-align:center;}
+/* 하단 사용자 — 이름 클릭 시 마이페이지 */
+.home-side-foot{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:4px;}
+.home-side-user-btn{
+  display:flex;align-items:center;gap:10px;width:100%;padding:8px;border-radius:11px;
+  cursor:pointer;font-family:inherit;transition:background .13s;
+}
+.home-side-user-btn:hover{background:#ebedea;}
+.home-side-avatar{
+  flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--teal-deep);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;text-transform:uppercase;
+}
+.home-side-user-name{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-side-logout{font-size:12.5px;color:var(--muted);align-self:flex-start;padding:4px 10px;}
+
+/* 가운데 — 새로운 논문 분석하기 */
+.home-main{flex:1;min-width:0;display:flex;justify-content:center;padding:64px 24px;overflow-y:auto;}
+.home-main-inner{width:100%;max-width:580px;}
+.home-main-head{text-align:center;margin-bottom:28px;}
+.home-main-title{font-size:30px;font-weight:800;letter-spacing:-0.02em;color:var(--ink);}
+.home-main-sub{margin-top:12px;color:var(--muted);font-size:15px;line-height:1.65;}
+.home-main-sub b{color:#2c322c;font-weight:700;}
+/* 홈 중앙 업로드 카드는 더 부드럽게 (그림자·둥근 모서리) */
+.home-main .upload-card{border:1px solid var(--line);border-radius:20px;box-shadow:0 18px 50px -28px rgba(45,32,18,0.4);padding:26px;}
 
 @media (max-width:760px){
   .home-side{position:fixed;z-index:65;box-shadow:0 0 40px rgba(0,0,0,0.15);}
-  .home-main{padding:40px 16px;}
+  .home-main{padding:44px 16px;}
+  .home-main-title{font-size:26px;}
 }

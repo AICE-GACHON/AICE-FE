@@ -1,6 +1,6 @@
 // 로그인 회원의 홈 — ChatGPT식 레이아웃.
-//   · 왼쪽 사이드바: 분석 이력 리스트(검색·전체보기), 접기, 하단에 마이페이지
-//   · 가운데: 새로운 논문 분석하기(UploadPage를 그대로 얹어 바로 PDF 업로드)
+//   · 왼쪽 사이드바: 분석 이력 리스트(검색·전체보기), 접기, 하단에 사용자(클릭 시 마이페이지)
+//   · 가운데: 새로운 논문 분석하기(UploadPage를 embedded로 얹어 바로 PDF 업로드)
 // 업로드→분석 상태는 AppRoutes의 AnalysisProvider가 들고 있어, 분석이 끝나면
 // analyze()가 /app/report로 옮겨 같은 결과를 그대로 보여준다.
 import { useEffect, useMemo, useState } from 'react';
@@ -31,6 +31,8 @@ export default function HomeDashboard() {
     return history.items.filter((s) => (s.title || '').toLowerCase().includes(q));
   }, [history.items, query]);
 
+  const nickname = user?.nickname || '사용자';
+
   return (
     <div className={`home-chat${collapsed ? ' is-collapsed' : ''}`}>
       <aside className="home-side">
@@ -45,6 +47,10 @@ export default function HomeDashboard() {
         </div>
 
         <div className="home-side-search">
+          <svg className="home-side-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
+          </svg>
           <input
             type="search"
             className="home-side-search-input"
@@ -83,14 +89,16 @@ export default function HomeDashboard() {
           )}
         </div>
 
+        {/* 하단 — 사용자 이름을 누르면 마이페이지로 (별도 버튼 없이) */}
         <div className="home-side-foot">
-          <button type="button" className="home-side-mypage" onClick={() => navigate('/app/mypage')}>
-            마이페이지
+          <button
+            type="button" className="home-side-user-btn"
+            onClick={() => navigate('/app/mypage')} title="마이페이지"
+          >
+            <span className="home-side-avatar">{nickname.charAt(0)}</span>
+            <span className="home-side-user-name">{nickname} 님</span>
           </button>
-          <div className="home-side-user">
-            <span className="workspace-user">{user?.nickname || '사용자'} 님</span>
-            <button type="button" className="txt-link" onClick={() => signOut()}>로그아웃</button>
-          </div>
+          <button type="button" className="txt-link home-side-logout" onClick={() => signOut()}>로그아웃</button>
         </div>
       </aside>
 
@@ -105,8 +113,13 @@ export default function HomeDashboard() {
 
       <main className="home-main">
         <div className="home-main-inner">
-          <h1 className="home-main-title">새로운 논문 분석하기</h1>
-          <UploadPage />
+          <div className="home-main-head">
+            <h1 className="home-main-title">새로운 논문 분석하기</h1>
+            <p className="home-main-sub">
+              논문 PDF를 올리면 <b>비슷한 논문들이 실제로 어떤 리뷰를 받았는지</b> 보여드려요.
+            </p>
+          </div>
+          <UploadPage embedded />
         </div>
       </main>
     </div>
