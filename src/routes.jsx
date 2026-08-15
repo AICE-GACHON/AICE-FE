@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import LandingPage from './LandingPage';
+import HomeDashboard from './workspace/HomeDashboard';
 import OnboardingFlow from './onboarding/OnboardingFlow';
 import SignupPage from './auth/SignupPage';
 import LoginPage from './auth/LoginPage';
@@ -282,10 +283,28 @@ function AppEntry() {
   return <Navigate to={target} replace />;
 }
 
+// 홈("/")은 로그인 여부로 갈린다 — 이미 회원가입해서 로그인한 사람에게는 마케팅
+// 랜딩이 아니라 대시보드 홈(HomeDashboard)을 준다. 게스트/로그인 전에는 지금까지처럼
+// 마케팅 랜딩(LandingPage)을 보여준다. 세션 확인 중에는 어느 쪽으로도 단정하지 않고
+// 잠깐 로딩만 둔다 — 여기서 랜딩을 먼저 그리면 그 안의 authed 처리가 먼저 돌아버린다.
+function HomeRoute() {
+  const { status } = useAuth();
+  if (status === 'loading') {
+    return (
+      <div className="story-loading">
+        <div className="story-spinner" />
+        <p className="wr-muted">불러오는 중…</p>
+      </div>
+    );
+  }
+  if (status === 'authed') return <HomeDashboard />;
+  return <LandingPage />;
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<HomeRoute />} />
       {/* 랜딩의 "시작하기"는 /onboarding으로 온다. replace라서 1단계에서 뒤로가면 랜딩이다. */}
       <Route path="/onboarding" element={<Navigate to="/onboarding/1" replace />} />
       <Route path="/onboarding/:step" element={<OnboardingRoute />} />

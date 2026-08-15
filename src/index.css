@@ -324,3 +324,45 @@ footer .brand{font-size:16px;}
 footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
 
 :focus-visible{outline:2px solid var(--teal);outline-offset:3px;}
+
+/* ---------- 로그인 회원 대시보드 홈 (게스트 랜딩과 구별되는 홈) ---------- */
+.home-dash{min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+.home-dash-bar{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;
+  padding:16px 32px;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+}
+.home-dash-bar-right{display:flex;align-items:center;gap:20px;}
+.home-dash-grid{
+  flex:1;width:100%;display:grid;gap:20px;padding:32px;align-content:start;
+  grid-template-columns:1.05fr 1fr;
+  grid-template-areas:"new history" "new mypage";
+}
+.home-panel{
+  background:#f1f3f0;border:1px solid var(--line);border-radius:18px;padding:24px 26px;
+  display:flex;flex-direction:column;min-height:190px;text-align:left;
+}
+.home-panel-new{grid-area:new;min-height:430px;cursor:pointer;font-family:inherit;
+  background:linear-gradient(160deg,#eef4f0,#e2ece6);transition:transform .18s,box-shadow .18s,background .18s;}
+.home-panel-new:hover{transform:translateY(-2px);background:linear-gradient(160deg,#e9f1ec,#dbe8e1);
+  box-shadow:0 16px 32px -20px rgba(45,32,18,0.5);}
+.home-panel-history{grid-area:history;}
+.home-panel-mypage{grid-area:mypage;}
+.home-panel-title{font-size:20px;font-weight:800;color:var(--ink);}
+.home-panel-desc{margin-top:10px;color:var(--muted);font-size:14px;line-height:1.6;max-width:34ch;}
+.home-panel-cta{margin-top:auto;color:var(--teal-deep);font-weight:700;font-size:15px;}
+.home-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.home-panel-more{font-size:13px;white-space:nowrap;}
+.home-panel-empty{margin-top:16px;color:var(--muted);font-size:14px;line-height:1.6;}
+.home-history-list{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+.home-history-item{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:inherit;text-align:left;
+  background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s;
+}
+.home-history-item:hover{border-color:var(--teal);}
+.home-history-title{font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-mypage-summary{margin-top:16px;display:flex;flex-direction:column;gap:12px;}
+.home-mypage-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;}
+@media (max-width:820px){
+  .home-dash-grid{grid-template-columns:1fr;grid-template-areas:"new" "history" "mypage";}
+  .home-panel-new{min-height:220px;}
+}
