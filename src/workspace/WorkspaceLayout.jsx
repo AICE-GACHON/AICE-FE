@@ -1,7 +1,7 @@
 // /app 아래 화면들의 공통 껍데기. 예전 Workspace.jsx가 하던 일에서 "지금 어느 화면인지"만
 // 라우터에게 넘겼다 — page state 대신 주소가 답을 갖고 있다.
 import { useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import TourOverlay from './TourOverlay';
 import WorkspaceShell from './WorkspaceShell';
 import { useAuth } from '../auth/authContext';
@@ -21,23 +21,7 @@ const hasSeenTour = () => {
 export default function WorkspaceLayout() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const [showTour, setShowTour] = useState(() => !hasSeenTour());
-
-  // 상단바 강조는 주소에서 읽는다. /app은 곧바로 /app/upload로 넘어가므로
-  // 그 찰나에도 어긋나 보이지 않는다.
-  //
-  // /app/upload로 시작하지 않으면(예: /app/report) null이다 — 예전엔 여기가
-  // 무조건 'upload'로 떨어져서, 결과 화면(/app/report)에서 헤더의 "새로운
-  // 논문 분석하기"가 "지금 있는 페이지"로 오인되어 클릭이 막혔다(WorkspaceShell의
-  // NavLink는 active===section이면 onClick을 아예 안 붙인다) — 정작 그 버튼을
-  // 눌러서 업로드 폼으로 가고 싶었던 것인데 안 눌린 것이다. /app/report는 이제
-  // upload도 papers도 mypage도 아닌, 넷 중 아무것도 강조되지 않는 상태로 둔다.
-  const active = pathname.startsWith('/app/mypage')
-    ? 'mypage'
-    : pathname.startsWith('/app/papers')
-      ? 'papers'
-      : pathname.startsWith('/app/upload') ? 'upload' : null;
 
   const dismissTour = () => {
     try {
@@ -66,11 +50,7 @@ export default function WorkspaceLayout() {
       {showTour && <TourOverlay onDone={dismissTour} />}
       <WorkspaceShell
         user={user}
-        active={active}
         onGoHome={() => navigate('/')}
-        onGoUpload={() => navigate('/app/upload')}
-        onGoPapers={() => navigate('/app/papers')}
-        onGoMyPage={() => navigate('/app/mypage')}
         onLogout={handleLogout}
       >
         <Outlet />
