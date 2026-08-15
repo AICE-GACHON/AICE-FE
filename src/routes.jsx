@@ -20,6 +20,7 @@ import MyPage from './workspace/MyPage';
 import PapersPage from './workspace/PapersPage';
 import { useAnalysis } from './workspace/analysisContext';
 import { getAnalysis } from './api/submissions';
+import LegalPage from './legal/LegalPage';
 import BodyDiffTest from './dev/BodyDiffTest';
 import { RequireAuth, RedirectIfAuthed } from './auth/guards';
 import { useAuth } from './auth/authContext';
@@ -246,6 +247,23 @@ function PastAnalysisRoute() {
   );
 }
 
+// 약관·개인정보처리방침의 단독 주소. 가드를 걸지 않는다 — 가입 전에도, 탈퇴한
+// 뒤에도 읽을 수 있어야 하는 문서다.
+//
+// "돌아가기"가 navigate(-1)인 이유: 이 화면에는 들어오는 길이 여럿이다(가입 폼,
+// 푸터, 공유받은 링크). 고정 주소로 보내면 그중 하나만 맞고 나머지는 엉뚱한
+// 곳에 떨어진다. 히스토리가 없으면(링크로 바로 열었으면) 랜딩으로 보낸다.
+function LegalRoute({ documentName }) {
+  const navigate = useNavigate();
+  const canGoBack = window.history.length > 1;
+  return (
+    <LegalPage
+      documentName={documentName}
+      onBack={() => (canGoBack ? navigate(-1) : navigate('/'))}
+    />
+  );
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -259,6 +277,9 @@ export default function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordRoute />} />
       {/* 재설정은 가드를 걸지 않는다 — 로그인한 채로 메일 링크를 누를 수 있다. */}
       <Route path="/reset-password" element={<ResetPasswordRoute />} />
+
+      <Route path="/terms" element={<LegalRoute documentName="terms" />} />
+      <Route path="/privacy" element={<LegalRoute documentName="privacy" />} />
 
       <Route path="/app" element={<RequireAuth><WorkspaceLayout /></RequireAuth>}>
         <Route index element={<Navigate to="/app/upload" replace />} />

@@ -2,6 +2,7 @@
 import AppRoutes from './routes';
 import './onboarding/onboarding.css';
 import './auth/auth.css';
+import './legal/legal.css';
 import './workspace/workspace.css';
 
 export default function App() {

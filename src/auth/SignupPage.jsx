@@ -2,6 +2,7 @@ import { useState } from 'react';
 import AuthLayout from './AuthLayout';
 import Field from './Field';
 import { signup, login } from '../api/auth';
+import LegalModal from '../legal/LegalModal';
 import { loadAnswers } from '../onboarding/sessionState';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,6 +31,8 @@ export default function SignupPage({ onExit, onSwitchToLogin, onSuccess }) {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  // 'terms' | 'privacy' | null — 열려 있는 약관 창. 모달이라 폼 입력이 유지된다.
+  const [openDocument, setOpenDocument] = useState(null);
 
   const update = (patch) => setForm((f) => ({ ...f, ...patch }));
 
@@ -53,6 +56,10 @@ export default function SignupPage({ onExit, onSwitchToLogin, onSuccess }) {
       await signup({
         email, password: form.password, nickname,
         inviteCode: form.inviteCode.trim(), onboardingId,
+        // 위 validate()가 체크박스를 강제하므로 여기 오면 항상 true다. 그래도
+        // 상수 대신 폼 값을 넘긴다 — 나중에 검증이 느슨해져도 동의하지 않은
+        // 사람이 동의한 것으로 기록되는 일은 없어야 한다.
+        agreedToTerms: form.agree,
       });
       // 회원가입 API는 토큰을 주지 않으므로, 가입 직후 같은 자격증명으로 바로 로그인해서 이어준다.
       const user = await login({ email, password: form.password });
@@ -121,7 +128,19 @@ export default function SignupPage({ onExit, onSwitchToLogin, onSuccess }) {
             checked={form.agree}
             onChange={(e) => update({ agree: e.target.checked })}
           />
-          <span><a href="#terms">이용약관</a>과 <a href="#privacy">개인정보처리방침</a>에 동의합니다.</span>
+          {/* 링크(<a href="#terms">)가 아니라 버튼이다 — 주소를 바꾸지 않고 모달만
+              연다. 예전에는 죽은 앵커라 눌러도 아무 일이 없었고, 사용자는 읽을 수
+              없는 문서에 동의하고 있었다. */}
+          <span>
+            <button type="button" className="legal-inline-link" onClick={() => setOpenDocument('terms')}>
+              이용약관
+            </button>
+            과{' '}
+            <button type="button" className="legal-inline-link" onClick={() => setOpenDocument('privacy')}>
+              개인정보처리방침
+            </button>
+            에 동의합니다.
+          </span>
         </label>
         {errors.agree && <span className="auth-field-error">{errors.agree}</span>}
 
@@ -135,6 +154,10 @@ export default function SignupPage({ onExit, onSwitchToLogin, onSuccess }) {
       <p className="auth-switch">
         이미 계정이 있으신가요? <button type="button" onClick={onSwitchToLogin}>로그인</button>
       </p>
+
+      {openDocument && (
+        <LegalModal documentName={openDocument} onClose={() => setOpenDocument(null)} />
+      )}
     </AuthLayout>
   );
 }
