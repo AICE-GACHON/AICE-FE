@@ -28,7 +28,6 @@ export function toOnboardingPayload(answers) {
     purposes: [],
     // '직접 입력'은 옵션 값이 아니라 사용자가 친 문자열로 바꿔 보낸다.
     fields: answers.fields.map((f) => (f === 'custom' ? answers.fieldCustom : f)).filter(Boolean),
-    stage: answers.stage,
     venue: firstVenue === 'custom' ? answers.venueCustom : firstVenue,
     result_order: [],
   };
@@ -46,7 +45,6 @@ export function answersFromProfile(profile) {
   if (!profile) return answers;
 
   answers.userType = profile.user_type ?? null;
-  answers.stage = profile.stage ?? null;
   answers.onboardingId = profile.onboarding_id ?? null;
 
   const fields = [];

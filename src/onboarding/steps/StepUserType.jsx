@@ -29,8 +29,8 @@ export default function StepUserType({ answers, update }) {
         ))}
       </div>
 
-      <h3 className="onboard-subq" style={{ marginTop: 32 }}>
-        관심 있는 전공 분야는 무엇인가요? <span className="onboard-optional">최대 {FIELD_MAX_SELECT}개</span>
+      <h3 className="onboard-subq" style={{ marginTop: 28 }}>
+        전공 분야가 무엇인가요? <span className="onboard-optional">최대 {FIELD_MAX_SELECT}개</span>
       </h3>
       <div className="onboard-options">
         {FIELD_OPTIONS.map((opt) => {

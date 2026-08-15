@@ -8,7 +8,6 @@ export const emptyAnswers = () => ({
   recencyBias: null,
   fields: [],
   fieldCustom: '',
-  stage: null,
   venues: [],
   venueCustom: '',
   onboardingId: null, // POST /api/onboarding 성공 시 채워짐 — 회원가입 요청에 실어 보내 계정에 연결한다

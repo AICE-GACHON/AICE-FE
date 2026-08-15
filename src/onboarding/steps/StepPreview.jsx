@@ -52,7 +52,8 @@ export default function StepPreview({ answers, onExit, onCreateAccount, onLogin 
             </div>
             <div>
               <span className="onboard-summary-key">검색 우선순위</span>
-              <span className="onboard-summary-val">{focusText} · {recencyText}</span>
+              <span className="onboard-summary-val" style={{ display: 'block' }}>관점: {focusText}</span>
+              <span className="onboard-summary-val" style={{ display: 'block' }}>경향: {recencyText}</span>
             </div>
             <div>
               <span className="onboard-summary-key">목표 학회</span>

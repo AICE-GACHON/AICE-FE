@@ -5,8 +5,10 @@ import { toOnboardingPayload, answersFromProfile } from '../../onboarding/profil
 import { saveAnswers } from '../../onboarding/sessionState';
 import {
   USER_TYPE_OPTIONS,
-  FIELD_OPTIONS, FIELD_MAX_SELECT, STAGE_OPTIONS, VENUE_OPTIONS,
-  userTypeLabel, fieldLabel, stageLabel, venueLabel,
+  FIELD_OPTIONS, FIELD_MAX_SELECT,
+  SIMILARITY_FOCUS_OPTIONS, RECENCY_BIAS_OPTIONS,
+  VENUE_OPTIONS,
+  userTypeLabel, fieldLabel, similarityFocusLabel, recencyBiasLabel, venueLabel,
 } from '../../onboarding/onboardingData';
 
 const Blank = () => <span className="mypage-blank">답하지 않음</span>;
@@ -132,6 +134,11 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
   // 서버가 venue를 하나만 들고 있어서(profileMapping.js) 화면도 첫 항목만 다룬다.
   const firstVenue = shown?.venues?.[0] ?? null;
   const venueName = firstVenue === 'custom' ? shown.venueCustom : venueLabel(firstVenue);
+  // similarityFocus·recencyBias는 아직 서버에 없는 값이다(백엔드 미연결) — 그래서
+  // shown에도 항상 null로 온다. 답 안 한 것과 "균형있게"를 고른 것이 결과적으로
+  // 같으므로, 없으면 균형있게로 보여준다(다른 항목처럼 "답하지 않음"으로 두지 않는다).
+  const focusText = similarityFocusLabel(shown?.similarityFocus) || '균형있게';
+  const recencyText = recencyBiasLabel(shown?.recencyBias) || '균형있게';
 
   return (
     <div className="wr-card upload-card" style={{ marginTop: 16 }}>
@@ -139,7 +146,7 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
         <div>
           <div className="wr-card-title">온보딩 답변</div>
           <p className="wr-muted" style={{ marginTop: 4 }}>
-            분석 결과를 무엇부터 보여줄지 정하는 데 쓰여요.
+            프로필로 저장되고, 유사 논문을 찾을 때 참고할 기준으로도 쓰여요.
           </p>
         </div>
         {!editing && status !== 'loading' && status !== 'error' && (
@@ -167,8 +174,8 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
       {!editing && status === 'ready' && (
         <div className="mypage-list" style={{ marginTop: 12 }}>
           <Row label="사용자 유형">{userTypeLabel(shown.userType) || <Blank />}</Row>
-          <Row label="관심 분야"><Tags values={fieldNames} /></Row>
-          <Row label="진행 단계">{stageLabel(shown.stage) || <Blank />}</Row>
+          <Row label="전공 분야"><Tags values={fieldNames} /></Row>
+          <Row label="검색 우선순위">관점: {focusText} · 경향: {recencyText}</Row>
           <Row label="목표 학회">{venueName || <Blank />}</Row>
         </div>
       )}
@@ -181,7 +188,7 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
             value={draft.userType} onChange={(v) => patch({ userType: v })}
           />
           <MultiChoice
-            label="관심 분야" options={FIELD_OPTIONS} max={FIELD_MAX_SELECT}
+            label="전공 분야" options={FIELD_OPTIONS} max={FIELD_MAX_SELECT}
             values={draft.fields} onChange={(v) => patch({ fields: v })}
           />
           {draft.fields.includes('custom') && (
@@ -189,14 +196,20 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
               className="auth-input mypage-custom-input"
               value={draft.fieldCustom}
               onChange={(e) => patch({ fieldCustom: e.target.value })}
-              placeholder="관심 분야를 직접 입력해 주세요"
+              placeholder="전공 분야를 직접 입력해 주세요"
               maxLength={100}
             />
           )}
 
+          {/* similarityFocus·recencyBias는 백엔드에 아직 저장 필드가 없어서, 여기서
+              골라도 "저장" 이후 응답엔 안 담겨 온다 — 저장하면 균형있게로 되돌아간다. */}
           <SingleChoice
-            label="진행 단계" options={STAGE_OPTIONS}
-            value={draft.stage} onChange={(v) => patch({ stage: v })}
+            label="관점" options={SIMILARITY_FOCUS_OPTIONS}
+            value={draft.similarityFocus} onChange={(v) => patch({ similarityFocus: v })}
+          />
+          <SingleChoice
+            label="경향" options={RECENCY_BIAS_OPTIONS}
+            value={draft.recencyBias} onChange={(v) => patch({ recencyBias: v })}
           />
 
           <SingleChoice

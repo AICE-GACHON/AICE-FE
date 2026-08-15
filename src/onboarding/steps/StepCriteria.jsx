@@ -5,10 +5,18 @@ import { VENUE_OPTIONS } from '../onboardingData';
 // (분야는 코퍼스에 태그가 없어 검색에 못 쓰고, 단계는 어디에도 안 쓰였다).
 // 목표 학회(venue)만 남긴다 — 코퍼스를 다른 학회로 확장할 계획이 있어서다.
 export default function StepCriteria({ answers, update }) {
+  // "아직 결정하지 않음"은 다른 학회와 같이 고르면 의미가 모순된다 — 서로 배타적으로 둔다.
   const toggleVenue = (value) => {
     const has = answers.venues.includes(value);
+
+    if (value === 'undecided') {
+      update({ venues: has ? [] : ['undecided'] });
+      return;
+    }
+
+    const withoutUndecided = answers.venues.filter((v) => v !== 'undecided');
     update({
-      venues: has ? answers.venues.filter((v) => v !== value) : [...answers.venues, value],
+      venues: has ? withoutUndecided.filter((v) => v !== value) : [...withoutUndecided, value],
     });
   };
 

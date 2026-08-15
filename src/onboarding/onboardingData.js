@@ -40,8 +40,8 @@ export const SIMILARITY_FOCUS_OPTIONS = [
 // hybrid_search.py의 고정 가중치(유사도 0.35 · 최신성 0.45 · 인용도 0.20) 중
 // 최신성·인용도 비중을 유저가 조절하는 것. 마찬가지로 백엔드 연결은 아직.
 export const RECENCY_BIAS_OPTIONS = [
-  { value: 'recent', label: '최신 트렌드 위주' },
-  { value: 'cited', label: '검증된(인용 많은) 논문 위주' },
+  { value: 'recent', label: '최신 트렌드 논문' },
+  { value: 'cited', label: '검증된(인용 많은) 논문' },
   { value: 'balanced', label: '균형있게' },
 ];
 
@@ -57,20 +57,10 @@ export const FIELD_OPTIONS = [
   { value: 'social_science', label: '경제·경영·사회과학' },
   { value: 'humanities', label: '인문학' },
   { value: 'arts_design', label: '예술·디자인' },
-  { value: 'unsure', label: '아직 잘 모르겠음' },
   { value: 'custom', label: '직접 입력' },
 ];
 
 export const FIELD_MAX_SELECT = 2;
-
-export const STAGE_OPTIONS = [
-  { value: 'idea', label: '아이디어를 정리하는 단계' },
-  { value: 'abstract', label: '초록만 작성한 단계' },
-  { value: 'draft', label: '논문 초안을 작성 중' },
-  { value: 'pre_submit', label: '투고 직전' },
-  { value: 'revising', label: '리뷰를 받고 수정 중' },
-  { value: 'studying', label: '기존 논문을 공부하는 중' },
-];
 
 export const VENUE_OPTIONS = [
   { value: 'iclr', label: 'ICLR' },
@@ -89,5 +79,4 @@ export const userTypeLabel = (value) => USER_TYPE_OPTIONS.find((o) => o.value ==
 export const similarityFocusLabel = (value) => SIMILARITY_FOCUS_OPTIONS.find((o) => o.value === value)?.label ?? '';
 export const recencyBiasLabel = (value) => RECENCY_BIAS_OPTIONS.find((o) => o.value === value)?.label ?? '';
 export const fieldLabel = (value) => FIELD_OPTIONS.find((o) => o.value === value)?.label ?? '';
-export const stageLabel = (value) => STAGE_OPTIONS.find((o) => o.value === value)?.label ?? '';
 export const venueLabel = (value) => VENUE_OPTIONS.find((o) => o.value === value)?.label ?? '';
