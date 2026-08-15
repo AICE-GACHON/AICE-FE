@@ -632,6 +632,18 @@
 .wr-review-part{margin-top:10px;}
 .wr-review-part p{margin:4px 0 0;font-size:13px;line-height:1.7;white-space:pre-wrap;}
 
+.wr-review-translate{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.wr-translate-btn{
+  padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;
+  color:var(--teal-deep);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:background .15s ease,border-color .15s ease;
+}
+.wr-translate-btn:hover:not(:disabled){background:var(--teal-soft);border-color:var(--teal-deep);}
+.wr-translate-btn.is-on{background:var(--teal-soft);border-color:var(--teal-deep);}
+.wr-translate-btn:disabled{opacity:.6;cursor:default;}
+.wr-translate-note{font-size:11.5px;color:var(--muted);}
+.wr-translate-error{font-size:11.5px;color:#b4341f;}
+
 .wr-review.is-detail .wr-review-head{
   padding:10px 8px 10px 0;border-radius:8px;transition:background .15s ease;
 }
