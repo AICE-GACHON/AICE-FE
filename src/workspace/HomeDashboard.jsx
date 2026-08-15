@@ -113,13 +113,7 @@ export default function HomeDashboard() {
 
       <main className="home-main">
         <div className="home-main-inner">
-          <div className="home-main-head">
-            <h1 className="home-main-title">새로운 논문 분석하기</h1>
-            <p className="home-main-sub">
-              논문 PDF를 올리면 <b>비슷한 논문들이 실제로 어떤 리뷰를 받았는지</b> 보여드려요.
-            </p>
-          </div>
-          <UploadPage embedded />
+          <UploadPage />
         </div>
       </main>
     </div>
