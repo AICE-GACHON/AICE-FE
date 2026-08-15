@@ -18,7 +18,7 @@ export default function Hero() {
         {loading ? null : authed ? (
           // 로그인 상태면 "Log in"·"Get started free" 둘 다 말이 안 된다(이미
           // 로그인했고 이미 시작했다) — 할 일이 하나뿐이니 버튼도 하나만 둔다.
-          <Link to="/app/upload" className="pill btn-lg">Analyze your paper <span>→</span></Link>
+          <Link to="/app" className="pill btn-lg">Analyze your paper <span>→</span></Link>
         ) : (
           <>
             <Link to="/onboarding" className="pill btn-lg">Get started free <span>→</span></Link>

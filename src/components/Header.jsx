@@ -28,7 +28,7 @@ export default function Header() {
             <>
               {/* 로그아웃은 이동이 아니라 즉시 실행되는 동작이라 버튼이다 — 링크가 아니다. */}
               <button type="button" className="txt-link" onClick={() => signOut()}>Log out</button>
-              <Link to="/app/upload" className="pill">Analyze your paper <span>→</span></Link>
+              <Link to="/app" className="pill">Analyze your paper <span>→</span></Link>
             </>
           ) : (
             <>

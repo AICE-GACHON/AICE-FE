@@ -19,7 +19,7 @@ import ResultReport from './workspace/ResultReport';
 import MyPage from './workspace/MyPage';
 import PapersPage from './workspace/PapersPage';
 import { useAnalysis } from './workspace/analysisContext';
-import { getAnalysis } from './api/submissions';
+import { getAnalysis, listSubmissions } from './api/submissions';
 import BodyDiffTest from './dev/BodyDiffTest';
 import { RequireAuth, RedirectIfAuthed } from './auth/guards';
 import { useAuth } from './auth/authContext';
@@ -246,6 +246,42 @@ function PastAnalysisRoute() {
   );
 }
 
+// /app의 기본 진입점(이슈 #26). 예전엔 무조건 업로드 폼으로 넘겼지만, 사용자는
+// 두 부류다 — 처음 온 사람은 업로드 폼이 맞고, 이미 분석한 게 있는 재방문자는
+// 그 결과("내 논문")부터 보고 싶다. 그래서 먼저 이력이 있는지 물어 갈림길을 만든다:
+//   이력 있으면 → /app/papers, 없으면 → /app/upload.
+//
+// 헤더의 "새로운 논문 분석하기"는 이 분기를 타지 않고 늘 /app/upload로 간다
+// (WorkspaceLayout.onGoUpload) — "기본 진입점"과 "새로 시작 버튼"의 목적지는 다르다.
+//
+// 목록 조회가 실패해도(네트워크·서버 오류) 업로드 폼으로 보낸다 — 이력이 없어도
+// 늘 뜻이 있는 안전한 기본값이라서다. 분기 판단 때문에 진입 직후 짧은 로딩이 한 번
+// 생기는데, 그 대신 재방문자가 매번 업로드 폼을 거쳐 "분석 이력"을 또 눌러야 하던
+// 불필요한 단계가 사라진다.
+function AppEntry() {
+  const [target, setTarget] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    listSubmissions()
+      .then((subs) => {
+        if (alive) setTarget(Array.isArray(subs) && subs.length > 0 ? '/app/papers' : '/app/upload');
+      })
+      .catch(() => { if (alive) setTarget('/app/upload'); });
+    return () => { alive = false; };
+  }, []);
+
+  if (target === null) {
+    return (
+      <div className="story-loading">
+        <div className="story-spinner" />
+        <p className="wr-muted">불러오는 중…</p>
+      </div>
+    );
+  }
+  return <Navigate to={target} replace />;
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -261,7 +297,7 @@ export default function AppRoutes() {
       <Route path="/reset-password" element={<ResetPasswordRoute />} />
 
       <Route path="/app" element={<RequireAuth><WorkspaceLayout /></RequireAuth>}>
-        <Route index element={<Navigate to="/app/upload" replace />} />
+        <Route index element={<AppEntry />} />
         <Route path="upload" element={<UploadPage />} />
         <Route path="report" element={<ReportRoute />} />
         <Route path="report/:paperId" element={<ReportRoute />} />

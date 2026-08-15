@@ -23,7 +23,9 @@ import CtaBand from './components/CtaBand';
 import Footer from './components/Footer';
 
 const SKIP_LANDING_KEY = 'paper-trace:skip_landing';
-const APP_HOME = '/app/upload';
+// 앱의 기본 진입점. 업로드 폼을 직접 가리키지 않고 /app에 맡긴다 — 거기서 분석
+// 이력 유무로 업로드 폼/내 논문을 갈라 준다(routes.jsx의 AppEntry, 이슈 #26).
+const APP_HOME = '/app';
 
 function hasSkipPreference() {
   try {
