@@ -54,13 +54,45 @@ export async function startAnalysis(submissionId) {
   return authorizedFetch(`/api/submissions/${submissionId}/analysis`, { method: 'POST' });
 }
 
+// mock 모드에서 폴링 횟수마다 돌려줄 진행 이벤트. 실제 서버가 내보내는 것과 같은
+// 모양이라(paper_assistant.schemas.ProgressEvent) 백엔드 없이도 단계 화면을
+// 그대로 확인할 수 있다. 한 번에 여러 건이 늘어나는 것도 진짜와 같다 — 폴링보다
+// 짧게 끝난 단계는 다음 응답에 몰아서 실려 온다.
+const MOCK_EVENT = (step, done, label, detail = null) => ({
+  step, done, label, detail, at: new Date().toISOString(),
+});
+
+// 준비(prepare) 단계를 일부러 한 틱 통째로 붙잡아 둔다 — 실제 서버에서 이 구간이
+// SPECTER2 로드라 30~60초씩 걸리고, 그동안 "모델을 불러오느라 시간이 걸려요"가
+// 화면에 떠 있는 유일한 설명이기 때문이다. 여기서 시작·끝을 한 틱에 몰아 보내면
+// 그 문구가 mock에서는 한 번도 보이지 않아, 정작 가장 오래 보일 화면을 못 만든다.
+const MOCK_PROGRESS_TICKS = [
+  [],
+  [MOCK_EVENT('prepare', false, '분석을 준비하고 있어요', '처음 한 번은 모델을 불러오느라 시간이 걸려요')],
+  [MOCK_EVENT('prepare', true, '준비를 마쳤어요'),
+   MOCK_EVENT('retrieval', false, '비슷한 논문을 찾고 있어요')],
+  [MOCK_EVENT('retrieval', true, '후보 50편을 찾았어요'),
+   MOCK_EVENT('rerank', false, '이 중에서 정말 비슷한 논문을 고르고 있어요')],
+  [MOCK_EVENT('rerank', true, '본문을 대조해 5편을 골랐어요'),
+   MOCK_EVENT('review_fetch', false, '고른 논문들이 받은 리뷰를 모으고 있어요')],
+  [MOCK_EVENT('review_fetch', true, '논문 5편의 리뷰 22건을 모았어요',
+              MOCK_REPORT.selected_papers?.[0]?.title ?? null),
+   MOCK_EVENT('synthesis', false, '모은 리뷰를 정리하고 있어요'),
+   MOCK_EVENT('synthesis', true, '정리를 마쳤어요')],
+];
+
 export async function getAnalysis(submissionId) {
   if (!BASE_URL) {
     const step = (mockProgress.get(submissionId) ?? 0) + 1;
     mockProgress.set(submissionId, step);
-    if (step < 2) return { submission_id: submissionId, status: 'pending', report: null };
-    if (step < 3) return { submission_id: submissionId, status: 'running', report: null };
-    return { submission_id: submissionId, status: 'done', report: MOCK_REPORT, explanation_source: 'stub' };
+    // 서버와 마찬가지로 **지금까지의 전체 목록**을 매번 돌려준다.
+    const progress = MOCK_PROGRESS_TICKS.slice(0, step).flat();
+    if (step < 2) return { submission_id: submissionId, status: 'pending', progress, report: null };
+    if (step < MOCK_PROGRESS_TICKS.length) {
+      return { submission_id: submissionId, status: 'running', progress, report: null };
+    }
+    return { submission_id: submissionId, status: 'done', progress, report: MOCK_REPORT,
+             explanation_source: 'stub' };
   }
   return authorizedFetch(`/api/submissions/${submissionId}/analysis`);
 }

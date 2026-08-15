@@ -6,6 +6,7 @@ import TourOverlay from './TourOverlay';
 import WorkspaceShell from './WorkspaceShell';
 import { AnalysisProvider } from './AnalysisProvider';
 import { useAuth } from '../auth/authContext';
+import ConsentBanner from '../legal/ConsentBanner';
 
 // 최초 시작인지는 기기(브라우저) 단위로 판단한다 — 백엔드에 계정별 "튜토리얼을 봤는지" 필드가
 // 없어서다(AICE-BE API 목록에 없음). 서버에 남기고 싶다면 별도 API 추가가 필요하다.
@@ -20,7 +21,7 @@ const hasSeenTour = () => {
 };
 
 export default function WorkspaceLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, setUser } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [showTour, setShowTour] = useState(() => !hasSeenTour());
@@ -74,6 +75,10 @@ export default function WorkspaceLayout() {
         onGoMyPage={() => navigate('/app/mypage')}
         onLogout={handleLogout}
       >
+        {/* === false로 비교한다. mock 모드(VITE_API_BASE_URL 미설정)에서는 user가
+            null이라, truthy 검사로 두면 백엔드 없이 화면만 보는 개발 중에 이
+            띠가 항상 떠 있게 된다. */}
+        {user?.consent_up_to_date === false && <ConsentBanner onAgreed={setUser} />}
         <Outlet />
       </WorkspaceShell>
     </AnalysisProvider>
