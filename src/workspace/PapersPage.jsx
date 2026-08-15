@@ -17,7 +17,9 @@ function formatDate(iso) {
   });
 }
 
-export default function PapersPage() {
+// embedded=true면 홈 대시보드 칸 안에 얹힌 상태다 — 그 경우 "← 돌아가기"와
+// 자체 제목/설명은 감춘다(대시보드 칸이 제목·전체보기 링크를 대신 갖는다).
+export default function PapersPage({ embedded = false }) {
   const navigate = useNavigate();
   const [state, setState] = useState({ status: 'loading', submissions: [], error: '' });
   // 삭제는 되돌릴 수 없다(FK CASCADE로 분석 결과까지 같이 지워진다) — 누르자마자
@@ -59,12 +61,18 @@ export default function PapersPage() {
       {/* 종합 리뷰·상세 화면에서 "← 분석 이력으로"를 눌러 여기 들어온 경우,
           그 화면으로 되짚어 갈 방법이 없었다 — navigate(-1)로 왔던 곳(리포트든
           업로드 화면이든)을 그대로 돌려준다. */}
-      <button type="button" className="onboard-back" onClick={() => navigate(-1)}>← 돌아가기</button>
+      {!embedded && (
+        <button type="button" className="onboard-back" onClick={() => navigate(-1)}>← 돌아가기</button>
+      )}
       <div className="wr-card upload-card">
-        <div className="wr-card-title">분석 이력</div>
-        <p className="wr-muted" style={{ marginTop: 4 }}>
-          분석시켰던 논문들이에요. 눌러서 그때 받은 결과를 다시 볼 수 있어요.
-        </p>
+        {!embedded && (
+          <>
+            <div className="wr-card-title">분석 이력</div>
+            <p className="wr-muted" style={{ marginTop: 4 }}>
+              분석시켰던 논문들이에요. 눌러서 그때 받은 결과를 다시 볼 수 있어요.
+            </p>
+          </>
+        )}
 
         {state.status === 'loading' && (
           <p className="wr-muted" style={{ marginTop: 16 }}>불러오는 중…</p>

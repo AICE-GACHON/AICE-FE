@@ -283,12 +283,26 @@ function AppEntry() {
   return <Navigate to={target} replace />;
 }
 
-// 홈("/")은 로그인 여부로 갈린다 — 이미 회원가입해서 로그인한 사람에게는 마케팅
-// 랜딩이 아니라 대시보드 홈(HomeDashboard)을 준다. 게스트/로그인 전에는 지금까지처럼
-// 마케팅 랜딩(LandingPage)을 보여준다. 세션 확인 중에는 어느 쪽으로도 단정하지 않고
-// 잠깐 로딩만 둔다 — 여기서 랜딩을 먼저 그리면 그 안의 authed 처리가 먼저 돌아버린다.
+// 홈("/")은 로그인 여부 + "이 기기에서 홈을 처음 보는가"로 갈린다.
+//   · 게스트/로그인 전         → 마케팅 랜딩(LandingPage)
+//   · 로그인했지만 첫 방문(첫 로그인) → 마케팅 랜딩을 한 번 더 (환영 성격)
+//   · 로그인 + 재방문           → 대시보드 홈(HomeDashboard)
+// "첫 로그인"을 계정별로 아는 서버 필드가 없어, 기기 단위 플래그로 근사한다.
+const HOME_VISITED_KEY = 'paper-trace:home_visited';
+function hasVisitedHome() {
+  try { return localStorage.getItem(HOME_VISITED_KEY) === '1'; } catch { return false; }
+}
+function markHomeVisited() {
+  try { localStorage.setItem(HOME_VISITED_KEY, '1'); } catch { /* 저장 불가 — 다음에도 랜딩을 한 번 더 볼 뿐 */ }
+}
+
 function HomeRoute() {
   const { status } = useAuth();
+  // 첫 방문 여부는 렌더 중 한 번만 고정한다 — 아래 effect가 곧바로 플래그를
+  // 세우므로, 렌더 중에 다시 읽으면 첫 방문에도 대시보드로 튄다.
+  const [firstVisit] = useState(() => !hasVisitedHome());
+  useEffect(() => { if (status === 'authed') markHomeVisited(); }, [status]);
+
   if (status === 'loading') {
     return (
       <div className="story-loading">
@@ -297,8 +311,8 @@ function HomeRoute() {
       </div>
     );
   }
-  if (status === 'authed') return <HomeDashboard />;
-  return <LandingPage />;
+  if (status !== 'authed' || firstVisit) return <LandingPage />;
+  return <HomeDashboard />;
 }
 
 export default function AppRoutes() {

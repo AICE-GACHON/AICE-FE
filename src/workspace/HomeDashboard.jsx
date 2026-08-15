@@ -1,38 +1,32 @@
 // 로그인한(=이미 회원가입한) 사용자의 홈. 로그인 전·게스트가 보는 마케팅
 // 랜딩(LandingPage)과는 다른, "이미 서비스를 쓰는 사람의 대시보드"다.
-// routes.jsx의 HomeRoute가 로그인 여부로 이 화면과 랜딩을 가른다.
+// 첫 로그인은 랜딩을 한 번 보여주고, 그다음부터 이 화면을 준다(routes.jsx HomeRoute).
 //
-// 세 칸으로 나뉜다:
-//   · 새로운 논문 분석하기 → PDF 업로드 폼(/app/upload)
-//   · 분석 이력 → 실제 내 제출 목록(미리보기) + 전체는 /app/papers
-//   · 마이페이지 → 계정 요약 + 전체 설정은 /app/mypage
-import { useEffect, useState } from 'react';
+// 세 칸:
+//   · 새로운 논문 분석하기 → PDF 업로드 폼(/app/upload)으로 이동
+//   · 분석 이력 → PapersPage를 통째로 임베드(embedded 모드)
+//   · 마이페이지 → MyPage를 통째로 임베드(embedded 모드)
+// 임베드된 화면은 각자 자기 데이터를 불러오고 저장/삭제까지 그대로 동작한다.
 import { Link, useNavigate } from 'react-router-dom';
 import BrandMark from '../components/BrandMark';
 import Footer from '../components/Footer';
 import { useAuth } from '../auth/authContext';
-import { listSubmissions } from '../api/submissions';
-
-const HISTORY_PREVIEW = 4;
-
-function formatDate(iso) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-}
+import PapersPage from './PapersPage';
+import MyPage from './MyPage';
+import { clearTokens } from '../api/tokenStorage';
+import { clearAnswers } from '../onboarding/sessionState';
 
 export default function HomeDashboard() {
-  const { user, signOut } = useAuth();
+  const { user, setUser, signOut } = useAuth();
   const navigate = useNavigate();
-  const [history, setHistory] = useState({ status: 'loading', items: [] });
 
-  useEffect(() => {
-    let alive = true;
-    listSubmissions()
-      .then((data) => { if (alive) setHistory({ status: 'ready', items: Array.isArray(data) ? data : [] }); })
-      .catch(() => { if (alive) setHistory({ status: 'error', items: [] }); });
-    return () => { alive = false; };
-  }, []);
+  // 탈퇴 직후 처리는 MyPageRoute(routes.jsx)와 같은 이유로 하드 이동한다 —
+  // 계정이 사라졌으면 메모리에 남은 것도 같이 버리는 게 맞다.
+  const handleAccountDeleted = () => {
+    clearTokens();
+    clearAnswers();
+    window.location.replace('/');
+  };
 
   return (
     <div className="home-dash">
@@ -47,50 +41,37 @@ export default function HomeDashboard() {
       <main className="home-dash-grid wrap">
         {/* 새로운 논문 분석하기 → 업로드 폼 */}
         <button type="button" className="home-panel home-panel-new" onClick={() => navigate('/app/upload')}>
-          <div className="home-panel-title">새로운 논문 분석하기</div>
-          <p className="home-panel-desc">PDF를 올리면 비슷한 논문과 그 리뷰·결과를 분석해 드려요.</p>
+          <div>
+            <div className="home-panel-title">새로운 논문 분석하기</div>
+            <p className="home-panel-desc">PDF를 올리면 비슷한 논문과 그 리뷰·결과를 분석해 드려요.</p>
+          </div>
           <span className="home-panel-cta">업로드하러 가기 <span aria-hidden="true">→</span></span>
         </button>
 
-        {/* 분석 이력 — 실제 제출 목록 미리보기 */}
-        <section className="home-panel home-panel-history">
+        {/* 분석 이력 — PapersPage 통째 임베드 */}
+        <section className="home-panel home-panel-embed home-panel-history">
           <div className="home-panel-head">
             <div className="home-panel-title">분석 이력</div>
-            <Link to="/app/papers" className="txt-link home-panel-more">전체 보기 →</Link>
+            <Link to="/app/papers" className="txt-link home-panel-more">전체 화면 →</Link>
           </div>
-          {history.status === 'loading' && <p className="home-panel-empty">불러오는 중…</p>}
-          {history.status === 'error' && <p className="home-panel-empty">이력을 불러오지 못했어요.</p>}
-          {history.status === 'ready' && (
-            history.items.length > 0 ? (
-              <ul className="home-history-list">
-                {history.items.slice(0, HISTORY_PREVIEW).map((s) => (
-                  <li key={s.submission_id}>
-                    <button
-                      type="button"
-                      className="home-history-item"
-                      onClick={() => navigate(`/app/papers/${s.submission_id}`)}
-                    >
-                      <span className="home-history-title">{s.title || '제목 없음'}</span>
-                      <span className="wr-muted">{formatDate(s.created_at)}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="home-panel-empty">아직 분석한 논문이 없어요. 논문을 올려 보면 여기 쌓여요.</p>
-            )
-          )}
+          <div className="home-embed-scroll">
+            <PapersPage embedded />
+          </div>
         </section>
 
-        {/* 마이페이지 — 계정 요약 */}
-        <section className="home-panel home-panel-mypage">
+        {/* 마이페이지 — MyPage 통째 임베드 */}
+        <section className="home-panel home-panel-embed home-panel-mypage">
           <div className="home-panel-head">
             <div className="home-panel-title">마이페이지</div>
-            <Link to="/app/mypage" className="txt-link home-panel-more">설정 열기 →</Link>
+            <Link to="/app/mypage" className="txt-link home-panel-more">전체 화면 →</Link>
           </div>
-          <div className="home-mypage-summary">
-            <div className="home-mypage-row"><span className="wr-muted">닉네임</span><b>{user?.nickname || '—'}</b></div>
-            <div className="home-mypage-row"><span className="wr-muted">이메일</span><span>{user?.email || '—'}</span></div>
+          <div className="home-embed-scroll">
+            <MyPage
+              embedded
+              user={user}
+              onUserChange={setUser}
+              onAccountDeleted={handleAccountDeleted}
+            />
           </div>
         </section>
       </main>
