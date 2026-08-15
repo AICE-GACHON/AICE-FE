@@ -88,10 +88,16 @@ export default function ReviewBlock({ review, index, detailMode = false, open: c
     setProgress(0);
     try {
       const targets = TRANSLATABLE_FIELDS.filter((f) => review[f]);
-      const results = await Promise.all(
-        targets.map((f) => translateToKorean(review[f], { onProgress: setProgress })),
-      );
-      setTranslated(Object.fromEntries(targets.map((f, i) => [f, results[i]])));
+      // 한 번에 하나씩 부른다. 예전엔 Promise.all로 네 필드를 동시에 던졌는데,
+      // 모델을 막 내려받은 직후에는 그중 하나가 "아직 준비 안 됨"으로 실패하고
+      // Promise.all은 하나만 실패해도 전체를 실패로 떨어뜨렸다(첫 시도는 실패,
+      // 다시 누르면 성공하는 증상의 원인). 순서대로 부르면 첫 호출이 다운로드와
+      // 재시도를 다 흡수하고, 나머지는 준비된 번역기를 그대로 쓴다.
+      const out = {};
+      for (const f of targets) {
+        out[f] = await translateToKorean(review[f], { onProgress: setProgress });
+      }
+      setTranslated(out);
       setShowKorean(true);
       setStatus('idle');
     } catch {
@@ -139,8 +145,13 @@ export default function ReviewBlock({ review, index, detailMode = false, open: c
                     : '번역 중…')
                   : (showKorean ? '영어 원문 보기' : '한국어로 번역')}
               </button>
+              {/* "어색할 수 있다"로는 부족하다 — 실측에서 긴 문장의 뒷절이 통째로
+                  누락돼 리뷰어의 판단 근거가 사라진 적이 있다. 어투 문제가 아니라
+                  내용이 빠질 수 있다는 걸 밝혀야 원문을 확인하게 된다. */}
               {showKorean && (
-                <span className="wr-translate-note">기계 번역이라 용어가 어색할 수 있어요</span>
+                <span className="wr-translate-note">
+                  기계 번역이라 내용이 빠질 수 있어요 — 중요한 판단은 원문으로 확인하세요
+                </span>
               )}
               {status === 'error' && (
                 <span className="wr-translate-error">번역에 실패했어요. 잠시 후 다시 시도해 주세요.</span>
