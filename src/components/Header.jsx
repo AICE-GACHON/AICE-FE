@@ -16,12 +16,13 @@ export default function Header() {
     <header>
       <nav>
         <Link to="/" className="brand"><BrandMark />PAIR</Link>
+        {/* 페이지 아래 섹션들로 순서대로 스크롤한다. 라벨은 각 섹션 내용에 맞춘다. */}
         <div className="navlinks">
-          <a href="#features">Product <span className="chev">▾</span></a>
-          <a href="#process">Use Cases <span className="chev">▾</span></a>
-          <a href="#scope">Conferences <span className="chev">▾</span></a>
-          <a href="#pricing">Pricing</a>
-          <a href="#simulator">Resources <span className="chev">▾</span></a>
+          <a href="#problem">Why PAIR</a>
+          <a href="#simulator">Live demo</a>
+          <a href="#process">How it works</a>
+          <a href="#features">Our approach</a>
+          <a href="#pricing">Get started</a>
         </div>
         <div className="navright">
           {loading ? null : authed ? (

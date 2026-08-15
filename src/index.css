@@ -58,6 +58,8 @@ img,svg{display:block;}
 
 /* ---------- NAV ---------- */
 header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+/* 상단 nav 링크로 섹션에 스크롤할 때, sticky 헤더에 가리지 않게 지점을 내려 잡는다. */
+#problem,#simulator,#process,#features,#pricing{scroll-margin-top:80px;}
 nav{display:flex;align-items:center;gap:36px;padding:16px 32px;max-width:1180px;margin:0 auto;}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:-0.01em;margin-right:8px;}
 .mark{width:30px;height:30px;border-radius:22%;background:var(--teal-deep);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;font-family:var(--mono);flex:0 0 auto;}
@@ -326,15 +328,17 @@ footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
 :focus-visible{outline:2px solid var(--teal);outline-offset:3px;}
 
 /* ---------- 로그인 회원 홈 (ChatGPT식: 왼쪽 사이드바 + 중앙 업로드) ---------- */
-.home-chat{display:flex;min-height:100vh;background:var(--bg);}
+.home-chat{display:flex;min-height:100vh;background:var(--bg);overflow-x:hidden;}
 
-/* 왼쪽 사이드바 */
+/* 왼쪽 사이드바 — 접을 땐 margin-left로 왼쪽으로 슬라이드해 빠지고, 그만큼
+   가운데가 넓어진다(display:none은 툭 끊겨서 안 쓴다). */
 .home-side{
   flex:0 0 284px;width:284px;display:flex;flex-direction:column;gap:16px;
   height:100vh;position:sticky;top:0;overflow:hidden;
   padding:18px 14px;background:#f8f9f8;border-right:1px solid var(--line);
+  transition:margin-left .28s cubic-bezier(.4,0,.2,1);
 }
-.home-chat.is-collapsed .home-side{display:none;}
+.home-chat.is-collapsed .home-side{margin-left:-284px;}
 .home-side-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px;}
 .home-side-brand{font-size:17px;letter-spacing:-0.01em;}
 .home-side-toggle,.home-side-open{
@@ -388,14 +392,13 @@ footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
 /* 가운데 — 인사 한 줄 + 업로드 화면. margin:auto로 화면 정중앙(세로·가로)에 두고,
    내용이 뷰포트보다 길면 잘리지 않고 스크롤되게 한다. 카드 글자는 원래 크기 그대로,
    인사 문구만 조금 크게 둔다. */
+/* 내용은 사이드바 오른쪽 "흰색(메인) 영역" 기준으로 가운데 정렬한다(화면 전체
+   기준 X). margin:auto가 이 영역 안에서 세로·가로 중앙에 두고, 길면 스크롤한다. */
 .home-main{flex:1;min-width:0;display:flex;padding:40px 24px;overflow-y:auto;}
-/* 사이드바가 열려 있으면 오른쪽에 사이드바 폭(284px)만큼 여백을 더해, 내용이
-   사이드바 너머(오른쪽 치우침)가 아니라 화면 정중앙에 오게 한다. 접으면 전체 폭 정중앙. */
-.home-chat:not(.is-collapsed) .home-main{padding-right:calc(24px + 284px);}
 .home-main-inner{width:100%;max-width:600px;margin:auto;}
 .home-greeting{text-align:center;font-size:28px;font-weight:600;letter-spacing:-0.01em;color:var(--ink);margin-bottom:26px;}
 
 @media (max-width:760px){
   .home-side{position:fixed;z-index:65;box-shadow:0 0 40px rgba(0,0,0,0.15);}
-  .home-main,.home-chat:not(.is-collapsed) .home-main{padding:40px 16px;}
+  .home-main{padding:40px 16px;}
 }

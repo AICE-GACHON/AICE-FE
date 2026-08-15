@@ -11,7 +11,12 @@ export default function WorkspaceShell({ user, onGoHome, onLogout, children }) {
           <BrandMark size={26} />PAIR
         </button>
         <div className="workspace-topbar-right">
-          {user?.nickname && <span className="workspace-user">{user.nickname} 님</span>}
+          {user?.nickname && (
+            <span className="workspace-user">
+              <span className="workspace-avatar">{user.nickname.charAt(0)}</span>
+              {user.nickname} 님
+            </span>
+          )}
           <button type="button" className="txt-link" onClick={onLogout}>로그아웃</button>
         </div>
       </div>
