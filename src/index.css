@@ -385,9 +385,10 @@ footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
 .home-side-user-name{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .home-side-logout{font-size:12.5px;color:var(--muted);align-self:flex-start;padding:4px 10px;}
 
-/* 가운데 — 원래 업로드 화면 그대로 (제목·그림자 없이) */
+/* 가운데 — 인사 한 줄 + 원래 업로드 화면 그대로 (진한 제목·그림자 없이) */
 .home-main{flex:1;min-width:0;display:flex;justify-content:center;padding:56px 24px;overflow-y:auto;}
 .home-main-inner{width:100%;max-width:600px;}
+.home-greeting{text-align:center;font-size:24px;font-weight:600;letter-spacing:-0.01em;color:var(--ink);margin-bottom:26px;}
 
 @media (max-width:760px){
   .home-side{position:fixed;z-index:65;box-shadow:0 0 40px rgba(0,0,0,0.15);}

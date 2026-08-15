@@ -113,6 +113,7 @@ export default function HomeDashboard() {
 
       <main className="home-main">
         <div className="home-main-inner">
+          <p className="home-greeting">어떤 논문을 분석해 볼까요?</p>
           <UploadPage />
         </div>
       </main>
