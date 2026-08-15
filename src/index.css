@@ -389,10 +389,13 @@ footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
    내용이 뷰포트보다 길면 잘리지 않고 스크롤되게 한다. 카드 글자는 원래 크기 그대로,
    인사 문구만 조금 크게 둔다. */
 .home-main{flex:1;min-width:0;display:flex;padding:40px 24px;overflow-y:auto;}
+/* 사이드바가 열려 있으면 오른쪽에 사이드바 폭(284px)만큼 여백을 더해, 내용이
+   사이드바 너머(오른쪽 치우침)가 아니라 화면 정중앙에 오게 한다. 접으면 전체 폭 정중앙. */
+.home-chat:not(.is-collapsed) .home-main{padding-right:calc(24px + 284px);}
 .home-main-inner{width:100%;max-width:600px;margin:auto;}
 .home-greeting{text-align:center;font-size:28px;font-weight:600;letter-spacing:-0.01em;color:var(--ink);margin-bottom:26px;}
 
 @media (max-width:760px){
   .home-side{position:fixed;z-index:65;box-shadow:0 0 40px rgba(0,0,0,0.15);}
-  .home-main{padding:40px 16px;}
+  .home-main,.home-chat:not(.is-collapsed) .home-main{padding:40px 16px;}
 }
