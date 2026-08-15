@@ -20,6 +20,7 @@ import ResultReport from './workspace/ResultReport';
 import MyPage from './workspace/MyPage';
 import PapersPage from './workspace/PapersPage';
 import { useAnalysis } from './workspace/analysisContext';
+import { AnalysisProvider } from './workspace/AnalysisProvider';
 import { getAnalysis, listSubmissions } from './api/submissions';
 import BodyDiffTest from './dev/BodyDiffTest';
 import { RequireAuth, RedirectIfAuthed } from './auth/guards';
@@ -316,7 +317,13 @@ function HomeRoute() {
 }
 
 export default function AppRoutes() {
+  // 분석 상태(AnalysisProvider)는 예전엔 WorkspaceLayout 안에만 있었다. 이제 홈
+  // 대시보드 중앙에서도 UploadPage로 바로 분석을 시작할 수 있어야 하고, 분석이
+  // 끝나면 analyze()가 /app/report로 옮겨 같은 report를 읽는다 — 홈과 /app가 같은
+  // Provider를 공유해야 그 report가 넘어간다. 그래서 라우터 전체를 감싼다(게스트
+  // 화면에서도 마운트되지만, 마운트만으로는 아무 요청도 하지 않아 무해하다).
   return (
+    <AnalysisProvider>
     <Routes>
       <Route path="/" element={<HomeRoute />} />
       {/* 랜딩의 "시작하기"는 /onboarding으로 온다. replace라서 1단계에서 뒤로가면 랜딩이다. */}
@@ -347,5 +354,6 @@ export default function AppRoutes() {
       {/* 없는 주소는 랜딩으로. replace라서 뒤로가기가 죽은 주소로 되돌아가지 않는다. */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </AnalysisProvider>
   );
 }
