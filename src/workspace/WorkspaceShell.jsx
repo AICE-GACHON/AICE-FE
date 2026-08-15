@@ -22,11 +22,13 @@ function NavLink({ label, section, active, onClick }) {
   );
 }
 
-export default function WorkspaceShell({ user, active, onGoUpload, onGoPapers, onGoMyPage, onLogout, children }) {
+export default function WorkspaceShell({ user, active, onGoHome, onGoUpload, onGoPapers, onGoMyPage, onLogout, children }) {
   return (
     <div className="workspace-shell">
       <div className="workspace-topbar">
-        <button type="button" className="onboard-brand" onClick={onGoUpload}>
+        {/* 로고는 홈(랜딩 첫 화면 /)으로 보낸다. 상단바의 "새로운 논문 분석하기"가
+            업로드 폼(/app/upload)을 따로 맡으므로 목적지가 겹치지 않는다. */}
+        <button type="button" className="onboard-brand" onClick={onGoHome}>
           <BrandMark size={26} />PAIR
         </button>
         <div className="workspace-topbar-right">

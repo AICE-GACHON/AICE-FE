@@ -15,7 +15,7 @@ export default function Header() {
   return (
     <header>
       <nav>
-        <div className="brand"><BrandMark />PAIR</div>
+        <Link to="/" className="brand"><BrandMark />PAIR</Link>
         <div className="navlinks">
           <a href="#features">Product <span className="chev">▾</span></a>
           <a href="#process">Use Cases <span className="chev">▾</span></a>

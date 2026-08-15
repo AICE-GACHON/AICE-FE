@@ -69,6 +69,7 @@ export default function WorkspaceLayout() {
       <WorkspaceShell
         user={user}
         active={active}
+        onGoHome={() => navigate('/')}
         onGoUpload={() => navigate('/app/upload')}
         onGoPapers={() => navigate('/app/papers')}
         onGoMyPage={() => navigate('/app/mypage')}
