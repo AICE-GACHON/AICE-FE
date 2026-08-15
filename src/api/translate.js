@@ -90,8 +90,123 @@ function getTranslator(onProgress) {
 // 원문이 키다 — 같은 문장은 어느 논문의 리뷰든 결과가 같다.
 const cache = new Map();
 
+async function attempt(text, onProgress) {
+  const translator = await getTranslator(onProgress);
+  return translator.translate(text);
+}
+
+async function translateOne(text, onProgress) {
+  try {
+    return await attempt(text, onProgress);
+  } catch {
+    // 모델을 막 내려받은 직후 첫 번역이 실패하는 걸 실측했다 — 그대로 다시
+    // 누르면 됐다. 다운로드는 끝났지만 번역기가 아직 못 쓰는 상태인 것으로
+    // 보인다. 사용자에게 실패를 보여주고 직접 다시 누르게 하는 대신, 번역기를
+    // 버리고 한 번만 조용히 다시 만들어 시도한다.
+    translatorPromise = null;
+    return attempt(text, onProgress);
+  }
+}
+
+// 문장 끝이 아닌 마침표가 학술 리뷰에는 널려 있다 — "et al.", "e.g.", "Fig. 3".
+// 이걸 문장 경계로 오해하면 조각이 엉뚱하게 잘려서 번역이 오히려 더 나빠진다.
+// 마침표로 끝나는 흔한 약어를 알고 있다가, 그런 조각은 다음 조각과 도로 붙인다.
+//
+// ⚠️ 숫자나 대문자 한 글자로 끝나는 경우는 **일부러 넣지 않았다.** "0.05" 같은
+// 소수는 마침표 뒤에 공백이 없어 애초에 잘리지 않고, "Table 1." · "Appendix B."는
+// 리뷰에서 문장을 끝내는 아주 흔한 형태다. 이걸 약어로 취급했더니 멀쩡한 두
+// 문장이 하나로 들러붙었다(실측).
+const ABBREV_END = /\b(?:et al|e\.g|i\.e|cf|vs|resp|approx|w\.r\.t|Fig|Eq|Sec|Tab|Ref|Alg|Thm|Def|Prop|Dr|Prof)\.$/i;
+
+function splitSentences(line) {
+  // 마침표·물음표·느낌표 뒤에 공백이 오는 자리를 문장 경계 후보로 본다.
+  const chunks = line.split(/(?<=[.!?])\s+/);
+  const sentences = [];
+  let buf = '';
+
+  for (const chunk of chunks) {
+    buf = buf ? `${buf} ${chunk}` : chunk;
+    if (ABBREV_END.test(buf)) continue;   // 약어로 끝났으면 아직 문장이 안 끝났다
+    sentences.push(buf);
+    buf = '';
+  }
+  if (buf) sentences.push(buf);
+  return sentences;
+}
+
+// 절(clause) 단위로 한 번 더 쪼개는 것도 시도했지만 **되돌렸다.** 긴 복문의
+// 뒷절이 사라지는 문제를 노렸는데, 그 절만 따로 떼어 넘겨도 누락은 그대로였고
+// (입력 길이 문제가 아니라 번역기가 "is tighter than the one reported in
+// <인용>" 구문 자체를 못 다룬다), 대신 퇴행이 생겼다 — "유도"가 "파생"이 되고
+// "정리 2"가 "Theorem 2"로 안 옮겨져 같은 화면 안에서 표기가 어긋났다.
+// 문장보다 잘게 쪼개면 문맥이 모자라 번역이 나빠진다는 쪽이 실측 결론이다.
+
+// 번역기가 ML 용어를 일상어로 옮겨버리는 걸 되돌린다. 실측에서 나온 것들이다 —
+// whitening을 화장품 "미백"으로, ablation을 외과 "절제"로, seed를 식물 "종자"로
+// 옮긴다. 어색한 정도가 아니라 읽는 사람이 딴 걸 떠올리는 오역이다.
+//
+// **일부러 보수적으로 골랐다.** 일상어로도 쓰이는 단어는 넣지 않았다. 특히
+// attention이 "주의"로 옮겨지는 게 이 코퍼스에서 제일 잦은데도 넣지 않았다 —
+// "주의"는 멀쩡한 한국어라, 무턱대고 바꾸면 진짜 '주의'를 말하는 문장을 망친다.
+// 여기 있는 것들은 ML 리뷰 맥락에서 다른 뜻으로 쓰일 일이 거의 없는 말들뿐이다.
+const GLOSSARY = [
+  ['미백', '화이트닝'],
+  ['절제', '애블레이션'],
+  ['종자', '시드'],
+  ['계급 증분', '클래스 증분'],
+  ['임베딩 규범', '임베딩 노름'],
+  ['재교육', '재학습'],
+  ['빡빡', '타이트'],
+];
+
+// ⚠️ 단어를 바꾸면 **뒤에 붙은 조사가 깨진다.** "절제가"를 그대로 치환하면
+// "애블레이션가"가 된다 — 받침이 생겼으니 "이"여야 한다. 백엔드가 같은 문제를
+// 같은 방식으로 푼다(query/narrative.py의 조사 선택).
+const PARTICLE_FORMS = [
+  ['이', '가'], ['은', '는'], ['을', '를'], ['과', '와'], ['으로', '로'],
+];
+const PARTICLE_RE = '(으로|로|이|가|은|는|을|를|과|와)?';
+
+function hasFinalConsonant(word) {
+  const code = word.charCodeAt(word.length - 1);
+  if (code < 0xAC00 || code > 0xD7A3) return null;   // 한글 음절이 아니면 판단 불가
+  return (code - 0xAC00) % 28 !== 0;
+}
+
+function pickParticle(word, particle) {
+  if (!particle) return '';
+  const final = hasFinalConsonant(word);
+  if (final === null) return particle;
+
+  for (const [withFinal, withoutFinal] of PARTICLE_FORMS) {
+    if (particle !== withFinal && particle !== withoutFinal) continue;
+    // "으로/로"만 예외다 — ㄹ 받침 뒤에는 받침이 있어도 "로"를 쓴다.
+    if (withFinal === '으로' && (word.charCodeAt(word.length - 1) - 0xAC00) % 28 === 8) {
+      return '로';
+    }
+    return final ? withFinal : withoutFinal;
+  }
+  return particle;
+}
+
+function fixTerms(text) {
+  return GLOSSARY.reduce((acc, [from, to]) => {
+    const re = new RegExp(from + PARTICLE_RE, 'g');
+    return acc.replace(re, (_, particle) => to + pickParticle(to, particle));
+  }, text);
+}
+
 /**
  * 영어 텍스트를 한국어로 옮긴다. 반드시 사용자 클릭 핸들러 안에서 부를 것.
+ *
+ * 긴 문단을 통째로 넘기지 않고 **문장 단위로 쪼개서** 번역한 뒤 도로 잇는다.
+ * 통째로 넘겼을 때 긴 복문의 뒷절이 통째로 사라지는 걸 실측했다("~보다 더
+ * 타이트하다"가 누락돼 칭찬의 근거가 없어졌다). 한 번에 넘기는 양이 작을수록
+ * 그 위험이 줄고, 브라우저가 거는 입력 한도에도 여유가 생긴다.
+ *
+ * ⚠️ 완화지 해결이 아니다. 기계번역인 이상 누락 가능성은 남으므로 원문 토글을
+ * 반드시 함께 제공해야 한다.
+ *
  * @param {string} text
  * @param {{onProgress?: (ratio: number) => void}} [opts]
  * @returns {Promise<string>}
@@ -100,8 +215,20 @@ export async function translateToKorean(text, { onProgress } = {}) {
   const hit = cache.get(text);
   if (hit !== undefined) return hit;
 
-  const translator = await getTranslator(onProgress);
-  const translated = await translator.translate(text);
+  // 리뷰 본문은 white-space:pre-wrap으로 그려진다(workspace.css). 줄바꿈이 곧
+  // 문단 구분이라 살려서 돌려줘야 한다 — 전부 한 줄로 이어붙이면 화면이 뭉갠다.
+  const out = [];
+  for (const line of text.split('\n')) {
+    if (!line.trim()) { out.push(line); continue; }
+
+    const parts = [];
+    for (const sentence of splitSentences(line)) {
+      parts.push(await translateOne(sentence, onProgress));
+    }
+    out.push(fixTerms(parts.join(' ')));
+  }
+
+  const translated = out.join('\n');
   cache.set(text, translated);
   return translated;
 }
