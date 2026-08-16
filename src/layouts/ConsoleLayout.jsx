@@ -5,15 +5,16 @@
 // 뒤다 — 홈에만 있으면 결과 화면에서 이력을 보려고 한 번 홈으로 나갔다가
 // 다시 들어와야 했다. 그래서 껍데기로 올려 /app 화면들이 같이 쓴다.
 //
-// 이력 목록과 접힘 상태는 이 컴포넌트가 들고 있다. 홈(/)과 /app은 서로 다른
-// 라우트라 옮겨 다니면 이 컴포넌트가 다시 마운트되고 상태도 초기화되는데,
-// 그 편이 맞다 — 목록은 그 사이 늘어났을 수 있고, 접어둔 건 그 화면에서의
-// 선택이다.
-import { useEffect, useMemo, useState } from 'react';
+// 접힘 상태는 이 컴포넌트가 들고 있다 — 홈(/)과 /app은 서로 다른 라우트라 옮겨
+// 다니면 다시 마운트되는데, 접어둔 건 그 화면에서의 선택이라 초기화되는 편이 맞다.
+// 이력 목록 자체는 SubmissionsProvider가 라우터 전체 위에서 들고 있다 — 분석
+// 이력 페이지(PapersPage)에서 지운 게 여기 사이드바에도 곧바로 반영되려면 두
+// 화면이 같은 배열을 봐야 하기 때문이다.
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import BrandMark from '@/components/BrandMark';
 import { useAuth } from '@/features/auth/authContext';
-import { listSubmissions } from '@/services/submissions';
+import { useSubmissionsHistory } from '@/features/workspace/submissionsContext';
 
 /** "2026-08-16" — 레일은 좁아서 시각까지 넣으면 제목이 밀린다. */
 function shortDate(iso) {
@@ -30,21 +31,13 @@ export default function ConsoleLayout({ children }) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [query, setQuery] = useState('');
-  const [history, setHistory] = useState({ status: 'loading', items: [] });
-
-  useEffect(() => {
-    let alive = true;
-    listSubmissions()
-      .then((data) => { if (alive) setHistory({ status: 'ready', items: Array.isArray(data) ? data : [] }); })
-      .catch(() => { if (alive) setHistory({ status: 'error', items: [] }); });
-    return () => { alive = false; };
-  }, []);
+  const { items, status } = useSubmissionsHistory();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return history.items;
-    return history.items.filter((s) => (s.title || '').toLowerCase().includes(q));
-  }, [history.items, query]);
+    if (!q) return items;
+    return items.filter((s) => (s.title || '').toLowerCase().includes(q));
+  }, [items, query]);
 
   const nickname = user?.nickname || '사용자';
 
@@ -79,12 +72,12 @@ export default function ConsoleLayout({ children }) {
         <div className="home-side-history">
           <div className="home-side-section">
             {/* 개수를 라벨에 붙인다 — 목록을 세지 않고도 이력이 몇 건인지 안다. */}
-            <span>분석 이력 · {history.items.length}</span>
+            <span>분석 이력 · {items.length}</span>
             <Link to="/app/papers" className="txt-link home-side-all">전체</Link>
           </div>
-          {history.status === 'loading' && <p className="home-side-empty">불러오는 중…</p>}
-          {history.status === 'error' && <p className="home-side-empty">불러오지 못했어요.</p>}
-          {history.status === 'ready' && (
+          {status === 'loading' && <p className="home-side-empty">불러오는 중…</p>}
+          {status === 'error' && <p className="home-side-empty">불러오지 못했어요.</p>}
+          {status === 'ready' && (
             filtered.length > 0 ? (
               <ul className="home-side-list">
                 {filtered.map((s) => (
