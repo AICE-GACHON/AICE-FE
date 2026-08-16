@@ -23,6 +23,7 @@ import { useAnalysis } from '@/features/workspace/analysisContext';
 import { AnalysisProvider } from '@/features/workspace/AnalysisProvider';
 import { getAnalysis, listSubmissions } from '@/services/submissions';
 import LegalPage from '@/features/legal/LegalPage';
+import SharedReportPage from '@/features/share/SharedReportPage';
 import BodyDiffTest from '@/dev/BodyDiffTest';
 import ReportPreview from '@/dev/ReportPreview';
 import TranslateTest from '@/dev/TranslateTest';
@@ -360,6 +361,13 @@ export default function AppRoutes() {
 
       <Route path="/terms" element={<LegalRoute documentName="terms" />} />
       <Route path="/privacy" element={<LegalRoute documentName="privacy" />} />
+
+      {/* 공유 링크. **가드를 걸지 않는다** — 로그인 없이 열리는 것이 이 화면의
+          존재 이유다(이슈 #30). 서버의 FRONTEND_BASE_URL이 만드는 주소가
+          `{origin}/shared/{token}`이므로 이 경로는 백엔드와의 약속이다.
+          바꾸려면 app/services/shares.py의 share_url()도 같이 바꿔야 하고,
+          그 전에 나간 링크는 되돌릴 수 없다. */}
+      <Route path="/shared/:token" element={<SharedReportPage />} />
 
       <Route path="/app" element={<RequireAuth><WorkspaceLayout /></RequireAuth>}>
         <Route index element={<AppEntry />} />
