@@ -396,8 +396,11 @@ footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
 .home-side-open:hover{background:var(--console-2);}
 /* 그 버튼은 position:fixed라 작업 영역 위에 겹쳐 앉는다 — 첫 줄인 띠의 라벨이
    그 아래 깔려 "PAPER DETAIL"이 "PER DETAIL"로 보였다. 버튼 오른쪽 끝(16+28=44px)을
-   지나도록 그 줄만 민다. 아래 카드까지 통째로 밀면 접은 이유(넓게 보기)가 무색해진다. */
-.home-chat.is-collapsed .ws-strip{padding-left:60px;}
+   지나도록 그 줄만 민다. 아래 카드까지 통째로 밀면 접은 이유(넓게 보기)가 무색해진다.
+   padding-top도 21px로 올린다 — 버튼은 top:16px+높이28px의 절반이라 세로 중심이
+   뷰포트 기준 30px인데, 띠 기본 padding-top(13px)으로는 라벨 중심이 23px이라
+   버튼과 7px 어긋났다(실측). 21px이면 23 + (21-13) = 31로 30px에 가장 가깝다. */
+.home-chat.is-collapsed .ws-strip{padding-left:60px;padding-top:21px;}
 
 /* 검색 (돋보기 아이콘 내장) */
 .home-side-search{position:relative;display:flex;align-items:center;}

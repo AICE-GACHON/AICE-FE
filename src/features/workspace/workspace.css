@@ -54,6 +54,16 @@
   font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--teal-deep);
 }
 .ws-strip-steps{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+/* ConsoleStrip.jsx가 슬래시+단계를 감싼 클래스 없는 <span> 하나하나 — 그게
+   .ws-strip-steps의 flex item이라 블록화되지만, 그 안의 .ws-strip-step 자신은
+   여전히 인라인이다. 인라인 요소는 getBoundingClientRect가 line-height가 아니라
+   글자 자체 높이(실측 15px)를 돌려주는데, 옆의 .ws-strip-label은 flex item이라
+   블록화돼 line-height 그대로(19px)를 돌려준다 — 같은 12px 글씨인데 라벨과
+   단계 줄의 세로 중심이 서로 다르게 잡히는 이유다. 이 span도 flex로 만들면
+   안의 slash·step이 마저 블록화돼 같은 19px 박스가 되고, 접었을 때 열기
+   버튼과 맞추는 계산(.home-chat.is-collapsed .ws-strip)이 두 형태(라벨 줄 ·
+   단계 줄) 모두에 같은 값으로 통한다. */
+.ws-strip-steps > span{display:flex;align-items:center;}
 .ws-strip-slash{font-family:var(--mono);font-size:12px;color:#c3cac4;margin-right:10px;}
 .ws-strip-step{font-family:var(--mono);font-size:12px;letter-spacing:0.12em;color:#a7ada7;}
 /* 끝난 칸은 브랜드색, 지금 칸은 잉크색 + 굵게. 셋이 전부 회색이면 어디 서 있는지
