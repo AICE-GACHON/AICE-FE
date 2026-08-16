@@ -11,7 +11,7 @@ import { decisionLabel, decisionTone } from './decision';
 //   제목 → 수정 전/후 대조 → 리뷰 요약 → 심사 타임라인
 // 순서가 곧 읽는 순서다: 무엇이 바뀌었는지 먼저 보고, 왜 바뀌었는지(리뷰)를 뒤에 읽는다.
 
-export default function PaperDetail({ paper, useMock, onBack, onReset, resetLabel = '← 새로운 논문 분석하기' }) {
+export default function PaperDetail({ paper, useMock, onBack }) {
   const [phase, setPhase] = useState(useMock ? 'done' : 'loading');
   const [story, setStory] = useState(useMock ? mockStoryFor(paper) : null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -34,7 +34,6 @@ export default function PaperDetail({ paper, useMock, onBack, onReset, resetLabe
     <div className="pd-wide">
       <div className="pd-back-row">
         <button type="button" className="onboard-back" onClick={onBack}>← 목록으로</button>
-        {onReset && <button type="button" className="onboard-back" onClick={onReset}>{resetLabel}</button>}
       </div>
 
       <div className="wr-card">
