@@ -1,8 +1,9 @@
 // 백엔드 연동 지점 — 회원가입/로그인/구글 로그인/토큰 재발급/로그아웃.
 // AICE-BE 실제 스펙 기준 (app/routers/auth.py, app/schemas/auth.py, DEVELOPMENT.md §7):
-//   POST /api/auth/signup  { email, password, nickname, openreview_id, onboarding_id? } -> UserResponse (201, 토큰 없음)
+//   POST /api/auth/signup  { email, password, nickname, openreview_id, agreed_to_terms, onboarding_id? } -> UserResponse (201, 토큰 없음)
 //   POST /api/auth/login   { email, password }               -> { access_token, refresh_token, token_type }
-//   POST /api/auth/google  { id_token, openreview_id? }       -> { access_token, refresh_token, token_type }
+//   POST /api/auth/google  { id_token, openreview_id?, agreed_to_terms? } -> { access_token, refresh_token, token_type }
+//   POST /api/user/me/consent (인증 필요)                     -> UserResponse (약관 개정 후 재동의)
 //   POST /api/auth/refresh { refresh_token }                 -> { access_token, refresh_token, token_type } (회전)
 //   POST /api/auth/logout  (인증 필요)                        -> 서버가 token_version을 올려 이전 refresh_token을 전부 무효화
 //   GET  /api/user/me      (인증 필요)                        -> UserResponse
@@ -42,9 +43,15 @@ async function unwrap(res) {
  * 떠 있으면(배포 기본값) 코드 없이 보낸 가입은 403 "초대 코드가 필요합니다"로
  * 거절된다. 개발 서버는 보통 비어 있어서 이 값을 무시한다.
  *
- * @param {{email: string, password: string, nickname: string, openreviewId: string, inviteCode?: string, onboardingId?: string|null}} payload
+ * agreedToTerms는 **환경과 무관하게 항상 필수**다. false거나 빠지면 서버가 400으로
+ * 거절한다(app/routers/auth.py _require_consent). 여기서 true를 박아넣지 않고
+ * 호출부에서 받아 넘기는 이유는, 그러면 사용자가 체크박스를 눌렀는지와 무관하게
+ * API 계층이 "동의했다"고 서버에 말하게 되기 때문이다 — 동의 이력을 남기는 목적
+ * 자체가 무너진다.
+ *
+ * @param {{email: string, password: string, nickname: string, openreviewId?: string, inviteCode?: string, onboardingId?: string|null, agreedToTerms: boolean}} payload
  */
-export async function signup({ email, password, nickname, openreviewId, inviteCode, onboardingId }) {
+export async function signup({ email, password, nickname, openreviewId, inviteCode, onboardingId, agreedToTerms }) {
   if (!BASE_URL) {
     console.info('[auth] VITE_API_BASE_URL 미설정 — 회원가입 mock 성공 처리:', { email, nickname, openreviewId, onboardingId });
     mockNicknameByEmail.set(email, nickname);
@@ -59,6 +66,7 @@ export async function signup({ email, password, nickname, openreviewId, inviteCo
       password,
       nickname,
       openreview_id: openreviewId,
+      agreed_to_terms: Boolean(agreedToTerms),
       ...(inviteCode ? { invite_code: inviteCode } : {}),
       ...(onboardingId ? { onboarding_id: onboardingId } : {}),
     }),
@@ -95,15 +103,21 @@ export async function login({ email, password }) {
  * 처음 구글로 가입하는 경우에만 openreview_id가 필요하고, 없이 호출하면 백엔드가
  * 400으로 이를 알려준다 — 이때 err.needsOpenreviewId를 true로 표시해 호출부가
  * openreview_id를 입력받아 같은 id_token으로 재시도할 수 있게 한다.
- * 처음 구글로 가입하는 계정에만 openreviewId·inviteCode가 필요하다. 이미 가입한
- * 사람의 로그인에는 서버가 둘 다 요구하지 않는다 — 초대받아 가입한 사람이 로그인할
- * 때마다 코드를 다시 입력해야 한다면 그건 초대가 아니라 비밀번호다.
+ * 처음 구글로 가입하는 계정에만 openreviewId·inviteCode·agreedToTerms가 필요하다.
+ * 이미 가입한 사람의 로그인에는 서버가 셋 다 요구하지 않는다 — 초대받아 가입한
+ * 사람이 로그인할 때마다 코드를 다시 입력해야 한다면 그건 초대가 아니라
+ * 비밀번호이고, 약관도 로그인할 때마다 물으면 동의가 아니라 확인 버튼이다.
+ *
+ * **처음 호출할 때는 셋 다 없이 보낸다.** 이 계정이 신규인지 기존인지는 서버만
+ * 알기 때문이다. 신규라서 거절당하면(needsInvite / needsConsent) 그때 화면이
+ * 한 번에 받아서 같은 id_token으로 재시도한다.
  *
  * @param {string} idToken
  * @param {string} [openreviewId]
  * @param {string} [inviteCode]
+ * @param {boolean} [agreedToTerms]
  */
-export async function loginWithGoogle(idToken, openreviewId, inviteCode) {
+export async function loginWithGoogle(idToken, openreviewId, inviteCode, agreedToTerms) {
   if (!BASE_URL) {
     console.info('[auth] VITE_API_BASE_URL 미설정 — 구글 로그인 mock 성공 처리');
     saveTokens({ access_token: 'mock-access-token', refresh_token: 'mock-refresh-token' });
@@ -115,17 +129,27 @@ export async function loginWithGoogle(idToken, openreviewId, inviteCode) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       id_token: idToken,
+      agreed_to_terms: Boolean(agreedToTerms),
       ...(openreviewId ? { openreview_id: openreviewId } : {}),
       ...(inviteCode ? { invite_code: inviteCode } : {}),
     }),
   });
   const body = await res.json().catch(() => null);
 
-  // 서버는 신규 가입일 때만 이 둘을 요구한다. 순서가 있다 — 초대 코드를 먼저
-  // 보고(403), 통과하면 openreview_id를 본다(400). 화면에서는 한 번에 받는다.
+  // 서버는 신규 가입일 때만 이것들을 요구한다. 순서가 있다 — 초대 코드를 먼저
+  // 보고(403), 통과하면 약관 동의를 본다(400). 화면에서는 한 번에 받는다.
   if (res.status === 403) {
     const err = new Error(body?.error?.message || '초대 코드가 필요합니다.');
     err.needsInvite = true;
+    throw err;
+  }
+  // ⚠️ 400은 이유가 여럿이라(동의 누락, 구글 계정에 이메일 없음) 메시지로 가른다.
+  // 서버 문구가 바뀌면 조용히 깨지는 종류의 판별이므로, 못 갈라도 아래 일반
+  // 에러로 떨어져 사용자에게 서버 메시지가 그대로 보이게 해뒀다 — 화면이 멈추지는
+  // 않는다. 서버 문구: "이용약관과 개인정보처리방침에 동의해야 가입할 수 있습니다."
+  if (res.status === 400 && body?.error?.message?.includes('동의')) {
+    const err = new Error(body.error.message);
+    err.needsConsent = true;
     throw err;
   }
   if (res.status === 400 && body?.error?.message?.includes('openreview_id')) {
@@ -315,6 +339,20 @@ export async function resetPassword({ token, newPassword }) {
   if (!res.ok || !body || body.success === false) {
     throw new Error(body?.error?.message || `비밀번호 재설정에 실패했어요 (${res.status})`);
   }
+}
+
+/**
+ * POST /api/user/me/consent — 개정된 약관에 다시 동의한다. 갱신된 UserResponse를 준다.
+ *
+ * body가 없다. 이 경로를 호출한 것 자체가 동의다 (서버도 같은 이유로 body를 받지
+ * 않는다 — app/routers/user.py). 동의 철회는 이 API가 아니라 탈퇴다.
+ *
+ * ⚠️ **응답으로 받은 user를 반드시 화면 상태에 반영해야 한다.** 안 그러면
+ * consent_up_to_date가 여전히 false인 옛 user가 남아, 방금 동의한 사람에게
+ * 재동의 배너가 계속 보인다.
+ */
+export function agreeToCurrentTerms() {
+  return authorizedFetch('/api/user/me/consent', { method: 'POST' });
 }
 
 export async function logout() {

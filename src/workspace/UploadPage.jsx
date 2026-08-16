@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import AnalysisProgress from './AnalysisProgress';
 import ResultReport from './ResultReport';
 import { useAnalysis } from './analysisContext';
 import { MOCK_REPORT } from './mockReport';
@@ -27,7 +28,7 @@ function UploadIcon() {
 // 갖고 있어서 폼 단계의 "논문 분석" 제목·설명은 감춘다(중복 방지).
 export default function UploadPage({ embedded = false }) {
   const {
-    pdfFile, pdfError, submission, phase, statusText, errorMsg,
+    pdfFile, pdfError, submission, phase, statusText, progress, errorMsg,
     acceptFile, clearFile, upload, analyze, reset,
   } = useAnalysis();
   const [dragging, setDragging] = useState(false);
@@ -221,13 +222,7 @@ export default function UploadPage({ embedded = false }) {
         )}
 
         {phase === 'working' && submission && (
-          <div className="wr-card upload-card">
-            <div className="wr-card-title">{statusText}…</div>
-            <p className="onboard-desc">
-              비슷한 논문을 찾고, 그중 정말 비슷한 것을 골라 리뷰를 모으고 있어요.
-            </p>
-            <p className="fine">첫 분석은 모델 로드 때문에 1~2분 정도 걸릴 수 있어요.</p>
-          </div>
+          <AnalysisProgress progress={progress} statusText={statusText} />
         )}
 
         {phase === 'error' && submission && (

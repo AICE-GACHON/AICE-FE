@@ -22,7 +22,9 @@ import PapersPage from './workspace/PapersPage';
 import { useAnalysis } from './workspace/analysisContext';
 import { AnalysisProvider } from './workspace/AnalysisProvider';
 import { getAnalysis, listSubmissions } from './api/submissions';
+import LegalPage from './legal/LegalPage';
 import BodyDiffTest from './dev/BodyDiffTest';
+import TranslateTest from './dev/TranslateTest';
 import { RequireAuth, RedirectIfAuthed } from './auth/guards';
 import { useAuth } from './auth/authContext';
 import { parseStep } from './onboarding/steps';
@@ -316,6 +318,23 @@ function HomeRoute() {
   return <HomeDashboard />;
 }
 
+// 약관·개인정보처리방침의 단독 주소. 가드를 걸지 않는다 — 가입 전에도, 탈퇴한
+// 뒤에도 읽을 수 있어야 하는 문서다.
+//
+// "돌아가기"가 navigate(-1)인 이유: 이 화면에는 들어오는 길이 여럿이다(가입 폼,
+// 푸터, 공유받은 링크). 고정 주소로 보내면 그중 하나만 맞고 나머지는 엉뚱한
+// 곳에 떨어진다. 히스토리가 없으면(링크로 바로 열었으면) 랜딩으로 보낸다.
+function LegalRoute({ documentName }) {
+  const navigate = useNavigate();
+  const canGoBack = window.history.length > 1;
+  return (
+    <LegalPage
+      documentName={documentName}
+      onBack={() => (canGoBack ? navigate(-1) : navigate('/'))}
+    />
+  );
+}
+
 export default function AppRoutes() {
   // 분석 상태(AnalysisProvider)는 예전엔 WorkspaceLayout 안에만 있었다. 이제 홈
   // 대시보드 중앙에서도 UploadPage로 바로 분석을 시작할 수 있어야 하고, 분석이
@@ -336,6 +355,9 @@ export default function AppRoutes() {
       {/* 재설정은 가드를 걸지 않는다 — 로그인한 채로 메일 링크를 누를 수 있다. */}
       <Route path="/reset-password" element={<ResetPasswordRoute />} />
 
+      <Route path="/terms" element={<LegalRoute documentName="terms" />} />
+      <Route path="/privacy" element={<LegalRoute documentName="privacy" />} />
+
       <Route path="/app" element={<RequireAuth><WorkspaceLayout /></RequireAuth>}>
         <Route index element={<AppEntry />} />
         <Route path="upload" element={<UploadPage />} />
@@ -350,6 +372,7 @@ export default function AppRoutes() {
       {/* 임시 테스트 진입점. 배포 번들에는 라우트 자체가 없다 —
           검증이 끝나면 이 줄과 src/dev/BodyDiffTest.jsx를 함께 지운다. */}
       {import.meta.env.DEV && <Route path="/dev/body-diff" element={<BodyDiffTest />} />}
+      {import.meta.env.DEV && <Route path="/dev/translate" element={<TranslateTest />} />}
 
       {/* 없는 주소는 랜딩으로. replace라서 뒤로가기가 죽은 주소로 되돌아가지 않는다. */}
       <Route path="*" element={<Navigate to="/" replace />} />

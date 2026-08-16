@@ -10,6 +10,7 @@ import { createContext, useContext } from 'react';
  *   submission: object | null,
  *   phase: 'form' | 'review' | 'working' | 'done' | 'error',
  *   statusText: string,
+ *   progress: Array<{step: string, done: boolean, label: string, detail: string|null, at: string}>,
  *   report: object | null,
  *   errorMsg: string,
  *   acceptFile: (file: File | null) => void,
