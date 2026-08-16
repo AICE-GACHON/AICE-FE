@@ -28,7 +28,7 @@ export default function Hero() {
       </div>
       {!loading && !authed && (
         <p className="fine">
-          By signing up you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.<br />
+          By signing up you agree to our <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.<br />
           Currently built on public review data from AI conferences.
         </p>
       )}

@@ -211,6 +211,10 @@ h1 .accent{color:var(--teal-deep);}
 }
 .gcard:hover .float-panel{transform:translateX(-50%) translateY(-5px);box-shadow:0 30px 56px -14px #2d201280;}
 .gcard.tone-cream .float-panel{top:66px;}
+/* 짧은 내용(본문 변경 이력 카드)은 top:30px에 붙이면 아래가 허전하게 비어
+   보인다 — 카드 세로 가운데에 놓는다. */
+.gcard.is-centered .float-panel{top:50%;transform:translate(-50%,-50%);}
+.gcard.is-centered:hover .float-panel{transform:translate(-50%,calc(-50% - 5px));}
 .screen-bar{display:flex;align-items:center;gap:9px;padding:8px 12px;background:#fbf8f4;border-bottom:1px solid #efe9e0;}
 .screen-dots{display:flex;gap:4px;flex:0 0 auto;}
 .screen-dots i{width:7px;height:7px;border-radius:50%;background:#e0d8cc;}
@@ -232,28 +236,32 @@ h1 .accent{color:var(--teal-deep);}
 .sc-pill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--teal-soft);color:var(--teal-deep);}
 .sc-hint{font-size:12px;font-weight:600;color:var(--teal-deep);margin:4px 0 14px;}
 
-.sc-paper{padding:14px 0;border-top:1px solid #f0ebe3;}
-.sc-paper:first-of-type{border-top:none;padding-top:2px;}
-.sc-paper-top{display:flex;gap:8px;align-items:baseline;}
 .sc-rank{font-family:var(--mono);font-size:12.5px;color:var(--muted);}
-.sc-paper-title{flex:1;font-size:14px;font-weight:700;line-height:1.45;}
-.sc-decision{font-size:12px;font-weight:700;color:var(--red);white-space:nowrap;}
+.sc-decision{font-size:11.5px;font-weight:700;color:var(--red);white-space:nowrap;}
 .sc-decision.accept{color:var(--teal-deep);}
-.sc-meta{font-size:12.5px;color:var(--muted);margin-top:4px;}
-.sc-badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:var(--teal-soft);color:var(--teal-deep);margin-left:6px;}
+/* 표 인용 — 실제 화면(ReviewedPaperList)이 카드가 아니라 표로 목록을 세우는 것과
+   같은 모양. 열은 셋으로 줄인다: 작은 카드 안에서 벤뉴·수정 횟수까지 다 넣으면
+   글자가 뭉개진다 — #·제목·최종 결과만으로도 "표"라는 인상은 충분하다. */
+.sc-table{margin-top:2px;}
+.sc-table-head{
+  display:grid;grid-template-columns:18px 1fr auto;gap:8px;padding-bottom:6px;
+  border-bottom:1px solid #f0ebe3;
+  font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.08em;color:var(--muted);
+}
+.sc-table-row{
+  display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:baseline;
+  padding:8px 0;border-top:1px solid #f4efe8;
+}
+.sc-table-row:first-of-type{border-top:none;}
+.sc-table-title{
+  font-size:12.5px;font-weight:700;line-height:1.35;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 .sc-reason{
   margin-top:10px;padding:10px 12px;border-radius:10px;background:#faf7f2;border:1px solid #f0ebe3;
   font-size:12.5px;line-height:1.65;color:#3d4139;
 }
 .sc-reason b{color:var(--teal-deep);margin-right:4px;}
-.sc-review{
-  display:flex;align-items:center;gap:10px;margin-top:10px;padding:9px 12px;
-  border:1px solid #efe9e0;border-radius:10px;font-size:12px;
-}
-.sc-review-no{font-weight:700;}
-.sc-review-score{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sc-chev{color:var(--teal-deep);font-weight:600;}
-.sc-paper-quiet .sc-paper-title{font-weight:600;color:#5b6058;}
 
 .sc-quote{
   font-size:15px;line-height:1.75;color:#2c302a;font-weight:500;
@@ -276,7 +284,7 @@ h1 .accent{color:var(--teal-deep);}
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
 
-/* 종합 요약 카드(④) + 근거 카드(⑤) */
+/* 총 리뷰 요약 카드(④) */
 .sc-sum-head{font-size:13px;font-weight:800;line-height:1.4;color:var(--ink);margin-bottom:8px;}
 .sc-sum-p{
   font-size:12px;line-height:1.65;color:#3d4139;
@@ -284,19 +292,14 @@ h1 .accent{color:var(--teal-deep);}
 }
 .sc-sum-p + .sc-sum-p{margin-top:8px;}
 .sc-sum-p b{color:var(--teal-deep);}
-.sc-sum-lead{-webkit-line-clamp:3;color:#2c302a;font-weight:600;line-height:1.55;}
-.sc-ev-list{display:flex;flex-direction:column;gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid #f0ebe3;}
-.sc-ev{display:flex;align-items:flex-start;gap:8px;}
-.sc-ev-label{
-  font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;
-  background:var(--teal-soft);color:var(--teal-deep);flex:0 0 auto;margin-top:1px;
+
+/* 본문 변경 이력 카드(⑤) — 세로 가운데에 놓아 다른 카드처럼 줄여 채울 필요가
+   없다. 실제 화면(story-change-label/-text)과 같은 크기 그대로 쓴다. */
+.sc-revision-label{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.sc-revision-text{
+  font-size:14px;line-height:1.75;background:#fff;border:1px solid #eee2d2;
+  border-radius:8px;padding:10px 12px;
 }
-.sc-ev-main{display:flex;flex-direction:column;flex:1;min-width:0;}
-.sc-ev-text{
-  font-size:11.5px;line-height:1.45;color:#41473f;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
-}
-.sc-ev-src{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-top:1px;}
 
 /* ---------- SCOPE STRIP ---------- */
 .scope-strip{background:var(--teal-soft);padding:16px 0;text-align:center;}
