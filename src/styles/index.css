@@ -328,6 +328,23 @@ section{padding:96px 0;}
 /* ---------- SIMULATOR (실제 결과 화면 컴포넌트를 그대로 재사용하는 랜딩 데모) ---------- */
 .sim-demo{max-width:720px;margin:0 auto;text-align:left;}
 
+/* 논문 상세는 이 720px 박스 안에 안 띄운다 — PaperDetail의 2단 레이아웃(.pd-columns)이
+   찌그러진다(ReviewSimulator.jsx 주석 참고). workspace.css의 .bodydiff-fullview와
+   같은 패턴(뷰포트 기준 폭의 body portal 모달)으로 박스 밖에 띄운다. */
+.sim-modal-backdrop{
+  position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:rgba(15,22,19,.52);backdrop-filter:blur(2px);
+}
+.sim-modal{
+  width:min(92vw,1100px);max-height:90vh;overflow-y:auto;
+  padding:28px 32px 32px;background:#fff;border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 24px 70px rgba(0,0,0,.22);text-align:left;
+}
+@media (max-width:700px){
+  .sim-modal-backdrop{padding:0;}
+  .sim-modal{width:100vw;max-height:100dvh;border:0;border-radius:0;padding:18px;}
+}
+
 /* ---------- PROCESS ---------- */
 .process{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 .process > div{border:1.5px solid var(--line);border-radius:var(--radius);padding:30px 26px;}
