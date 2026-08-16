@@ -71,6 +71,7 @@ function MultiChoice({ label, options, values, max, onChange }) {
             label={o.label}
             desc={o.desc}
             multi
+            round
             selected={values.includes(o.value)}
             disabled={!values.includes(o.value) && values.length >= max}
             onClick={() => toggle(o.value)}
@@ -130,14 +131,27 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
   const fieldNames = (shown?.fields ?? [])
     .map((f) => (f === 'custom' ? shown.fieldCustom : fieldLabel(f)))
     .filter(Boolean);
-  // 서버가 venue를 하나만 들고 있어서(profileMapping.js) 화면도 첫 항목만 다룬다.
-  const firstVenue = shown?.venues?.[0] ?? null;
-  const venueName = firstVenue === 'custom' ? shown.venueCustom : venueLabel(firstVenue);
-  // similarityFocus·recencyBias는 아직 서버에 없는 값이다(백엔드 미연결) — 그래서
-  // shown에도 항상 null로 온다. 답 안 한 것과 "균형있게"를 고른 것이 결과적으로
-  // 같으므로, 없으면 균형있게로 보여준다(다른 항목처럼 "답하지 않음"으로 두지 않는다).
+  const venueNames = (shown?.venues ?? [])
+    .map((v) => (v === 'custom' ? shown.venueCustom : venueLabel(v)))
+    .filter(Boolean);
+  // 값이 없으면 "균형있게"를 고른 것과 결과가 같으므로, 다른 항목처럼
+  // "답하지 않음"으로 두지 않고 균형있게로 보여준다.
   const focusText = similarityFocusLabel(shown?.similarityFocus) || '균형있게';
   const recencyText = recencyBiasLabel(shown?.recencyBias) || '균형있게';
+
+  // "아직 결정하지 않음"은 다른 학회와 같이 고르면 의미가 모순된다 — 서로
+  // 배타적으로 둔다(온보딩 3단계 StepCriteria.jsx와 같은 규칙).
+  const toggleDraftVenue = (value) => {
+    const has = draft.venues.includes(value);
+    if (value === 'undecided') {
+      patch({ venues: has ? [] : ['undecided'] });
+      return;
+    }
+    const withoutUndecided = draft.venues.filter((v) => v !== 'undecided');
+    patch({
+      venues: has ? withoutUndecided.filter((v) => v !== value) : [...withoutUndecided, value],
+    });
+  };
 
   return (
     <div className="wr-card upload-card" style={{ marginTop: 16 }}>
@@ -174,8 +188,8 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
         <div className="mypage-list" style={{ marginTop: 12 }}>
           <Row label="사용자 유형">{userTypeLabel(shown.userType) || <Blank />}</Row>
           <Row label="전공 분야"><Tags values={fieldNames} /></Row>
-          <Row label="검색 우선순위">관점: {focusText} · 경향: {recencyText}</Row>
-          <Row label="목표 학회">{venueName || <Blank />}</Row>
+          <Row label="검색 우선순위">관점: {focusText} / 경향: {recencyText}</Row>
+          <Row label="목표 학회"><Tags values={venueNames} /></Row>
         </div>
       )}
 
@@ -200,8 +214,6 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
             />
           )}
 
-          {/* similarityFocus·recencyBias는 백엔드에 아직 저장 필드가 없어서, 여기서
-              골라도 "저장" 이후 응답엔 안 담겨 온다 — 저장하면 균형있게로 되돌아간다. */}
           <SingleChoice
             label="관점" options={SIMILARITY_FOCUS_OPTIONS}
             value={draft.similarityFocus} onChange={(v) => patch({ similarityFocus: v })}
@@ -211,10 +223,21 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
             value={draft.recencyBias} onChange={(v) => patch({ recencyBias: v })}
           />
 
-          <SingleChoice
-            label="목표 학회" options={VENUE_OPTIONS}
-            value={draft.venues[0] ?? null} onChange={(v) => patch({ venues: v ? [v] : [] })}
-          />
+          <div className="mypage-edit-group">
+            <div className="mypage-edit-label">목표 학회</div>
+            <div className="mypage-edit-options">
+              {VENUE_OPTIONS.map((o) => (
+                <OptionButton
+                  key={o.value}
+                  multi
+                  round
+                  label={o.label}
+                  selected={draft.venues.includes(o.value)}
+                  onClick={() => toggleDraftVenue(o.value)}
+                />
+              ))}
+            </div>
+          </div>
           {draft.venues.includes('custom') && (
             <input
               className="auth-input mypage-custom-input"
