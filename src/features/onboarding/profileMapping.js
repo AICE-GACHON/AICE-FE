@@ -12,9 +12,11 @@ const isKnownOption = (options, value) => options.some((o) => o.value === value)
 /**
  * 화면 답변 → POST /api/onboarding 본문 (OnboardingCreate와 같은 snake_case).
  *
- * similarity_focus·recency_bias·venue(배열)는 백엔드 스키마에 필드가 생겨서
- * (alembic 0016) 이제 실제로 저장된다. 다만 검색 로직(hybrid_search.py·
- * _RERANK_SYSTEM)에는 아직 반영 안 됨 — 계정에 남기만 한다.
+ * similarity_focus·recency_bias는 저장(alembic 0016)에 더해 **분석에도 실제로
+ * 반영된다** — focus는 2단계 재정렬 프롬프트(nodes.py rerank_system), bias는
+ * 1단계 랭킹 가중치(hybrid_search.py RANKING_PRESETS). 무엇이 적용됐는지는
+ * 결과의 report.preferences에 남고 화면이 그걸 보여준다(AppliedPreferences).
+ * venue(배열)는 아직 저장만 한다.
  *
  * purposes·result_order는 백엔드에서 완전히 삭제됐다(0017, 쓰는 곳이 없던
  * 죽은 필드). 더 이상 안 보낸다.

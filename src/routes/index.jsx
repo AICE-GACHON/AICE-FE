@@ -24,7 +24,9 @@ import { AnalysisProvider } from '@/features/workspace/AnalysisProvider';
 import { SubmissionsProvider } from '@/features/workspace/SubmissionsProvider';
 import { getAnalysis, listSubmissions } from '@/services/submissions';
 import LegalPage from '@/features/legal/LegalPage';
+import SharedReportPage from '@/features/share/SharedReportPage';
 import BodyDiffTest from '@/dev/BodyDiffTest';
+import ReportPreview from '@/dev/ReportPreview';
 import TranslateTest from '@/dev/TranslateTest';
 import { RequireAuth, RedirectIfAuthed } from '@/features/auth/guards';
 import { useAuth } from '@/features/auth/authContext';
@@ -399,6 +401,13 @@ export default function AppRoutes() {
       <Route path="/terms" element={<LegalRoute documentName="terms" />} />
       <Route path="/privacy" element={<LegalRoute documentName="privacy" />} />
 
+      {/* 공유 링크. **가드를 걸지 않는다** — 로그인 없이 열리는 것이 이 화면의
+          존재 이유다(이슈 #30). 서버의 FRONTEND_BASE_URL이 만드는 주소가
+          `{origin}/shared/{token}`이므로 이 경로는 백엔드와의 약속이다.
+          바꾸려면 app/services/shares.py의 share_url()도 같이 바꿔야 하고,
+          그 전에 나간 링크는 되돌릴 수 없다. */}
+      <Route path="/shared/:token" element={<SharedReportPage />} />
+
       <Route path="/app" element={<RequireAuth><WorkspaceLayout /></RequireAuth>}>
         <Route index element={<AppEntry />} />
         <Route path="upload" element={<UploadPage />} />
@@ -413,6 +422,7 @@ export default function AppRoutes() {
       {/* 임시 테스트 진입점. 배포 번들에는 라우트 자체가 없다 —
           검증이 끝나면 이 줄과 src/dev/BodyDiffTest.jsx를 함께 지운다. */}
       {import.meta.env.DEV && <Route path="/dev/body-diff" element={<BodyDiffTest />} />}
+      {import.meta.env.DEV && <Route path="/dev/report" element={<ReportPreview />} />}
       {import.meta.env.DEV && <Route path="/dev/translate" element={<TranslateTest />} />}
 
       {/* 없는 주소는 랜딩으로. replace라서 뒤로가기가 죽은 주소로 되돌아가지 않는다. */}
