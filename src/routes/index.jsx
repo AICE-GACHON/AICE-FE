@@ -24,6 +24,7 @@ import { AnalysisProvider } from '@/features/workspace/AnalysisProvider';
 import { getAnalysis, listSubmissions } from '@/services/submissions';
 import LegalPage from '@/features/legal/LegalPage';
 import BodyDiffTest from '@/dev/BodyDiffTest';
+import ReportPreview from '@/dev/ReportPreview';
 import TranslateTest from '@/dev/TranslateTest';
 import { RequireAuth, RedirectIfAuthed } from '@/features/auth/guards';
 import { useAuth } from '@/features/auth/authContext';
@@ -374,6 +375,7 @@ export default function AppRoutes() {
       {/* 임시 테스트 진입점. 배포 번들에는 라우트 자체가 없다 —
           검증이 끝나면 이 줄과 src/dev/BodyDiffTest.jsx를 함께 지운다. */}
       {import.meta.env.DEV && <Route path="/dev/body-diff" element={<BodyDiffTest />} />}
+      {import.meta.env.DEV && <Route path="/dev/report" element={<ReportPreview />} />}
       {import.meta.env.DEV && <Route path="/dev/translate" element={<TranslateTest />} />}
 
       {/* 없는 주소는 랜딩으로. replace라서 뒤로가기가 죽은 주소로 되돌아가지 않는다. */}
