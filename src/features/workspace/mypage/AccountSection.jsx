@@ -196,7 +196,7 @@ export default function AccountSection({ user, onUserChange }) {
           <div className="auth-submit-error" style={{ marginTop: 16 }}>{submitError}</div>
         )}
         {done && (
-          <div className="wr-banner" style={{ marginTop: 16 }}>{done}</div>
+          <div className="wr-banner wr-banner-plain" style={{ marginTop: 16 }}>{done}</div>
         )}
       </div>
 

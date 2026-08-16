@@ -613,6 +613,12 @@
 
 .wr-banner{margin-top:0;padding:11px 14px;border-radius:10px;font-size:14.5px;background:#fdf0e3;color:#8a4d10;border:1px solid #f0d8bb;}
 .wr-banner-danger{background:#fdeceb;color:#8f2f28;border-color:#f2c9c5;font-weight:600;}
+/* 색을 뺀 알림 상자 — 마이페이지 전용이다.
+   결과 화면의 배너는 색이 곧 뜻이다(주황=단서 있음, 붉은색=믿기 어려움). 반면
+   마이페이지는 한 화면에 성격이 다른 알림이 여럿 세로로 쌓여서, 상자마다 색이
+   다르면 페이지가 경고문 모음처럼 보인다 — 여기서는 색을 빼고 글로만 말한다.
+   경중은 <b>로 굵게 세운 문장이 진다. */
+.wr-banner-plain{background:var(--surface);color:var(--ink);border-color:var(--line);font-weight:400;}
 
 /* similar papers — 랜딩 시뮬레이터(SelectedPapers)가 쓰는 카드형 목록.
    /app의 결과 화면은 표(.rp-row)로 옮겼지만, 랜딩은 한 편씩 펼쳐 보여주는

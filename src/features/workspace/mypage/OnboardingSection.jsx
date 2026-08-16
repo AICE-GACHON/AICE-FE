@@ -178,7 +178,7 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
       )}
 
       {!editing && status === 'empty' && (
-        <div className="wr-banner" style={{ marginTop: 16 }}>
+        <div className="wr-banner wr-banner-plain" style={{ marginTop: 16 }}>
           아직 저장된 온보딩 답변이 없어요. 온보딩을 건너뛰고 가입하셨거나
           구글로 바로 가입하신 경우예요. <b>지금 채워 넣을 수 있어요.</b>
         </div>
