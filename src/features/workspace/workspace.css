@@ -349,7 +349,19 @@
 
 /* 제목 카드 우측 상단의 OpenReview 링크 — 예전엔 화면 맨 아래 별도 카드였는데,
    "원문에서 확인하고 싶다"는 요구는 스크롤 안 해도 바로 눈에 띄는 게 낫다. */
-.pd-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;}
+/* 제목과 OpenReview 링크는 한 줄이 기본이지만, 자리가 없으면 링크가 아래로
+   내려간다. 링크는 white-space:nowrap이라 안 줄어들고 제목 쪽은 얼마든지
+   짓눌려서, wrap이 없으면 제목이 좁은 열에 갇힌다(실측: 375px에서 제목 열 60px,
+   70자 제목이 11줄로 흘렀다).
+   기준을 뷰포트가 아니라 이 줄의 폭으로 잡는 이유: 좁은 건 화면이 아니라 이
+   줄이다 — 레일이 붙어 작업 영역이 줄어든 780px 부근에서도 같은 일이 생긴다.
+   min-width가 "이보다 좁아지면 차라리 줄을 바꿔라"의 기준이고, 100%로 상한을
+   두는 건 줄 자체가 280px보다 좁을 때 넘치지 않게 하기 위해서다. */
+.pd-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+/* basis가 0이어야 한다. auto로 두면 줄바꿈 판단에 제목의 자연 폭(max-content)이
+   쓰여서, 자리가 충분한 넓은 화면에서도 링크가 아래로 내려간다. basis 0이면
+   판단 기준이 아래 min-width가 되고, 남는 자리는 grow로 제목이 가져간다. */
+.pd-title-main{flex:1 1 0;min-width:min(100%,280px);}
 /* 알약(999px)이 아니라 각진 버튼이다 — 콘솔 화면의 버튼은 전부 8px 곡률로
    맞춰, 둥근 알약은 랜딩의 CTA에만 남긴다. */
 .pd-openreview-link{

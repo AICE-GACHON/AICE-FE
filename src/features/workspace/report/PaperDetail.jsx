@@ -44,7 +44,10 @@ export default function PaperDetail({ paper, useMock, onBack, onReset, resetLabe
 
       <div className="wr-card pd-head-card">
         <div className="pd-title-row">
-          <div style={{ flex: 1, minWidth: 0 }}>
+          {/* 폭 규칙은 CSS로 뺐다 — 인라인 스타일은 스타일시트를 이겨서,
+              "이보다 좁아지면 링크를 다음 줄로 내려라"는 규칙(.pd-title-main의
+              min-width)을 인라인 minWidth:0이 무력화했다. */}
+          <div className="pd-title-main">
             {/* 학회 · 최종 결과 · 리뷰 수를 한 줄에 세운다 — 상세로 들어온 순간
                 가장 먼저 확인하는 세 가지이고, 표에서 보던 순서와 같다.
                 수정 횟수는 여기 안 넣는다 — 바로 아래 BodyDiffPanel의 버전 탭이
