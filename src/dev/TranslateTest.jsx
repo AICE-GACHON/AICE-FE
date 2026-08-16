@@ -8,10 +8,10 @@
 // 다르기 때문이다 — 학술 용어, 수식 기호, 표 참조, 아주 짧은 문장, 아주 긴
 // 덩어리, 이미 한국어인 원문이 각각 다른 실패를 만든다.
 //
-// 검증이 끝나면 이 파일과 routes.jsx의 /dev/translate 줄을 함께 지운다.
+// 검증이 끝나면 이 파일과 routes/index.jsx의 /dev/translate 줄을 함께 지운다.
 import { useEffect, useState } from 'react';
-import ReviewBlock from '../workspace/report/ReviewBlock';
-import { isTranslationAvailable } from '../api/translate';
+import ReviewBlock from '@/features/workspace/report/ReviewBlock';
+import { isTranslationAvailable } from '@/services/translate';
 
 const CASES = [
   {
