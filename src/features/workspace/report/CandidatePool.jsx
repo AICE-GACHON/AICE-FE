@@ -19,7 +19,9 @@ export default function CandidatePool({ candidates, selectedIds }) {
   const chosen = new Set(selectedIds);
 
   return (
-    <div className="wr-card">
+    // 점선 테두리 — 이 카드는 결과가 아니라 근거라는 표시다. 실선 카드들
+    // 사이에 섞여 있으면 "고르지 않은 논문"까지 결과로 읽힌다.
+    <div className="wr-card wr-candidate-card">
       <button
         type="button"
         className="wr-section-head"
@@ -31,13 +33,31 @@ export default function CandidatePool({ candidates, selectedIds }) {
         </span>
         <span className="wr-section-toggle">{open ? '접기' : '펼치기'}</span>
       </button>
-      {open && (
+
+      {!open && (
         <>
+          <p className="wr-candidate-lede">
+            결과가 아니라 근거예요. 검색이 무엇을 뽑았고 그중 무엇이 골라졌는지 대조할 수 있어요.
+          </p>
+          {/* 몇 편 중 몇 편이 남았는지를 비율 막대로 — 숫자 두 개보다 걸러진
+              정도가 먼저 읽힌다. */}
+          <div className="wr-candidate-bar" aria-hidden="true">
+            <span style={{ flex: chosen.size || 1 }} className="is-picked" />
+            <span style={{ flex: Math.max(candidates.length - chosen.size, 1) }} />
+          </div>
+          <div className="wr-candidate-ratio">
+            {chosen.size} SELECTED / {candidates.length} CANDIDATES
+          </div>
+        </>
+      )}
+
+      {open && (
+        <div className="wr-candidate-list">
           {candidates.map((c) => {
             const match = MATCH_LABEL[c.match_type];
             return (
               <div key={c.paper_id} className={`wr-candidate${chosen.has(c.paper_id) ? ' picked' : ''}`}>
-                <span className="wr-paper-rank">{c.rank}.</span>
+                <span className="wr-candidate-rank">{String(c.rank).padStart(2, '0')}</span>
                 <span className="wr-candidate-title">{c.title}</span>
                 <span className="wr-candidate-meta">
                   {c.venue}
@@ -47,7 +67,7 @@ export default function CandidatePool({ candidates, selectedIds }) {
               </div>
             );
           })}
-        </>
+        </div>
       )}
     </div>
   );

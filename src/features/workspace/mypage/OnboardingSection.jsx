@@ -133,7 +133,7 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
   const venueName = shown?.venue === 'custom' ? shown.venueCustom : venueLabel(shown?.venue);
 
   return (
-    <div className="wr-card upload-card" style={{ marginTop: 16 }}>
+    <div className="wr-card upload-card">
       <div className="mypage-section-head">
         <div>
           <div className="wr-card-title">온보딩 답변</div>
@@ -142,7 +142,7 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
           </p>
         </div>
         {!editing && status !== 'loading' && status !== 'error' && (
-          <button type="button" className="pill ghost mypage-edit-btn" onClick={startEditing}>
+          <button type="button" className="mypage-edit-btn" onClick={startEditing}>
             수정
           </button>
         )}

@@ -44,8 +44,10 @@ export default function DeleteAccountSection({ user, onAccountDeleted }) {
   };
 
   return (
-    <div className="wr-card upload-card" style={{ marginTop: 16 }}>
-      <div className="wr-card-title">회원 탈퇴</div>
+    // 되돌릴 수 없는 구역이라 카드 테두리부터 붉다 — 여는 순간이 아니라
+    // 스크롤로 지나가는 순간에 이미 다르게 보여야 한다.
+    <div className="wr-card upload-card mypage-danger-card">
+      <div className="wr-card-title mypage-danger-title">회원 탈퇴</div>
 
       <div className="wr-banner wr-banner-danger" style={{ marginTop: 12 }}>
         탈퇴하면 <b>되돌릴 수 없어요.</b> 업로드한 논문과 분석 결과가 전부 함께 지워지고,

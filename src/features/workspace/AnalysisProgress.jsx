@@ -11,29 +11,30 @@
 import { useEffect, useState } from 'react';
 import { currentStep, toSteps } from './progressSteps';
 
-/** 초 → "1분 20초". 분석은 길어야 몇 분이라 시간 단위는 없다. */
-function formatElapsed(seconds) {
-  if (seconds < 60) return `${seconds}초`;
-  return `${Math.floor(seconds / 60)}분 ${seconds % 60}초`;
+/** 초 → "01:12". 카드 머리의 모노 숫자 자리라 자릿수가 흔들리면 안 된다 —
+    "1분 20초"는 글자 폭이 바뀔 때마다 옆 요소를 밀어 시계가 떨린다. */
+function formatClock(seconds) {
+  const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  return `${m}:${s}`;
 }
 
-function Elapsed() {
+function useElapsed() {
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(timer);
   }, []);
-  // 처음 몇 초는 숨긴다 — "0초"부터 세는 것은 정보가 아니라 초조함만 준다.
-  if (seconds < 5) return null;
-  return <div className="analysis-elapsed">{formatElapsed(seconds)}째 분석 중</div>;
+  return seconds;
 }
 
 /**
- * @param {{progress: Array, statusText: string}} props
+ * @param {{progress: Array, statusText: string, submission?: object}} props
  */
-export default function AnalysisProgress({ progress, statusText }) {
+export default function AnalysisProgress({ progress, statusText, submission }) {
   const steps = toSteps(progress);
   const running = currentStep(steps);
+  const seconds = useElapsed();
 
   // 제목은 **지금 참인 문장**만 쓴다. 돌고 있는 단계가 있으면 그것을, 단계 사이의
   // 짧은 틈에 폴링이 걸렸으면 마지막으로 끝난 일을 말한다. 여기에 "거의 다 됐어요"
@@ -43,37 +44,67 @@ export default function AnalysisProgress({ progress, statusText }) {
   const heading = latest ? latest.label : `${statusText}…`;
 
   return (
-    <div className="wr-card upload-card">
-      <div className="wr-card-title">{heading}</div>
-      <p className="onboard-desc">
-        비슷한 논문을 찾고, 그중 정말 비슷한 것을 골라 리뷰를 모으고 있어요.
-      </p>
+    <div className="wr-card wr-card-flush analysis-card">
+      {/* 머리를 딥그린으로 채우는 건 장식이 아니라 상태다 — 이 카드만 지금
+          "살아서 도는 중"이고, 나머지 화면은 전부 멈춰 있는 종이다. */}
+      <div className="analysis-head">
+        <span className="analysis-head-title">
+          <span className="analysis-head-spinner" aria-hidden="true" />
+          {heading}
+        </span>
+        {/* 처음 몇 초는 숨긴다 — "00:00"부터 세는 것은 정보가 아니라 초조함만 준다. */}
+        {seconds >= 5 && (
+          <span className="analysis-head-clock">{formatClock(seconds)} ELAPSED</span>
+        )}
+      </div>
 
-      {steps.length > 0 && (
-        // aria-live로 읽어 준다 — 화면을 못 보는 사용자에게는 이 목록이 유일한
-        // 진행 정보다. polite라 읽던 것을 끊지 않는다.
-        <ol className="analysis-steps" aria-live="polite">
-          {steps.map((step) => (
-            <li
-              key={step.step}
-              className={'analysis-step' + (step.done ? ' is-done' : ' is-current')}
-            >
-              <span className="analysis-step-mark" aria-hidden="true">
-                {step.done ? <CheckIcon /> : <span className="analysis-step-spinner" />}
-              </span>
-              <span className="analysis-step-body">
-                <span className="analysis-step-label">{step.label}</span>
-                {step.detail && (
-                  <span className="analysis-step-detail">{step.detail}</span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ol>
-      )}
+      <div className="wr-card-pad">
+        <p className="analysis-lede">
+          비슷한 논문을 찾고, 그중 정말 비슷한 것을 골라 리뷰를 모으고 있어요.
+        </p>
 
-      <Elapsed />
-      <p className="fine">첫 분석은 모델 로드 때문에 1~2분 정도 걸릴 수 있어요.</p>
+        {/* 채워지지 않는 막대다 — 진행률이 아니라 "멈추지 않았다"만 말한다.
+            비율을 그리지 않는 이유는 파일 첫머리 경고 참고. */}
+        <div className="analysis-sweep" aria-hidden="true"><span /></div>
+
+        {steps.length > 0 && (
+          // aria-live로 읽어 준다 — 화면을 못 보는 사용자에게는 이 목록이 유일한
+          // 진행 정보다. polite라 읽던 것을 끊지 않는다.
+          <ol className="analysis-steps" aria-live="polite">
+            {steps.map((step) => (
+              <li
+                key={step.step}
+                className={'analysis-step' + (step.done ? ' is-done' : ' is-current')}
+              >
+                <span className="analysis-step-mark" aria-hidden="true">
+                  {step.done ? <CheckIcon /> : <span className="analysis-step-spinner" />}
+                </span>
+                <span className="analysis-step-body">
+                  <span className="analysis-step-label">{step.label}</span>
+                  {step.detail && (
+                    <span className="analysis-step-detail">{step.detail}</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {submission?.title && (
+          <div className="analysis-target">
+            <div className="mono-label">TARGET</div>
+            <div className="analysis-target-title">{submission.title}</div>
+            <div className="analysis-target-meta">
+              {submission.page_count != null && `${submission.page_count} PAGES · `}
+              ICLR + NEURIPS 43,000편 대조 중
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="analysis-foot">
+        첫 분석은 모델 로드 때문에 1~2분 정도 걸릴 수 있어요. 이 창을 떠나도 분석은 계속됩니다.
+      </div>
     </div>
   );
 }

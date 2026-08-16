@@ -5,67 +5,38 @@
      3. 여러 건을 훑는 자리는 카드가 아니라 표 — 같은 열이 세로로 정렬돼야
         비교가 된다. 카드는 한 건을 읽는 자리에만 쓴다. */
 
-/* overflow-x:clip은 하위 full-bleed 요소(width:100vw)의 안전장치다 — 100vw는
-   세로 스크롤바 폭을 안 빼고 계산하는 브라우저가 있어서, 없으면 몇 px 넘치는
-   만큼 페이지 전체에 가로 스크롤이 생긴다. hidden과 달리 별도 스크롤 컨테이너를
-   만들지 않아 하위 sticky 요소도 페이지 스크롤을 따른다. */
-.workspace-shell{min-height:100vh;background:var(--surface);overflow-x:clip;}
-
-/* 상단바 — 딥그린. 여기가 어두워야 아래 작업 영역이 "종이"로 읽힌다. */
-.workspace-topbar{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:13px 26px;background:var(--console);color:#fff;
-}
-.workspace-topbar-left{display:flex;align-items:center;gap:10px;min-width:0;}
-.workspace-brand{
-  display:flex;align-items:center;gap:9px;border:none;background:none;cursor:pointer;
-  font-family:inherit;font-weight:800;font-size:16px;letter-spacing:0.02em;color:#fff;
-}
-.workspace-context{
-  font-family:var(--mono);font-size:11px;letter-spacing:0.12em;color:var(--console-soft);
-  margin-left:8px;white-space:nowrap;
-}
-.workspace-topbar-right{display:flex;align-items:center;gap:14px;}
-.workspace-user{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:#fff;}
-/* 어두운 바탕에서는 흰 글씨 아바타가 묻힌다 — 밝은 teal 바탕에 어두운 글자로 뒤집는다. */
-.workspace-avatar{
-  flex:0 0 auto;width:26px;height:26px;border-radius:8px;
-  background:var(--teal-bright);color:#06231e;
-  display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;text-transform:uppercase;
-}
-.workspace-logout{
-  border:none;background:none;cursor:pointer;font-family:inherit;
-  font-size:13px;color:var(--console-soft);
-}
-.workspace-logout:hover{color:#fff;}
+/* 딥그린 상단바(.workspace-topbar/-brand/-user/-logout/-context)는 걷어냈다.
+   레일(ConsoleLayout)이 /app까지 올라오면서 로고·사용자·로그아웃이 전부 거기
+   있게 됐고, 상단바가 유일하게 갖고 있던 "지금 어느 화면인가"는 작업 영역 맨
+   위 .ws-strip으로 옮겼다. 껍데기 자체(.workspace-shell)도 .home-chat이 대신한다. */
 
 /* 폭은 화면마다 다르다(업로드는 좁고 리포트는 넓다) — 껍데기는 최대 폭만
-   잡아주고 실제 폭은 각 화면이 정한다. */
-.workspace-body{max-width:1240px;margin:0 auto;padding:22px 26px 44px;}
+   잡아주고 실제 폭은 각 화면이 정한다.
+   flex:none인 이유: 부모(.home-main)가 flex column이라 기본값이면 내용이 길 때
+   눌린다 — 여기는 눌리지 말고 넘친 만큼 .home-main이 스크롤해야 한다. */
+.workspace-body{flex:none;width:100%;max-width:1240px;margin:0 auto;padding:22px 26px 44px;}
 
 /* 화면 상단 되돌아가기 줄 — 링크 여러 개가 세로선으로 나뉜다 */
 .ws-backrow{
   display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;
-  font-size:13px;font-weight:600;color:var(--muted);
+  font-size:14px;font-weight:600;color:var(--muted);
 }
-.ws-backrow .onboard-back{font-size:13px;padding:0;}
+.ws-backrow .onboard-back{font-size:14px;padding:0;}
 .ws-backrow-sep{color:#c3cac4;}
-.ws-backrow-meta{margin-left:auto;font-family:var(--mono);font-size:11px;letter-spacing:0.1em;color:var(--label);}
+.ws-backrow-meta{margin-left:auto;font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--label);}
 
 /* 좁은 화면(업로드 폼·마이페이지 등)을 콘솔 폭 안에서 다시 좁히는 자리 */
 .ws-narrow{max-width:840px;}
 
 @media (max-width:640px){
   .workspace-body{padding:16px 16px 36px;}
-  .workspace-topbar{padding:12px 16px;}
-  .workspace-context{display:none;}
 }
 
 .upload-card{padding:20px 22px;}
 .upload-textarea{min-height:120px;resize:vertical;}
 .upload-pdf-clear{
   border:1px solid var(--card-line);background:#fff;border-radius:8px;padding:4px 12px;
-  font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;
+  font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;
 }
 
 /* ---------- 콘솔 공용 부품 (ws = workspace) ---------- */
@@ -77,14 +48,14 @@
   padding:13px 26px;background:#fff;border-bottom:1px solid var(--card-line);
 }
 .ws-strip-label{
-  font-family:var(--mono);font-size:11px;letter-spacing:0.14em;color:var(--muted);font-weight:500;
+  font-family:var(--mono);font-size:12px;letter-spacing:0.14em;color:var(--muted);font-weight:500;
 }
 .ws-strip-corpus{
-  font-family:var(--mono);font-size:11px;letter-spacing:0.1em;color:var(--teal-deep);
+  font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--teal-deep);
 }
 .ws-strip-steps{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.ws-strip-slash{font-family:var(--mono);font-size:11px;color:#c3cac4;margin-right:10px;}
-.ws-strip-step{font-family:var(--mono);font-size:11px;letter-spacing:0.12em;color:#a7ada7;}
+.ws-strip-slash{font-family:var(--mono);font-size:12px;color:#c3cac4;margin-right:10px;}
+.ws-strip-step{font-family:var(--mono);font-size:12px;letter-spacing:0.12em;color:#a7ada7;}
 /* 끝난 칸은 브랜드색, 지금 칸은 잉크색 + 굵게. 셋이 전부 회색이면 어디 서 있는지
    알 수 없고, 셋이 전부 색이 있으면 아무 데도 강조가 없다. */
 .ws-strip-step.is-done{color:var(--teal-deep);}
@@ -94,12 +65,12 @@
 .ws-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   border:none;border-radius:8px;background:var(--teal-deep);color:#fff;
-  font-family:inherit;font-size:14px;font-weight:700;padding:11px 26px;cursor:pointer;
+  font-family:inherit;font-size:15px;font-weight:700;padding:11px 26px;cursor:pointer;
   transition:background .16s;
 }
 .ws-btn:hover:not(:disabled){background:var(--teal);}
 .ws-btn:disabled{opacity:0.45;cursor:not-allowed;}
-.ws-btn-block{width:100%;padding:13px;font-size:14.5px;}
+.ws-btn-block{width:100%;padding:13px;font-size:15.5px;}
 .ws-btn-ghost{
   background:#fff;color:var(--teal-deep);border:1px solid var(--card-line);
 }
@@ -109,17 +80,17 @@
    안 읽힌다. 옅은 면 + 모노 머리글자로 "곁의 말"이라고 표시한다. */
 .ws-note{
   display:flex;gap:9px;margin-top:14px;padding:11px 13px;border-radius:8px;
-  background:#f3f6f4;font-size:12.5px;line-height:1.65;color:var(--muted);
+  background:#f3f6f4;font-size:13.5px;line-height:1.65;color:var(--muted);
 }
 .ws-note-mark{font-family:var(--mono);font-weight:700;color:var(--teal-deep);flex:none;}
 
 /* 경고 — 값(쪽수 등)을 칩으로 앞세우고 이유를 뒤에 붙인다 */
 .ws-warn{
   display:flex;align-items:center;gap:10px;margin-top:18px;padding:11px 14px;border-radius:8px;
-  background:#fdf6ec;border:1px solid #f0dcbb;color:#8a5b18;font-size:13px;line-height:1.6;
+  background:#fdf6ec;border:1px solid #f0dcbb;color:#8a5b18;font-size:14px;line-height:1.6;
 }
 .ws-warn-chip{
-  flex:none;font-family:var(--mono);font-weight:700;font-size:11px;
+  flex:none;font-family:var(--mono);font-weight:700;font-size:12px;
   background:#8a5b18;color:#fdf6ec;padding:2px 7px;border-radius:4px;
 }
 
@@ -137,16 +108,16 @@
 .upload-intro{margin-bottom:24px;}
 
 .upload-confirm-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
-.upload-confirm-title{font-size:24px;font-weight:800;letter-spacing:-0.02em;}
+.upload-confirm-title{font-size:25px;font-weight:800;letter-spacing:-0.02em;}
 
 /* 추출 결과 — 카드 안에서 TITLE / ABSTRACT 두 구획으로 잘린다 */
 .upload-extract-block{padding:16px 20px;border-bottom:1px solid var(--rule);}
 .upload-extract-block.is-last{border-bottom:none;}
 .upload-extract-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
-.upload-extract-count{font-family:var(--mono);font-size:10.5px;color:#c3cac4;}
-.upload-extract-title{font-size:17px;font-weight:700;line-height:1.5;margin-top:7px;}
+.upload-extract-count{font-family:var(--mono);font-size:11.5px;color:#c3cac4;}
+.upload-extract-title{font-size:18px;font-weight:700;line-height:1.5;margin-top:7px;}
 .upload-extract-abstract{
-  font-size:13.5px;line-height:1.8;color:#3a413a;margin-top:8px;
+  font-size:14.5px;line-height:1.8;color:#3a413a;margin-top:8px;
   max-height:230px;overflow-y:auto;
 }
 
@@ -181,11 +152,11 @@
 .upload-drop-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
 
 .upload-drop-icon{margin:0 auto 12px;color:var(--teal-deep);}
-.upload-drop-title{font-size:14.5px;font-weight:700;}
-.upload-drop-hint{margin-top:5px;font-size:12.5px;color:var(--muted);}
+.upload-drop-title{font-size:15.5px;font-weight:700;}
+.upload-drop-hint{margin-top:5px;font-size:13.5px;color:var(--muted);}
 .upload-drop-browse{
   margin-top:13px;border:1px solid #dfe3dd;background:#fff;border-radius:8px;
-  padding:8px 18px;font-size:13px;font-weight:700;color:var(--teal-deep);
+  padding:8px 18px;font-size:14px;font-weight:700;color:var(--teal-deep);
   cursor:pointer;font-family:inherit;transition:border-color .18s;
 }
 .upload-drop-browse:hover:not(:disabled){border-color:var(--teal);}
@@ -195,13 +166,13 @@
   display:flex;align-items:center;justify-content:space-between;gap:14px;
   flex-wrap:wrap;text-align:left;
 }
-.upload-file-name{font-size:14px;font-weight:700;word-break:break-all;}
-.upload-file-size{margin-top:2px;font-size:12.5px;color:var(--muted);}
+.upload-file-name{font-size:15px;font-weight:700;word-break:break-all;}
+.upload-file-size{margin-top:2px;font-size:13.5px;color:var(--muted);}
 .upload-file-actions{display:flex;gap:8px;flex-shrink:0;}
 
 /* ---------- 결과: 종합 요약 본문 ---------- */
-.wr-summary{margin-top:10px;font-size:14px;line-height:1.75;}
-.wr-summary h4{font-size:14.5px;font-weight:800;margin:14px 0 6px;}
+.wr-summary{margin-top:10px;font-size:15px;line-height:1.75;}
+.wr-summary h4{font-size:15.5px;font-weight:800;margin:14px 0 6px;}
 .wr-summary h4:first-child{margin-top:0;}
 .wr-summary p{margin:8px 0;}
 .wr-summary ul{margin:8px 0;padding-left:20px;}
@@ -209,22 +180,22 @@
 /* 서버가 weak 신뢰도 경고를 인용문으로 보낸다 — 본문과 확실히 구분돼야 한다. */
 .wr-quote{
   margin:10px 0;padding:10px 14px;border-left:3px solid #e0b3ad;
-  background:#fbeceb;color:#8a2f26;border-radius:0 8px 8px 0;font-size:13.5px;
+  background:#fbeceb;color:#8a2f26;border-radius:0 8px 8px 0;font-size:14.5px;
 }
 
 /* ---------- 결과: 머리 카드 (올린 논문 + 총계) ---------- */
 .rp-query-card{display:flex;align-items:center;gap:28px;}
 .rp-query-main{flex:1;min-width:0;}
-.rp-query-title{font-size:17px;font-weight:800;line-height:1.45;letter-spacing:-0.01em;margin-top:6px;}
+.rp-query-title{font-size:18px;font-weight:800;line-height:1.45;letter-spacing:-0.01em;margin-top:6px;}
 .rp-query-abstract{
-  font-size:13px;line-height:1.65;color:var(--muted);margin-top:8px;max-width:920px;
+  font-size:14px;line-height:1.65;color:var(--muted);margin-top:8px;max-width:920px;
 }
 /* 수치는 세로선으로 칸을 나눠 오른쪽 끝에 붙인다 — 제목과 같은 흐름에 두면
    문장처럼 읽히고, 칸으로 나누면 계기판처럼 읽힌다. */
 .rp-stats{display:flex;flex:none;}
 .rp-stat{padding:0 22px;border-left:1px solid var(--rule);text-align:right;}
 .rp-stat:last-child{padding-right:0;}
-.rp-stat-value{font-size:22px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;}
+.rp-stat-value{font-size:23px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;}
 .rp-stat-value.is-accent{color:var(--teal-deep);}
 
 @media (max-width:860px){
@@ -247,7 +218,7 @@
 .rp-row-head{
   padding-top:9px;padding-bottom:9px;background:var(--field);
   border-bottom:1px solid var(--rule);
-  font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;color:var(--label);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:0.12em;color:var(--label);
 }
 .rp-row-item{
   background:none;border:none;border-bottom:1px solid var(--rule-soft);
@@ -260,20 +231,20 @@
 .rp-row-item.is-negative{background:#fffbfb;}
 .rp-row-item.is-negative:hover{background:var(--teal-soft);}
 
-.rp-rank{font-family:var(--mono);font-size:12.5px;color:#a7ada7;}
+.rp-rank{font-family:var(--mono);font-size:13.5px;color:#a7ada7;}
 .rp-main{min-width:0;display:flex;flex-direction:column;gap:3px;}
-.rp-title{font-size:14px;font-weight:700;line-height:1.4;}
+.rp-title{font-size:15px;font-weight:700;line-height:1.4;}
 .rp-row-item:hover .rp-title{color:var(--teal-deep);}
-.rp-sub{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--label);}
-.rp-venue{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.rp-sub{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--label);}
+.rp-venue{font-family:var(--mono);font-size:13px;color:var(--muted);}
 .rp-num{text-align:right;}
 /* 수정 횟수는 이 표의 판단 기준이라 굵게 세운다. "없음"만 흐리게 — 0은 비교
    대상에서 빠지는 값이라 나머지 숫자와 같은 무게로 서면 안 된다. */
-.rp-revisions{font-family:var(--mono);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;}
+.rp-revisions{font-family:var(--mono);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;}
 .rp-revisions.is-none{font-weight:400;color:var(--muted);}
-.rp-count{font-family:var(--mono);font-size:13px;color:var(--muted);}
-.rp-chev{color:#c3cac4;text-align:right;font-size:16px;line-height:1;}
-.rp-detail-title{font-size:20px;font-weight:800;line-height:1.35;letter-spacing:-0.01em;}
+.rp-count{font-family:var(--mono);font-size:14px;color:var(--muted);}
+.rp-chev{color:#c3cac4;text-align:right;font-size:17px;line-height:1;}
+.rp-detail-title{font-size:21px;font-weight:800;line-height:1.35;letter-spacing:-0.01em;}
 
 /* 좁은 화면에서는 표가 성립하지 않는다(가로 스크롤은 비교를 더 어렵게 한다) —
    순위·제목·평균 한 줄, 그 아래 결과 칩으로 접는다. 학회·리뷰 수·화살표는
@@ -310,7 +281,7 @@
 .papers-row-head{
   padding-top:9px;padding-bottom:9px;background:var(--field);
   border-bottom:1px solid var(--rule);
-  font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;color:var(--label);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:0.12em;color:var(--label);
 }
 .papers-row-item{border-bottom:1px solid var(--rule-soft);}
 .papers-list li:last-child .papers-row-item{border-bottom:none;}
@@ -321,14 +292,14 @@
   cursor:pointer;font-family:inherit;
 }
 .papers-title{
-  display:block;font-size:14.5px;font-weight:700;line-height:1.45;color:var(--ink);
+  display:block;font-size:15.5px;font-weight:700;line-height:1.45;color:var(--ink);
 }
 .papers-open-btn:hover .papers-title{color:var(--teal-deep);}
-.papers-field{display:block;font-size:12px;color:var(--label);margin-top:3px;}
-.papers-date{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.papers-field{display:block;font-size:13px;color:var(--label);margin-top:3px;}
+.papers-date{font-family:var(--mono);font-size:13px;color:var(--muted);}
 .papers-delete-btn{
   border:1px solid var(--card-line);background:#fff;border-radius:999px;
-  padding:5px 13px;font-size:12.5px;font-weight:600;color:#8f2f28;
+  padding:5px 13px;font-size:13.5px;font-weight:600;color:#8f2f28;
   cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;
 }
 .papers-delete-btn:hover{background:#fdeceb;border-color:#f2c9c5;}
@@ -337,13 +308,13 @@
 .papers-confirm{
   display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
   padding:15px 22px;background:#fdf6f5;border-bottom:1px solid var(--rule-soft);
-  font-size:13.5px;color:#8f2f28;
+  font-size:14.5px;color:#8f2f28;
 }
 .papers-confirm-actions{display:flex;gap:8px;flex:none;}
-.papers-confirm-cancel{padding:7px 18px;font-size:13px;border-radius:999px;}
+.papers-confirm-cancel{padding:7px 18px;font-size:14px;border-radius:999px;}
 .papers-delete-confirm-btn{
   border:none;background:#c0392b;color:#fff;border-radius:999px;
-  padding:7px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  padding:7px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
 }
 .papers-delete-confirm-btn:disabled{opacity:.6;cursor:default;}
 
@@ -355,25 +326,25 @@
   .papers-row-item .rp-chev{display:none;}
   .papers-open-btn{grid-column:1;grid-row:1;}
   .papers-delete-btn{grid-column:2;grid-row:1;}
-  .papers-date{grid-column:1 / 3;grid-row:2;font-size:11.5px;}
+  .papers-date{grid-column:1 / 3;grid-row:2;font-size:12.5px;}
   .papers-confirm{padding:13px 16px;}
 }
 
 /* 더미 데이터 미리보기 — 실제 결과로 오해할 수 없게 계속 눈에 띄어야 한다. */
 .rp-preview-btn{
   margin-top:14px;border:1.5px dashed var(--line);background:#fff;border-radius:999px;
-  padding:8px 18px;font-size:13px;font-weight:600;color:var(--muted);
+  padding:8px 18px;font-size:14px;font-weight:600;color:var(--muted);
   cursor:pointer;font-family:inherit;
 }
 .rp-preview-btn:hover{border-color:var(--teal);color:var(--teal-deep);}
 .rp-preview-banner{
   display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  padding:11px 14px;border-radius:10px;font-size:13.5px;
+  padding:11px 14px;border-radius:10px;font-size:14.5px;
   background:#fdf0e3;color:#8a4d10;border:1px solid #f0d8bb;
 }
 .rp-preview-banner button{
   border:1px solid #d8b98f;background:#fff;border-radius:999px;padding:5px 14px;
-  font-size:12.5px;font-weight:700;color:#8a4d10;cursor:pointer;font-family:inherit;
+  font-size:13.5px;font-weight:700;color:#8a4d10;cursor:pointer;font-family:inherit;
 }
 
 /* 제목 카드 우측 상단의 OpenReview 링크 — 예전엔 화면 맨 아래 별도 카드였는데,
@@ -382,7 +353,7 @@
 /* 알약(999px)이 아니라 각진 버튼이다 — 콘솔 화면의 버튼은 전부 8px 곡률로
    맞춰, 둥근 알약은 랜딩의 CTA에만 남긴다. */
 .pd-openreview-link{
-  flex:none;font-size:12.5px;font-weight:700;color:var(--teal-deep);
+  flex:none;font-size:13.5px;font-weight:700;color:var(--teal-deep);
   border:1px solid var(--card-line);border-radius:8px;padding:6px 14px;text-decoration:none;
   white-space:nowrap;background:#fff;
 }
@@ -411,10 +382,10 @@
 /* 논문 상세 머리 카드 — 학회·최종 결과·평균이 한 줄, 제목이 그 아래 */
 .pd-head-card{display:flex;flex-direction:column;}
 .pd-head-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.pd-head-venue{font-family:var(--mono);font-size:11.5px;letter-spacing:0.08em;color:var(--muted);}
+.pd-head-venue{font-family:var(--mono);font-size:12.5px;letter-spacing:0.08em;color:var(--muted);}
 .pd-head-decision{display:inline-flex;align-items:center;gap:7px;}
-.pd-head-stats{font-family:var(--mono);font-size:11.5px;color:var(--label);}
-.pd-head-title{font-size:22px;font-weight:800;line-height:1.4;letter-spacing:-0.015em;margin-top:10px;}
+.pd-head-stats{font-family:var(--mono);font-size:12.5px;color:var(--label);}
+.pd-head-title{font-size:23px;font-weight:800;line-height:1.4;letter-spacing:-0.015em;margin-top:10px;}
 /* "왜 이 논문인가"는 결과가 아니라 근거다 — 본문과 같은 무게로 흐르지 않도록
    왼쪽에 브랜드색 세로선을 세우고 라벨을 붙인다. */
 .pd-why{
@@ -422,16 +393,16 @@
   background:#f0f6f3;border-left:2px solid var(--teal-deep);
 }
 .pd-why-label{
-  font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:0.1em;
+  font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:0.1em;
   color:var(--teal-deep);flex:none;padding-top:2px;
 }
-.pd-why-text{font-size:13px;line-height:1.7;color:#2c322c;}
+.pd-why-text{font-size:14px;line-height:1.7;color:#2c322c;}
 
 /* 논문 상세 오른쪽은 읽기 도구에 가깝게: 얇은 경계, 작은 곡률, 제한된 강조색. */
 .pd-right.wr-stack{gap:14px;}
 .pd-right > .wr-card{padding:18px 20px;box-shadow:none;}
 .pd-right .wr-card-title{
-  font-size:15px;line-height:1.4;letter-spacing:-.01em;margin-bottom:10px;
+  font-size:16px;line-height:1.4;letter-spacing:-.01em;margin-bottom:10px;
 }
 
 
@@ -441,17 +412,17 @@
 
 /* ---------- 결과: 수정 전/후 대조 (상세 화면) ---------- */
 .rc-field{margin-top:16px;}
-.rc-field-label{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;}
+.rc-field-label{font-size:14px;font-weight:700;color:var(--muted);margin-bottom:8px;}
 .rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .rc-col{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg);}
 .rc-col-head{
   display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  font-size:12.5px;font-weight:700;margin-bottom:8px;
+  font-size:13.5px;font-weight:700;margin-bottom:8px;
 }
-.rc-legend{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;}
+.rc-legend{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;}
 .rc-legend-before{background:#e9ebe8;color:#5c645f;}
 .rc-legend-after{background:#fdf1a9;color:#7a6410;}
-.rc-text{font-size:13.5px;line-height:1.75;word-break:break-word;}
+.rc-text{font-size:14.5px;line-height:1.75;word-break:break-word;}
 /* 형광펜 — 회색은 "곧 사라질 부분", 노랑은 "새로 들어온 부분". */
 .rc-mark-before{background:#e9ebe8;color:var(--muted);border-radius:3px;padding:1px 2px;}
 .rc-mark-after{background:#fdf1a9;color:var(--ink);border-radius:3px;padding:1px 2px;}
@@ -479,13 +450,13 @@
 }
 .mypage-fields .auth-field-label{
   flex:0 0 128px;
-  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.12em;
+  font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:0.12em;
   color:var(--label);text-transform:uppercase;
 }
 .mypage-fields .auth-input{
   flex:1;min-width:180px;width:auto;
   border-width:1px;border-color:var(--card-line);border-radius:8px;
-  padding:9px 12px;font-size:14px;
+  padding:9px 12px;font-size:15px;
 }
 /* 오류 문구는 라벨 열을 비우고 입력칸 아래에 붙어야 짝이 보인다. */
 .mypage-fields .auth-field-error{flex:1 0 100%;margin-left:144px;}
@@ -496,16 +467,16 @@
 }
 .mypage-key{
   flex:0 0 128px;
-  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.12em;color:var(--label);
+  font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:0.12em;color:var(--label);
 }
-.mypage-val{flex:1;font-size:14px;min-width:0;word-break:break-word;}
-.mypage-note-inline{font-size:12px;color:var(--label);margin-left:8px;}
-.mypage-hint{font-size:12.5px;color:var(--label);line-height:1.65;padding:8px 0 0 144px;}
-.mypage-blank{color:var(--muted);font-size:13.5px;}
+.mypage-val{flex:1;font-size:15px;min-width:0;word-break:break-word;}
+.mypage-note-inline{font-size:13px;color:var(--label);margin-left:8px;}
+.mypage-hint{font-size:13.5px;color:var(--label);line-height:1.65;padding:8px 0 0 144px;}
+.mypage-blank{color:var(--muted);font-size:14.5px;}
 .mypage-tags{display:flex;gap:6px;flex-wrap:wrap;}
 
 .mypage-subsection{margin-top:20px;padding-top:16px;border-top:1px solid var(--rule);}
-.mypage-subsection-title{font-size:14px;font-weight:800;margin-bottom:4px;}
+.mypage-subsection-title{font-size:15px;font-weight:800;margin-bottom:4px;}
 
 @media (max-width:640px){
   .mypage-row,.mypage-fields .auth-field{flex-direction:column;align-items:stretch;gap:5px;}
@@ -517,7 +488,7 @@
 .mypage-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
 .mypage-edit-btn{
   flex:none;border:1px solid var(--card-line);background:#fff;border-radius:8px;
-  padding:6px 14px;font-size:12.5px;font-weight:700;color:var(--teal-deep);
+  padding:6px 14px;font-size:13.5px;font-weight:700;color:var(--teal-deep);
   cursor:pointer;font-family:inherit;
 }
 .mypage-edit-btn:hover{border-color:var(--teal);background:var(--teal-soft);}
@@ -525,7 +496,7 @@
 /* 온보딩 답변 인라인 수정 */
 .mypage-edit-group{margin-top:20px;}
 .mypage-edit-group:first-child{margin-top:0;}
-.mypage-edit-label{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:10px;}
+.mypage-edit-label{font-size:14.5px;font-weight:700;color:var(--ink);margin-bottom:10px;}
 .mypage-edit-options{display:flex;flex-direction:column;gap:8px;}
 .mypage-custom-input{margin-top:10px;}
 
@@ -540,7 +511,7 @@
 .mypage-danger-title{color:#8f2f28;}
 .mypage-danger-btn{
   border:1.5px solid var(--red);color:var(--red);background:#fff;
-  border-radius:999px;padding:10px 20px;font-size:14px;font-weight:700;
+  border-radius:999px;padding:10px 20px;font-size:15px;font-weight:700;
 }
 .mypage-danger-btn:hover:not(:disabled){background:var(--red);color:#fff;}
 .mypage-danger-btn:disabled{opacity:0.45;cursor:not-allowed;}
@@ -554,9 +525,9 @@
   background:#fff;border:1px solid var(--card-line);border-radius:12px;
   padding:18px 22px;
 }
-.wr-card-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.wr-pill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--teal-soft);color:var(--teal-deep);}
-.wr-muted{color:var(--muted);font-size:13px;}
+.wr-card-title{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.wr-pill{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--teal-soft);color:var(--teal-deep);}
+.wr-muted{color:var(--muted);font-size:14px;}
 
 /* 카드 안 구획 — 제목 줄 오른쪽에 모노 메타를 붙여 "이 카드가 무엇으로
    만들어졌는지"(개수·출처·정렬 기준)를 값처럼 밝힌다. */
@@ -566,7 +537,7 @@
 }
 .wr-card-head .wr-card-title{margin-bottom:0;}
 .wr-card-head-meta{
-  font-family:var(--mono);font-size:10.5px;letter-spacing:0.1em;color:var(--label);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:0.1em;color:var(--label);
   white-space:nowrap;flex:none;
 }
 /* 머리·바닥 줄을 카드 폭 끝까지 붙이려면 카드 자체의 padding을 걷어야 한다. */
@@ -579,35 +550,35 @@
 
 /* 상태 칩 — 표에서 색으로 먼저 읽히고 글자로 확인된다 */
 .ws-chip{
-  display:inline-block;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:5px;
+  display:inline-block;font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:5px;
   white-space:nowrap;background:#f2f3f1;color:var(--muted);
 }
 .ws-chip.accept{background:var(--teal-soft);color:var(--teal-deep);}
 .ws-chip.reject{background:#fdeceb;color:var(--red);}
 .ws-chip.withdrawn{background:#fdf0e3;color:#a35b12;}
 .ws-chip.neutral{background:#f2f3f1;color:var(--muted);}
-.wr-hint{color:var(--teal-deep);font-size:12px;font-weight:600;margin:2px 0 12px;}
+.wr-hint{color:var(--teal-deep);font-size:13px;font-weight:600;margin:2px 0 12px;}
 
-.wr-banner{margin-top:0;padding:11px 14px;border-radius:10px;font-size:13.5px;background:#fdf0e3;color:#8a4d10;border:1px solid #f0d8bb;}
+.wr-banner{margin-top:0;padding:11px 14px;border-radius:10px;font-size:14.5px;background:#fdf0e3;color:#8a4d10;border:1px solid #f0d8bb;}
 .wr-banner-danger{background:#fdeceb;color:#8f2f28;border-color:#f2c9c5;font-weight:600;}
 
 /* similar papers — 랜딩 시뮬레이터(SelectedPapers)가 쓰는 카드형 목록.
    /app의 결과 화면은 표(.rp-row)로 옮겼지만, 랜딩은 한 편씩 펼쳐 보여주는
    데모라 카드 형태가 그대로 맞다. */
-.wr-paper-rank{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px;min-width:20px;}
+.wr-paper-rank{color:var(--muted);font-variant-numeric:tabular-nums;font-size:14px;min-width:20px;}
 .wr-paper-main{flex:1;min-width:0;}
 .wr-paper-top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;}
-.wr-paper-title{font-weight:700;font-size:14.5px;flex:1;}
-.wr-decision{font-size:12.5px;font-weight:700;color:var(--ink);}
+.wr-paper-title{font-weight:700;font-size:15.5px;flex:1;}
+.wr-decision{font-size:13.5px;font-weight:700;color:var(--ink);}
 .wr-decision.accept{color:var(--teal-deep);}
 .wr-decision.reject{color:var(--red);}
 .wr-decision.withdrawn{color:#a35b12;}
-.wr-paper-meta{font-size:12.5px;color:var(--muted);margin-top:3px;}
-.wr-match-badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:var(--teal-soft);color:var(--teal-deep);margin-left:6px;cursor:help;}
-.wr-split-badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:#fdf0e3;color:#a35b12;margin-left:6px;}
+.wr-paper-meta{font-size:13.5px;color:var(--muted);margin-top:3px;}
+.wr-match-badge{display:inline-block;font-size:12px;padding:1px 7px;border-radius:9px;background:var(--teal-soft);color:var(--teal-deep);margin-left:6px;cursor:help;}
+.wr-split-badge{display:inline-block;font-size:12px;padding:1px 7px;border-radius:9px;background:#fdf0e3;color:#a35b12;margin-left:6px;}
 .wr-more-btn{
   background:none;border:1px solid var(--line);border-radius:8px;color:var(--teal-deep);
-  font-size:13px;font-weight:700;padding:8px 16px;margin-top:12px;cursor:pointer;font-family:inherit;
+  font-size:14px;font-weight:700;padding:8px 16px;margin-top:12px;cursor:pointer;font-family:inherit;
 }
 
 /* ---------- first-time tour (Grammarly 스타일 코치마크) ---------- */
@@ -618,12 +589,12 @@
 }
 .tour-progress{height:4px;border-radius:999px;background:rgba(255,255,255,0.25);overflow:hidden;margin-bottom:14px;}
 .tour-progress-fill{height:100%;background:var(--teal-bright);transition:width .25s ease;}
-.tour-title{font-size:14.5px;font-weight:800;margin-bottom:6px;}
-.tour-body{font-size:13px;line-height:1.55;color:#d7f0e8;margin-bottom:16px;}
+.tour-title{font-size:15.5px;font-weight:800;margin-bottom:6px;}
+.tour-body{font-size:14px;line-height:1.55;color:#d7f0e8;margin-bottom:16px;}
 .tour-actions{display:flex;align-items:center;justify-content:space-between;}
-.tour-skip{border:none;background:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;color:#bfe6d8;}
+.tour-skip{border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;color:#bfe6d8;}
 .tour-skip:hover{color:#fff;}
-.tour-next{border:none;border-radius:999px;background:#fff;color:var(--teal-deep);font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 16px;cursor:pointer;}
+.tour-next{border:none;border-radius:999px;background:#fff;color:var(--teal-deep);font-family:inherit;font-size:13.5px;font-weight:700;padding:8px 16px;cursor:pointer;}
 .tour-next:hover{background:#eafff6;}
 
 @media (max-width:520px){
@@ -643,7 +614,7 @@
 }
 .story-close{
   position:absolute;top:18px;right:20px;width:34px;height:34px;border-radius:50%;
-  border:1px solid var(--line);background:#fff;cursor:pointer;font-size:15px;color:var(--muted);
+  border:1px solid var(--line);background:#fff;cursor:pointer;font-size:16px;color:var(--muted);
 }
 .story-close:hover{color:var(--ink);border-color:var(--teal);}
 
@@ -652,14 +623,14 @@
 @keyframes story-spin{to{transform:rotate(360deg);}}
 
 .story-content{display:flex;flex-direction:column;gap:16px;}
-.story-head-meta{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:6px;}
+.story-head-meta{font-size:14px;color:var(--muted);font-weight:600;margin-bottom:6px;}
 .story-title{font-size:clamp(19px,2.4vw,23px);font-weight:800;letter-spacing:-0.01em;line-height:1.35;}
 
 .story-journey{border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;background:#fafaf8;}
-.story-journey-chain{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:13.5px;font-weight:600;}
+.story-journey-chain{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:14.5px;font-weight:600;}
 .story-journey-arrow{color:var(--teal-deep);font-weight:700;margin-right:8px;}
 .story-journey-stop.is-query{color:var(--teal-deep);}
-.story-journey-outcome{margin-top:10px;font-size:12.5px;font-weight:700;color:var(--teal-deep);}
+.story-journey-outcome{margin-top:10px;font-size:13.5px;font-weight:700;color:var(--teal-deep);}
 .story-journey-outcome.outcome-still_rejected{color:var(--red);}
 
 .story-caveats{display:flex;flex-direction:column;gap:6px;}
@@ -671,19 +642,19 @@
   flex:0 0 22px;width:22px;height:22px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--teal-deep);
-  font:inherit;font-size:15px;font-weight:500;line-height:1;cursor:pointer;
+  font:inherit;font-size:16px;font-weight:500;line-height:1;cursor:pointer;
 }
 .story-detail-toggle:hover{border-color:var(--teal-deep);}
 .story-detail-toggle[aria-expanded="true"]{border-color:var(--teal-deep);}
 .bodydiff-guide-toggle{
   flex:none;border:0;background:none;padding:2px 0;color:var(--teal-deep);
-  font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+  font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
 }
 .bodydiff-guide-toggle:hover{text-decoration:underline;text-underline-offset:3px;}
-.story-narrative-headline{font-size:14.5px;line-height:1.7;color:#2c302a;margin-top:8px;}
-.story-subhead{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);margin:16px 0 6px;}
+.story-narrative-headline{font-size:15.5px;line-height:1.7;color:#2c302a;margin-top:8px;}
+.story-subhead{font-size:13.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);margin:16px 0 6px;}
 .story-list{margin:0 0 0 20px;padding:0;display:flex;flex-direction:column;gap:5px;}
-.story-list li{font-size:13.5px;color:#33372f;}
+.story-list li{font-size:14.5px;color:#33372f;}
 .story-timeline{display:flex;flex-direction:column;gap:0;margin-top:2px;}
 .story-event{
   border-left:1px solid var(--line);padding-left:16px;position:relative;padding-bottom:10px;
@@ -703,25 +674,25 @@
 }
 .story-event.is-expandable .story-event-head:hover{background:#f5f6f4;}
 .story-event.is-open .story-event-head{background:var(--teal-soft);}
-.story-event-date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;}
-.story-event-actor{font-size:12px;font-weight:700;color:var(--teal-deep);white-space:nowrap;}
-.story-event-headline{font-size:13.5px;color:#2c302a;flex:1;min-width:160px;}
+.story-event-date{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;}
+.story-event-actor{font-size:13px;font-weight:700;color:var(--teal-deep);white-space:nowrap;}
+.story-event-headline{font-size:14.5px;color:#2c302a;flex:1;min-width:160px;}
 .story-event-toggle{
   flex:0 0 22px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--teal-deep);
-  font-size:15px;font-weight:500;line-height:1;
+  font-size:16px;font-weight:500;line-height:1;
 }
 .story-event.is-open .story-event-toggle{border-color:var(--teal-deep);}
 .story-event-body{margin-top:6px;padding:12px 14px;background:#fafaf8;border:1px solid var(--line);border-radius:8px;}
-.story-review-body{font-size:13.5px;line-height:1.7;color:#33372f;white-space:pre-wrap;}
+.story-review-body{font-size:14.5px;line-height:1.7;color:#33372f;white-space:pre-wrap;}
 .story-review-body p{margin:0 0 8px;}
 .story-review-body p:last-child{margin-bottom:0;}
-.story-review-body b{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;}
+.story-review-body b{display:block;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;}
 
 .story-changes{display:flex;flex-direction:column;gap:12px;}
-.story-change-label{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:4px;}
-.story-change-text,.story-change-value{font-size:13px;line-height:1.7;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
-.story-change-file{font-size:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.story-change-label{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.story-change-text,.story-change-value{font-size:14px;line-height:1.7;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
+.story-change-file{font-size:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .story-change-file a{color:var(--teal-deep);font-weight:600;text-decoration:underline;text-underline-offset:2px;}
 .diff-ins{background:#d6f0e6;color:#0b6e57;border-radius:3px;padding:0 2px;}
 .diff-del{background:#fbeceb;color:#8f2f28;border-radius:3px;padding:0 2px;text-decoration:line-through;}
@@ -753,16 +724,16 @@
 .bodydiff-head-row{margin-bottom:6px;}
 .bodydiff-head-title{
   display:flex;align-items:center;gap:8px;margin-bottom:6px;
-  font-size:16px;font-weight:800;line-height:1.4;letter-spacing:-.01em;
+  font-size:17px;font-weight:800;line-height:1.4;letter-spacing:-.01em;
 }
 .bodydiff-callout{
   background:var(--teal-soft);color:#0b5445;border:1px solid #cdeae0;border-radius:10px;
-  padding:11px 14px;font-size:12.5px;line-height:1.65;
+  padding:11px 14px;font-size:13.5px;line-height:1.65;
 }
 .bodydiff-callout b{font-weight:800;}
 .bodydiff-callout p{margin:0 0 6px;}
 .bodydiff-callout p:last-child{margin-bottom:0;}
-.bodydiff-warn{color:var(--amber);font-size:13.5px;}
+.bodydiff-warn{color:var(--amber);font-size:14.5px;}
 
 .bodydiff-timeline{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 16px;flex-shrink:0;}
 .bodydiff-version-btn{
@@ -771,8 +742,8 @@
 }
 .bodydiff-version-btn:hover{border-color:var(--teal);}
 .bodydiff-version-btn.is-active{border-color:var(--teal-deep);background:var(--teal-soft);}
-.bodydiff-version-no{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;}
-.bodydiff-version-meta{font-size:11px;color:var(--muted);white-space:nowrap;margin-top:2px;}
+.bodydiff-version-no{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;}
+.bodydiff-version-meta{font-size:12px;color:var(--muted);white-space:nowrap;margin-top:2px;}
 
 /* 헤더(버전·PDF링크·범례)와 요약 칩은 늘 보이고, 실제 diff 텍스트만 그
    안의 .bodydiff-scroll에서 스크롤한다 — 바깥 .bodydiff-scroll(콜아웃·버전
@@ -786,11 +757,11 @@
   margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);flex-shrink:0;
 }
 .bodydiff-body-head-left{display:flex;flex-direction:column;gap:6px;flex:1 1 auto;min-width:0;}
-.bodydiff-body-head-title{font-size:13.5px;font-weight:800;color:var(--ink);}
-.bodydiff-legend-item{font-size:11.5px;}
+.bodydiff-body-head-title{font-size:14.5px;font-weight:800;color:var(--ink);}
+.bodydiff-legend-item{font-size:12.5px;}
 
 .bodydiff-pdf-links{display:flex;gap:14px;flex-wrap:wrap;}
-.bodydiff-pdf-link{font-size:12.5px;color:var(--teal-deep);font-weight:600;text-decoration:none;}
+.bodydiff-pdf-link{font-size:13.5px;color:var(--teal-deep);font-weight:600;text-decoration:none;}
 .bodydiff-pdf-link:hover{text-decoration:underline;text-underline-offset:2px;}
 
 .bodydiff-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;flex-shrink:0;}
@@ -803,7 +774,7 @@
 }
 .bodydiff-fullview-open{
   flex:none;border:1px solid var(--line);border-radius:6px;background:#fff;padding:4px 7px;
-  color:var(--teal-deep);font:inherit;font-size:11.5px;font-weight:700;line-height:1.2;cursor:pointer;
+  color:var(--teal-deep);font:inherit;font-size:12.5px;font-weight:700;line-height:1.2;cursor:pointer;
 }
 .bodydiff-fullview-open:hover{border-color:var(--teal-deep);background:var(--teal-soft);}
 
@@ -825,11 +796,11 @@
 .bodydiff-fullview-close{
   flex:0 0 32px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
-  font:inherit;font-size:22px;line-height:1;cursor:pointer;
+  font:inherit;font-size:23px;line-height:1;cursor:pointer;
 }
 .bodydiff-fullview-close:hover{border-color:var(--teal-deep);color:var(--teal-deep);}
 .bodydiff-fullview-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;padding:24px 20px 32px;}
-.bodydiff-fullview-scroll .bodydiff-text{max-width:1100px;margin:0 auto;font-size:15px;line-height:1.9;}
+.bodydiff-fullview-scroll .bodydiff-text{max-width:1100px;margin:0 auto;font-size:16px;line-height:1.9;}
 .bodydiff-fullview-nav{margin:12px 0 0;box-shadow:none;}
 
 @media (max-width:700px){
@@ -848,20 +819,20 @@
 }
 .bodydiff-change-nav-btn{
   border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 12px;
-  font-size:12px;font-weight:700;color:var(--teal-deep);cursor:pointer;font-family:inherit;
+  font-size:13px;font-weight:700;color:var(--teal-deep);cursor:pointer;font-family:inherit;
 }
 .bodydiff-change-nav-btn:hover{border-color:var(--teal);background:var(--teal-soft);}
-.bodydiff-change-nav-pos{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.bodydiff-change-nav-pos{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;}
 
-.bodydiff-text{font-size:13.5px;line-height:1.85;white-space:pre-wrap;color:#2c302a;}
+.bodydiff-text{font-size:14.5px;line-height:1.85;white-space:pre-wrap;color:#2c302a;}
 .bodydiff-change-focus{outline:2px solid var(--teal-deep);outline-offset:2px;border-radius:3px;}
 
 .bodydiff-media-block{margin:18px 0;white-space:normal;background:#fafaf8;border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
-.bodydiff-media-title{font-weight:700;font-size:12.5px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
-.bodydiff-moved-badge{font-weight:600;font-size:11.5px;}
+.bodydiff-media-title{font-weight:700;font-size:13.5px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.bodydiff-moved-badge{font-weight:600;font-size:12.5px;}
 .bodydiff-media-pair{display:flex;gap:12px;flex-wrap:wrap;}
 .bodydiff-media-slot{flex:1 1 220px;}
-.bodydiff-media-slot-label{font-size:11.5px;color:var(--muted);margin-bottom:4px;}
+.bodydiff-media-slot-label{font-size:12.5px;color:var(--muted);margin-bottom:4px;}
 .bodydiff-media-img{max-width:100%;border:1px solid var(--line);border-radius:6px;background:#fff;}
 
 @media (max-width:999px){
@@ -898,39 +869,39 @@
 /* 왜 골랐는지 — 유사도 점수를 못 주는 대신 사람이 읽을 근거를 준다 */
 .wr-selection-reason{
   margin-top:10px;padding:10px 12px;border-radius:10px;
-  background:var(--teal-soft);color:var(--teal-deep);font-size:13px;line-height:1.6;
+  background:var(--teal-soft);color:var(--teal-deep);font-size:14px;line-height:1.6;
 }
 .wr-selection-reason b{margin-right:6px;}
 
 .wr-meta-review{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--bg);}
-.wr-meta-review p{margin:4px 0 0;font-size:13px;line-height:1.65;color:var(--muted);}
+.wr-meta-review p{margin:4px 0 0;font-size:14px;line-height:1.65;color:var(--muted);}
 
 .wr-reviews{margin-top:14px;}
-.wr-review-part-label{font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.02em;}
+.wr-review-part-label{font-size:12.5px;font-weight:800;color:var(--muted);letter-spacing:.02em;}
 
 .wr-review{border-top:1px solid var(--line);}
 .wr-review-head{
   display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;
   background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;
 }
-.wr-review-no{font-size:12.5px;font-weight:700;}
-.wr-review-score{font-size:12.5px;color:var(--muted);}
-.wr-review-toggle{margin-left:auto;color:var(--teal-deep);font-size:12px;font-weight:600;white-space:nowrap;}
+.wr-review-no{font-size:13.5px;font-weight:700;}
+.wr-review-score{font-size:13.5px;color:var(--muted);}
+.wr-review-toggle{margin-left:auto;color:var(--teal-deep);font-size:13px;font-weight:600;white-space:nowrap;}
 .wr-review-body{padding:0 0 12px;}
 .wr-review-part{margin-top:10px;}
-.wr-review-part p{margin:4px 0 0;font-size:13px;line-height:1.7;white-space:pre-wrap;}
+.wr-review-part p{margin:4px 0 0;font-size:14px;line-height:1.7;white-space:pre-wrap;}
 
 .wr-review-translate{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
 .wr-translate-btn{
   padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;
-  color:var(--teal-deep);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  color:var(--teal-deep);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
   transition:background .15s ease,border-color .15s ease;
 }
 .wr-translate-btn:hover:not(:disabled){background:var(--teal-soft);border-color:var(--teal-deep);}
 .wr-translate-btn.is-on{background:var(--teal-soft);border-color:var(--teal-deep);}
 .wr-translate-btn:disabled{opacity:.6;cursor:default;}
-.wr-translate-note{font-size:11.5px;color:var(--muted);}
-.wr-translate-error{font-size:11.5px;color:#b4341f;}
+.wr-translate-note{font-size:12.5px;color:var(--muted);}
+.wr-translate-error{font-size:12.5px;color:#b4341f;}
 
 .wr-review.is-detail .wr-review-head{
   padding:10px 8px 10px 0;border-radius:8px;transition:background .15s ease;
@@ -941,11 +912,11 @@
   flex:0 0 22px;width:22px;height:22px;
   display:inline-flex;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--teal-deep);
-  font-size:15px;font-weight:500;line-height:1;
+  font-size:16px;font-weight:500;line-height:1;
 }
 .wr-review.is-detail.is-open .wr-review-toggle{border-color:var(--teal-deep);}
-.wr-review.is-detail .wr-review-part-label{font-size:13.5px;color:var(--teal-deep);letter-spacing:.01em;}
-.wr-review.is-detail .wr-review-part p{margin-top:5px;font-size:13.5px;line-height:1.75;}
+.wr-review.is-detail .wr-review-part-label{font-size:14.5px;color:var(--teal-deep);letter-spacing:.01em;}
+.wr-review.is-detail .wr-review-part p{margin-top:5px;font-size:14.5px;line-height:1.75;}
 .pd-right .wr-reviews{margin-top:10px;}
 
 .wr-section-head{
@@ -953,38 +924,38 @@
   background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;
 }
 .wr-section-toggle{
-  margin-left:auto;color:var(--teal-deep);font-size:12px;font-weight:700;white-space:nowrap;
+  margin-left:auto;color:var(--teal-deep);font-size:13px;font-weight:700;white-space:nowrap;
 }
 
 .wr-paper-links{
   display:flex;align-items:center;gap:14px;margin-top:14px;
   padding-top:12px;border-top:1px solid var(--line);
 }
-.wr-paper-links a{font-size:12.5px;color:var(--teal-deep);font-weight:600;text-decoration:none;}
+.wr-paper-links a{font-size:13.5px;color:var(--teal-deep);font-weight:600;text-decoration:none;}
 .wr-paper-links a:hover{text-decoration:underline;}
 
 /* ---------- 검색 후보 (근거 추적용, 기본 접힘) ---------- */
 /* 점선 = "결과가 아니라 근거". 실선 카드와 섞이면 고르지 않은 논문까지
    결과로 읽힌다. */
 .wr-candidate-card{border-style:dashed;border-color:#cfd6d0;padding:16px 20px;}
-.wr-candidate-lede{font-size:12.5px;line-height:1.65;color:var(--label);margin-top:6px;}
+.wr-candidate-lede{font-size:13.5px;line-height:1.65;color:var(--label);margin-top:6px;}
 .wr-candidate-bar{display:flex;gap:5px;margin-top:12px;}
 .wr-candidate-bar > span{height:5px;border-radius:3px;background:#e6e8e4;}
 .wr-candidate-bar > span.is-picked{background:var(--teal-deep);}
 .wr-candidate-ratio{
-  font-family:var(--mono);font-size:10.5px;letter-spacing:0.08em;color:var(--label);margin-top:7px;
+  font-family:var(--mono);font-size:11.5px;letter-spacing:0.08em;color:var(--label);margin-top:7px;
 }
 .wr-candidate-list{margin-top:10px;max-height:420px;overflow-y:auto;}
 .wr-candidate{
   display:flex;align-items:baseline;gap:10px;padding:7px 0;
-  border-top:1px solid var(--rule-soft);font-size:12.5px;
+  border-top:1px solid var(--rule-soft);font-size:13.5px;
 }
 .wr-candidate.picked{background:var(--teal-soft);border-radius:6px;padding-left:8px;}
-.wr-candidate-rank{font-family:var(--mono);font-size:11.5px;color:#a7ada7;flex:none;}
+.wr-candidate-rank{font-family:var(--mono);font-size:12.5px;color:#a7ada7;flex:none;}
 .wr-candidate-title{flex:1;min-width:0;}
 .wr-candidate-meta{color:var(--muted);white-space:nowrap;}
 .wr-picked-badge{
-  display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:9px;
+  display:inline-block;font-size:12px;font-weight:700;padding:1px 7px;border-radius:9px;
   background:var(--teal-deep);color:#fff;margin-left:6px;
 }
 
@@ -996,14 +967,14 @@
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:13px 20px;background:var(--teal-deep);color:#fff;
 }
-.analysis-head-title{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:700;}
+.analysis-head-title{display:flex;align-items:center;gap:9px;font-size:15.5px;font-weight:700;}
 .analysis-head-spinner{
   flex:none;width:13px;height:13px;border-radius:50%;
   border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;
   animation:story-spin .8s linear infinite;
 }
-.analysis-head-clock{font-family:var(--mono);font-size:11.5px;color:#bfe6d8;}
-.analysis-lede{font-size:14px;line-height:1.7;color:#3a413a;}
+.analysis-head-clock{font-family:var(--mono);font-size:12.5px;color:#bfe6d8;}
+.analysis-lede{font-size:15px;line-height:1.7;color:#3a413a;}
 
 /* 채워지지 않는 막대 — 비율이 아니라 "멈추지 않았다"만 말한다. */
 .analysis-sweep{
@@ -1022,12 +993,12 @@
 
 /* 무엇을 상대로 도는가 — 분석이 길어질수록 "내가 뭘 올렸더라"가 흐려진다. */
 .analysis-target{margin-top:18px;border-top:1px solid var(--rule);padding-top:14px;}
-.analysis-target-title{font-size:14px;font-weight:700;line-height:1.5;margin-top:6px;}
-.analysis-target-meta{font-family:var(--mono);font-size:11.5px;color:var(--label);margin-top:6px;}
+.analysis-target-title{font-size:15px;font-weight:700;line-height:1.5;margin-top:6px;}
+.analysis-target-meta{font-family:var(--mono);font-size:12.5px;color:var(--label);margin-top:6px;}
 
 .analysis-foot{
   padding:12px 20px;background:var(--field);border-top:1px solid var(--rule);
-  font-size:12.5px;color:var(--label);line-height:1.6;
+  font-size:13.5px;color:var(--label);line-height:1.6;
 }
 
 /* 서버가 알려준 단계를 위에서 아래로 쌓는다. 끝난 단계는 체크, 지금 것은 스피너.
@@ -1038,7 +1009,7 @@
 }
 .analysis-step{
   display:flex;align-items:flex-start;gap:10px;
-  padding:9px 12px;border-radius:10px;font-size:13.5px;line-height:1.5;
+  padding:9px 12px;border-radius:10px;font-size:14.5px;line-height:1.5;
 }
 /* 지금 도는 단계만 배경으로 띄운다 — 전부 칠하면 어디를 봐야 할지 사라진다. */
 .analysis-step.is-current{background:var(--teal-soft);}
@@ -1057,7 +1028,7 @@
 .analysis-step.is-current .analysis-step-label{font-weight:700;}
 /* detail은 논문 제목이 오기도 한다 — 길면 줄바꿈 대신 잘라서 줄 수를 지킨다. */
 .analysis-step-detail{
-  font-size:12.5px;color:var(--muted);
+  font-size:13.5px;color:var(--muted);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 
