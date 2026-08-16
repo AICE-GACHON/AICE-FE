@@ -102,21 +102,27 @@ export default function AccountSection({ user, onUserChange }) {
   };
 
   return (
-    <form className="wr-card upload-card" onSubmit={handleSubmit}>
-      <div className="wr-card-title">내 정보</div>
-      <p className="wr-muted" style={{ marginTop: 4 }}>
-        바꾸고 싶은 것만 고친 뒤 저장하면 돼요.
-      </p>
+    <form className="wr-card wr-card-flush" onSubmit={handleSubmit}>
+      <div className="wr-card-head">
+        <div>
+          <div className="wr-card-title">내 정보</div>
+          <p className="wr-muted" style={{ marginTop: 4 }}>
+            바꾸고 싶은 것만 고친 뒤 저장하면 돼요.
+          </p>
+        </div>
+      </div>
 
-      <div className="auth-form" style={{ marginTop: 20 }}>
+      {/* 라벨을 입력칸 위가 아니라 왼쪽 고정 열에 세운다 — 값이 세로로 정렬돼야
+          "무엇이 채워졌고 무엇이 비었는지"가 훑어서 보인다(.mypage-fields). */}
+      <div className="wr-card-pad mypage-fields">
         {/* 이메일은 계정을 식별하는 값이고 변경 API가 없다 — 입력칸으로 두면
             고칠 수 있는 것처럼 보인다. 읽기 전용으로 보여만 준다. */}
-        <div className="mypage-row" style={{ paddingBottom: 4 }}>
-          <div className="mypage-key">이메일</div>
-          <div className="mypage-val">
+        <div className="mypage-row">
+          <span className="mypage-key">EMAIL</span>
+          <span className="mypage-val">
             {user?.email}
-            <span className="fine" style={{ marginLeft: 8 }}>변경할 수 없어요</span>
-          </div>
+            <span className="mypage-note-inline">변경할 수 없어요</span>
+          </span>
         </div>
 
         <Field
@@ -129,79 +135,76 @@ export default function AccountSection({ user, onUserChange }) {
         />
 
         <Field
-          label="OpenReview ID"
+          label="OPENREVIEW ID"
           value={openreviewId}
           onChange={(e) => setOpenreviewId(e.target.value)}
           maxLength={MAX_OPENREVIEW_ID}
           placeholder="~Hong_Gildong1"
           error={errors.openreviewId}
         />
-        <p className="fine" style={{ marginTop: -10 }}>
+        <p className="mypage-hint">
           {user?.openreview_id
             ? '나중에 "내가 낸 논문"을 찾아 연결하는 데 쓸 값이에요.'
             : '아직 연결하지 않았어요. 지금 넣지 않아도 서비스 이용에는 지장이 없어요.'}
         </p>
-      </div>
 
-      {/* 비밀번호 */}
-      <div style={{ marginTop: 28, borderTop: '1px solid var(--line)', paddingTop: 20 }}>
-        <div className="wr-card-title" style={{ fontSize: 14 }}>비밀번호 변경</div>
+        {/* 비밀번호 */}
+        <div className="mypage-subsection">
+          <div className="mypage-subsection-title">비밀번호 변경</div>
 
-        {!hasPassword ? (
-          // 구글 전용 계정이다. 입력칸을 띄우면 채울 값이 없고, 보내봐야 400이다.
-          // has_password가 없으면 이 분기 자체가 불가능하다 — google_linked로는
-          // "구글 연동됨"과 "구글 전용"이 구분되지 않는다.
-          <p className="wr-muted" style={{ marginTop: 8 }}>
-            구글 로그인으로 만든 계정이라 비밀번호가 없어요. 구글 계정에서 관리해 주세요.
-          </p>
-        ) : (
-          <div className="auth-form" style={{ marginTop: 14 }}>
-            <Field
-              label="현재 비밀번호"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              autoComplete="current-password"
-              error={errors.currentPassword}
-            />
-            <Field
-              label="새 비밀번호"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              autoComplete="new-password"
-              error={errors.newPassword}
-            />
-            <Field
-              label="새 비밀번호 확인"
-              type="password"
-              value={newPasswordAgain}
-              onChange={(e) => setNewPasswordAgain(e.target.value)}
-              autoComplete="new-password"
-              error={errors.newPasswordAgain}
-            />
-            <p className="fine" style={{ marginTop: -10 }}>
-              바꾸면 이 기기를 뺀 나머지 기기에서 로그아웃돼요.
+          {!hasPassword ? (
+            // 구글 전용 계정이다. 입력칸을 띄우면 채울 값이 없고, 보내봐야 400이다.
+            // has_password가 없으면 이 분기 자체가 불가능하다 — google_linked로는
+            // "구글 연동됨"과 "구글 전용"이 구분되지 않는다.
+            <p className="wr-muted" style={{ marginTop: 8 }}>
+              구글 로그인으로 만든 계정이라 비밀번호가 없어요. 구글 계정에서 관리해 주세요.
             </p>
-          </div>
+          ) : (
+            <>
+              <Field
+                label="현재 비밀번호"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                error={errors.currentPassword}
+              />
+              <Field
+                label="새 비밀번호"
+                type="password"
+                placeholder="8자 이상"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+                error={errors.newPassword}
+              />
+              <Field
+                label="새 비밀번호 확인"
+                type="password"
+                placeholder="다시 한 번"
+                value={newPasswordAgain}
+                onChange={(e) => setNewPasswordAgain(e.target.value)}
+                autoComplete="new-password"
+                error={errors.newPasswordAgain}
+              />
+              <p className="mypage-hint">바꾸면 이 기기를 뺀 나머지 기기에서 로그아웃돼요.</p>
+            </>
+          )}
+        </div>
+
+        {submitError && (
+          <div className="auth-submit-error" style={{ marginTop: 16 }}>{submitError}</div>
+        )}
+        {done && (
+          <div className="wr-banner" style={{ marginTop: 16 }}>{done}</div>
         )}
       </div>
 
-      {submitError && (
-        <div className="auth-submit-error" style={{ marginTop: 16 }}>{submitError}</div>
-      )}
-      {done && (
-        <div className="wr-banner" style={{ marginTop: 16 }}>{done}</div>
-      )}
-
-      <button
-        type="submit"
-        className="pill btn-lg"
-        style={{ width: '100%', justifyContent: 'center', marginTop: 20 }}
-        disabled={saving || !dirty}
-      >
-        {saving ? '저장 중…' : '저장'}
-      </button>
+      <div className="wr-card-foot" style={{ justifyContent: 'flex-end' }}>
+        <button type="submit" className="ws-btn" disabled={saving || !dirty}>
+          {saving ? '저장 중…' : '저장'}
+        </button>
+      </div>
     </form>
   );
 }

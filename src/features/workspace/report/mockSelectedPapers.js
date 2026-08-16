@@ -107,7 +107,7 @@ export const MOCK_SELECTED_PAPERS = [
   {
     paper_id: 901, rank: 1, decision: 'reject', venue: 'ICLR 2025', confidence: 'high',
     title: 'GASLITEing the Retrieval: Poisoning Knowledge DBs to Mislead Embedding-based Search',
-    avg_rating: 6, rating_count: 4, rating_spread: 3,
+    avg_rating: 6, rating_count: 4, rating_spread: 3, revision_count: 2,
     openreview_url: 'https://openreview.net/forum?id=GASLITEing',
     reason: '둘 다 Adversarial Decoding(Zhang et al., 2025)에 기반한 임베딩 공간 최적화 기법을 사용해 검색 시스템을 대상으로 한 공격을 다룬다.',
     meta_review: 'This paper presents a framework for attacking retrieval systems. The experimental results are impressive and the paper is well-written. However, the technical novelty of the proposed method is limited, and the assumptions made about query distributions and embedding models are unrealistic for real-world scenarios.',
@@ -132,14 +132,15 @@ export const MOCK_SELECTED_PAPERS = [
   {
     paper_id: 902, rank: 2, decision: 'reject', venue: 'ICLR 2025', confidence: 'medium',
     title: 'Asymmetric Embedding Models for Hierarchical Retrieval: Provable Constructions and a Pretrain-Finetune Recipe',
-    avg_rating: 3.5, rating_count: 4, rating_spread: 3,
+    // 0회 — "없음"이 어떻게 보이는지 확인용. null(서버 미제공)과 구분돼야 한다.
+    avg_rating: 3.5, rating_count: 4, rating_spread: 3, revision_count: 0,
     reason: '둘 다 텍스트 임베딩 모델(GTR, Contriever 등)의 검색 성능과 정보 손실 문제를 다룬다.',
     meta_review: 'This paper considers the problem of hierarchical retrieval. There was consensus amongst reviewers that the technical motivation here is not adequately articulated, and the experimental setup was also seen as quite weak.',
   },
   {
     paper_id: 903, rank: 3, decision: 'reject', venue: 'ICLR 2025', confidence: 'high',
     title: 'Length-Induced Embedding Collapse in Transformer-based Models',
-    avg_rating: 6, rating_count: 4, rating_spread: 3,
+    avg_rating: 6, rating_count: 4, rating_spread: 3, revision_count: 3,
     openreview_url: 'https://openreview.net/forum?id=LengthCollapse',
     // 타임라인의 review 이벤트와 같은 리뷰다 — 목록으로도, 시간순으로도 볼 수 있게 한다.
     reviews: lengthCollapseTimeline
@@ -151,13 +152,14 @@ export const MOCK_SELECTED_PAPERS = [
   {
     paper_id: 904, rank: 4, decision: 'reject', venue: 'ICLR 2025', confidence: 'medium',
     title: 'On the Vulnerability of Applying Retrieval-Augmented Generation within Knowledge-Intensive Application Domains',
-    avg_rating: 5, rating_count: 3, rating_spread: 2,
+    avg_rating: 5, rating_count: 3, rating_spread: 2, revision_count: 1,
     reason: '둘 다 검색 시스템의 취약점과 정보 유출을 다루지만, 이쪽은 검색 시스템에만 집중해 있다.',
     meta_review: '제목이 RAG 전반을 다룬다고 주장하면서 실제로는 특정 도메인에만 집중해 있어 오해를 유발한다는 지적과, 관련 적대적 공격·방어 문헌과의 비교가 부족하다는 지적을 받았습니다.',
   },
   {
     paper_id: 905, rank: 5, decision: 'reject', venue: 'ICLR 2025', confidence: 'low',
     title: 'TrojanRAG: Retrieval-Augmented Generation Can Be Backdoor Driver in Large Language Models',
+    // revision_count 없음 — OpenReview 조회가 실패했을 때 "—"로 비는지 확인용.
     avg_rating: 5, rating_count: 4, rating_spread: 1,
     reason: '검색 인덱스를 오염시켜 생성 결과를 조작한다는 점에서 위협 모델이 겹친다.',
     meta_review: '공격 시나리오는 현실적이나 방어 기법에 대한 논의가 부족하다는 평가를 받았습니다.',

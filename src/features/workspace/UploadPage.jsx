@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import AnalysisProgress from './AnalysisProgress';
+import ConsoleStrip from './ConsoleStrip';
 import ResultReport from './ResultReport';
 import { useAnalysis } from './analysisContext';
 import { MOCK_REPORT } from '@/services/mocks/mockReport';
@@ -90,7 +91,11 @@ export default function UploadPage({ embedded = false }) {
   }
 
   return (
-    <>
+    <div className={embedded ? 'upload-flow' : 'upload-flow upload-flow-standalone'}>
+        {/* 홈에 얹힌 경우 띠는 홈이 이미 메인 폭 전체에 그렸다 — 여기서 또
+            그리면 같은 줄이 두 번 쌓인다. */}
+        {!embedded && <ConsoleStrip />}
+
         {/* phase==='done'도 여기서 폼을 보여준다 — 결과 화면은 이제 별도 주소
             (/app/report)라, 뒤로가기나 "논문 분석" 재클릭으로 이 화면에
             돌아왔을 때 phase만 'done'으로 남아있는 경우가 생긴다. report는
@@ -98,143 +103,163 @@ export default function UploadPage({ embedded = false }) {
             여기선 그냥 새로 올릴 폼을 보여주면 된다(리셋할 필요 없음). */}
         {(phase === 'form' || phase === 'done'
           || (phase === 'error' && !submission) || (phase === 'working' && !submission)) && (
-          <div className="wr-card upload-card">
+          <>
             {!embedded && (
-              <>
-                <div className="wr-card-title">논문 분석</div>
-                <p className="onboard-desc">
-                  논문 PDF를 올리면 <b>비슷한 논문들이 실제로 어떤 리뷰를 받았는지</b> 보여드려요.
+              <div className="upload-intro">
+                <h1 className="home-greeting">어떤 논문을 분석해 볼까요?</h1>
+                <p className="home-greeting-sub">
+                  PDF를 올리면 비슷한 논문들이 실제로 어떤 리뷰를 받았는지 모아서 보여드려요.
                 </p>
-              </>
+              </div>
             )}
 
-            <form onSubmit={handleUpload}>
-              <div className="upload-pdf-head">
-                <span className="auth-field-label">논문 PDF</span>
+            <form className="wr-card wr-card-flush" onSubmit={handleUpload}>
+              {/* 카드 머리에 입력 규격(형식·용량)을 못박아 둔다 — 파일을 고르고
+                  나서 "20MB까지였어요"를 듣는 것보다 낫다. */}
+              <div className="wr-card-head">
+                <span className="ws-strip-label">INPUT · 논문 PDF</span>
+                <span className="wr-card-head-meta">PDF · MAX 20MB</span>
               </div>
 
-              {/* 존 전체가 클릭 대상이지만 포커스는 안쪽 버튼이 받는다 —
-                  div에 role=button을 주고 그 안에 또 버튼을 넣으면 중첩이 된다. */}
-              <div
-                className={
-                  'upload-drop'
-                  + (dragging ? ' is-dragging' : '')
-                  + (pdfFile ? ' has-file' : '')
-                  + (busy ? ' is-disabled' : '')
-                }
-                onClick={pdfFile ? undefined : openPicker}
-                onDragOver={(e) => { e.preventDefault(); if (!busy && !pdfFile) setDragging(true); }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={handleDrop}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handlePdfChange}
-                  disabled={busy}
-                  className="upload-drop-input"
-                  tabIndex={-1}
-                />
+              <div className="wr-card-pad">
+                {/* 존 전체가 클릭 대상이지만 포커스는 안쪽 버튼이 받는다 —
+                    div에 role=button을 주고 그 안에 또 버튼을 넣으면 중첩이 된다. */}
+                <div
+                  className={
+                    'upload-drop'
+                    + (dragging ? ' is-dragging' : '')
+                    + (pdfFile ? ' has-file' : '')
+                    + (busy ? ' is-disabled' : '')
+                  }
+                  onClick={pdfFile ? undefined : openPicker}
+                  onDragOver={(e) => { e.preventDefault(); if (!busy && !pdfFile) setDragging(true); }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handlePdfChange}
+                    disabled={busy}
+                    className="upload-drop-input"
+                    tabIndex={-1}
+                  />
 
-                {pdfFile ? (
-                  <div className="upload-file">
-                    <div className="upload-file-meta">
-                      <div className="upload-file-name">{pdfFile.name}</div>
-                      <div className="upload-file-size">
-                        {(pdfFile.size / 1024 / 1024).toFixed(1)}MB
+                  {pdfFile ? (
+                    <div className="upload-file">
+                      <div className="upload-file-meta">
+                        <div className="upload-file-name">{pdfFile.name}</div>
+                        <div className="upload-file-size">
+                          {(pdfFile.size / 1024 / 1024).toFixed(1)}MB
+                        </div>
+                      </div>
+                      <div className="upload-file-actions">
+                        <button type="button" className="upload-pdf-clear" onClick={openPicker} disabled={busy}>
+                          바꾸기
+                        </button>
+                        <button type="button" className="upload-pdf-clear" onClick={handleClearFile} disabled={busy}>
+                          제거
+                        </button>
                       </div>
                     </div>
-                    <div className="upload-file-actions">
-                      <button type="button" className="upload-pdf-clear" onClick={openPicker} disabled={busy}>
-                        바꾸기
+                  ) : (
+                    <>
+                      <UploadIcon />
+                      <div className="upload-drop-title">
+                        {dragging ? '여기에 놓으면 돼요' : 'PDF를 여기로 끌어다 놓으세요'}
+                      </div>
+                      <button
+                        type="button"
+                        className="upload-drop-browse"
+                        onClick={(e) => { e.stopPropagation(); openPicker(); }}
+                        disabled={busy}
+                      >
+                        파일 선택
                       </button>
-                      <button type="button" className="upload-pdf-clear" onClick={handleClearFile} disabled={busy}>
-                        제거
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <UploadIcon />
-                    <div className="upload-drop-title">
-                      {dragging ? '여기에 놓으면 돼요' : 'PDF를 여기로 끌어다 놓으세요'}
-                    </div>
-                    <div className="upload-drop-hint">PDF · 최대 20MB</div>
-                    <button
-                      type="button"
-                      className="upload-drop-browse"
-                      onClick={(e) => { e.stopPropagation(); openPicker(); }}
-                      disabled={busy}
-                    >
-                      파일 선택
-                    </button>
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
+                {pdfError && <div className="auth-field-error" style={{ marginTop: 8 }}>{pdfError}</div>}
+                {phase === 'error' && <div className="auth-submit-error" style={{ marginTop: 12 }}>{errorMsg}</div>}
+
+                <div className="ws-note">
+                  <span className="ws-note-mark" aria-hidden="true">i</span>
+                  <span>
+                    본문과 참고문헌까지 읽어야 정확하게 고를 수 있어서 PDF 원문이 필요해요.
+                    스캔본도 괜찮아요 — 페이지를 그대로 읽어서 제목과 초록을 찾아냅니다.
+                  </span>
+                </div>
               </div>
-              {pdfError && <div className="auth-field-error" style={{ marginTop: 8 }}>{pdfError}</div>}
-              {phase === 'error' && <div className="auth-submit-error" style={{ marginTop: 14 }}>{errorMsg}</div>}
 
-              <p className="fine" style={{ marginTop: 12 }}>
-                본문과 참고문헌까지 읽어야 정확하게 고를 수 있어서 PDF 원문이 필요해요.
-                스캔본도 괜찮아요 — 페이지를 그대로 읽어서 제목과 초록을 찾아냅니다.
-              </p>
-
-              <button
-                type="submit"
-                className="pill btn-lg"
-                style={{ width: '100%', justifyContent: 'center', marginTop: 12 }}
-                disabled={!pdfFile || busy}
-              >
-                {busy ? `${statusText}…` : '다음'}
-              </button>
+              <div className="wr-card-pad" style={{ paddingTop: 0 }}>
+                <button type="submit" className="ws-btn ws-btn-block" disabled={!pdfFile || busy}>
+                  {busy ? `${statusText}…` : '다음 → 추출 결과 확인'}
+                </button>
+              </div>
             </form>
-          </div>
+          </>
         )}
 
         {phase === 'review' && (
-          <div className="wr-card upload-card">
-            <div className="wr-card-title">이 논문이 맞나요?</div>
-            <p className="onboard-desc">PDF에서 이렇게 읽었어요. 다르면 다시 올려 주세요.</p>
+          <>
+            <div className="upload-confirm-head">
+              <h2 className="upload-confirm-title">이 논문이 맞나요?</h2>
+              <span className="wr-card-head-meta">EXTRACTED FROM PDF</span>
+            </div>
+            <p className="home-greeting-sub" style={{ marginTop: 8, marginBottom: 0 }}>
+              PDF에서 이렇게 읽었어요. 다르면 다시 올려 주세요.
+            </p>
 
             {isLongDocument && (
-              <div className="wr-banner" style={{ marginTop: 14 }}>
-                <span aria-hidden="true">ℹ️</span> {pageCount}페이지 문서예요.
-                논문 PDF가 맞는지 확인해 주세요 — 분량이 많으면 분석에 시간이 더 걸려요.
+              // 쪽수는 경고의 근거이자 값이다 — 문장 안에 묻지 않고 칩으로 앞에 세운다.
+              <div className="ws-warn">
+                <span className="ws-warn-chip">{pageCount}P</span>
+                <span>분량이 많은 문서예요. 논문 PDF가 맞는지 확인해 주세요 — 분석에 시간이 더 걸려요.</span>
               </div>
             )}
 
-            <div className="upload-extracted">
-              <div className="auth-field-label">제목</div>
-              <div className="wr-query-title">{submission.title}</div>
-              <div className="auth-field-label" style={{ marginTop: 14 }}>초록</div>
-              <div className="wr-muted upload-extracted-abstract">{submission.abstract}</div>
-              {pageCount != null && (
-                <div className="wr-muted" style={{ marginTop: 10 }}>{pageCount}페이지</div>
-              )}
+            <div className="wr-card wr-card-flush" style={{ marginTop: 16 }}>
+              <div className="upload-extract-block">
+                <div className="mono-label">TITLE</div>
+                <div className="upload-extract-title">{submission.title}</div>
+              </div>
+              <div className="upload-extract-block is-last">
+                <div className="upload-extract-head">
+                  <span className="mono-label">ABSTRACT</span>
+                  <span className="upload-extract-count">
+                    {(submission.abstract || '').length.toLocaleString('en-US')} CHARS
+                  </span>
+                </div>
+                <div className="upload-extract-abstract">{submission.abstract}</div>
+              </div>
+              <div className="wr-card-foot">
+                <button type="button" className="onboard-back" onClick={handleReset}>← 다시 올리기</button>
+                <button type="button" className="ws-btn" onClick={analyze}>분석 시작</button>
+              </div>
             </div>
-
-            <div className="upload-review-actions">
-              <button type="button" className="onboard-back" onClick={handleReset}>← 다시 올리기</button>
-              <button type="button" className="pill btn-lg" onClick={analyze}>분석 시작</button>
-            </div>
-          </div>
+          </>
         )}
 
         {phase === 'working' && submission && (
-          <AnalysisProgress progress={progress} statusText={statusText} />
+          <AnalysisProgress progress={progress} statusText={statusText} submission={submission} />
         )}
 
         {phase === 'error' && submission && (
-          <div className="wr-card upload-card">
-            <div className="wr-card-title">분석에 실패했어요</div>
-            <div className="auth-submit-error" style={{ marginTop: 12 }}>{errorMsg}</div>
-            <div className="upload-review-actions">
+          <div className="wr-card wr-card-flush">
+            <div className="wr-card-head">
+              <span className="wr-card-title">분석에 실패했어요</span>
+              <span className="wr-card-head-meta">FAILED</span>
+            </div>
+            <div className="wr-card-pad">
+              <div className="auth-submit-error">{errorMsg}</div>
+            </div>
+            <div className="wr-card-foot">
               <button type="button" className="onboard-back" onClick={handleReset}>← 처음부터</button>
-              <button type="button" className="pill btn-lg" onClick={analyze}>다시 시도</button>
+              <button type="button" className="ws-btn" onClick={analyze}>다시 시도</button>
             </div>
           </div>
         )}
-    </>
+    </div>
   );
 }

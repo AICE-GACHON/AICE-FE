@@ -9,12 +9,15 @@ import { listSubmissions, deleteSubmission } from '@/services/submissions';
 //
 // 목록은 가볍게(GET /api/submissions, 초록·리포트 없음)만 받고, 실제 리포트는
 // 눌렀을 때 routes/index.jsx의 PastAnalysisRoute가 그 submission_id로 따로 불러온다.
+// "2026-08-16 14:02". ko-KR 기본 형식("2026. 08. 16. 오후 2:02")은 글자 폭이
+// 행마다 달라져 모노 열로 세워도 자리가 맞지 않는다 — 표에서는 정렬이 형식보다
+// 중요하므로 ISO에 가까운 고정폭 표기를 쓴다.
 function formatDate(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString('ko-KR', {
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
-  });
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} `
+    + `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 // embedded=true면 홈 대시보드 칸 안에 얹힌 상태다 — 그 경우 "← 돌아가기"와
@@ -56,91 +59,105 @@ export default function PapersPage({ embedded = false }) {
     }
   };
 
+  const rows = state.submissions;
+
   return (
-    <div className="wr-stack papers-page">
+    <div className="papers-page ws-narrow">
       {/* 종합 리뷰·상세 화면에서 "← 분석 이력으로"를 눌러 여기 들어온 경우,
           그 화면으로 되짚어 갈 방법이 없었다 — navigate(-1)로 왔던 곳(리포트든
           업로드 화면이든)을 그대로 돌려준다. */}
       {!embedded && (
-        <button type="button" className="onboard-back" onClick={() => navigate(-1)}>← 돌아가기</button>
+        <div className="ws-backrow">
+          <button type="button" className="onboard-back" onClick={() => navigate(-1)}>← 돌아가기</button>
+        </div>
       )}
-      <div className="wr-card upload-card">
+
+      <div className="wr-card wr-card-flush">
         {!embedded && (
-          <>
-            <div className="wr-card-title">분석 이력</div>
-            <p className="wr-muted" style={{ marginTop: 4 }}>
-              분석시켰던 논문들이에요. 눌러서 그때 받은 결과를 다시 볼 수 있어요.
-            </p>
-          </>
+          <div className="wr-card-head">
+            <div>
+              <div className="wr-card-title">분석 이력</div>
+              <p className="wr-muted" style={{ marginTop: 5 }}>
+                분석시켰던 논문들이에요. 눌러서 그때 받은 결과를 다시 볼 수 있어요.
+              </p>
+            </div>
+            <span className="wr-card-head-meta">{rows.length} SUBMISSIONS</span>
+          </div>
         )}
 
         {state.status === 'loading' && (
-          <p className="wr-muted" style={{ marginTop: 16 }}>불러오는 중…</p>
+          <p className="wr-muted wr-card-pad">불러오는 중…</p>
         )}
         {state.status === 'error' && (
-          <div className="auth-submit-error" style={{ marginTop: 16 }}>{state.error}</div>
+          <div className="wr-card-pad"><div className="auth-submit-error">{state.error}</div></div>
         )}
         {deleteError && (
-          <div className="auth-submit-error" style={{ marginTop: 16 }}>{deleteError}</div>
+          <div className="wr-card-pad"><div className="auth-submit-error">{deleteError}</div></div>
         )}
 
         {state.status === 'ready' && (
-          state.submissions.length > 0 ? (
-            <ul className="papers-list" style={{ marginTop: 12 }}>
-              {state.submissions.map((s) => (
-                <li key={s.submission_id} className="papers-item">
-                  {confirmingId === s.submission_id ? (
-                    <div className="papers-confirm">
-                      <span>이 논문의 분석 이력을 지울까요? 되돌릴 수 없어요.</span>
-                      <div className="papers-confirm-actions">
-                        <button
-                          type="button"
-                          className="pill ghost"
-                          onClick={() => setConfirmingId(null)}
-                          disabled={deletingId === s.submission_id}
-                        >
-                          취소
-                        </button>
-                        <button
-                          type="button"
-                          className="papers-delete-confirm-btn"
-                          onClick={() => handleDelete(s.submission_id)}
-                          disabled={deletingId === s.submission_id}
-                        >
-                          {deletingId === s.submission_id ? '지우는 중…' : '지우기'}
-                        </button>
+          rows.length > 0 ? (
+            <>
+              <div className="papers-row papers-row-head">
+                <span>TITLE</span><span>DATE</span><span /><span />
+              </div>
+              <ul className="papers-list">
+                {rows.map((s) => (
+                  <li key={s.submission_id}>
+                    {confirmingId === s.submission_id ? (
+                      // 삭제 확인은 그 줄을 대신 차지한다 — 별도 모달을 띄우면
+                      // "어느 줄을 지우는 건지"가 화면에서 사라진다.
+                      <div className="papers-confirm">
+                        <span>이 논문의 분석 이력을 지울까요? 되돌릴 수 없어요.</span>
+                        <div className="papers-confirm-actions">
+                          <button
+                            type="button"
+                            className="ws-btn ws-btn-ghost papers-confirm-cancel"
+                            onClick={() => setConfirmingId(null)}
+                            disabled={deletingId === s.submission_id}
+                          >
+                            취소
+                          </button>
+                          <button
+                            type="button"
+                            className="papers-delete-confirm-btn"
+                            onClick={() => handleDelete(s.submission_id)}
+                            disabled={deletingId === s.submission_id}
+                          >
+                            {deletingId === s.submission_id ? '지우는 중…' : '지우기'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        className="rp-item papers-open-btn"
-                        onClick={() => navigate(`/app/papers/${s.submission_id}`)}
-                      >
-                        <span className="rp-main">
-                          <span className="rp-title">{s.title || '제목 없음'}</span>
-                          <span className="wr-muted">
-                            {s.field ? `${s.field} · ` : ''}{formatDate(s.created_at)}
-                          </span>
-                        </span>
+                    ) : (
+                      <div className="papers-row papers-row-item">
+                        <button
+                          type="button"
+                          className="papers-open-btn"
+                          onClick={() => navigate(`/app/papers/${s.submission_id}`)}
+                        >
+                          <span className="papers-title">{s.title || '제목 없음'}</span>
+                          {s.field && <span className="papers-field">{s.field}</span>}
+                        </button>
+                        <span className="papers-date">{formatDate(s.created_at)}</span>
+                        <button
+                          type="button"
+                          className="papers-delete-btn"
+                          onClick={() => setConfirmingId(s.submission_id)}
+                        >
+                          삭제
+                        </button>
                         <span className="rp-chev" aria-hidden="true">›</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="papers-delete-btn"
-                        onClick={() => setConfirmingId(s.submission_id)}
-                      >
-                        삭제
-                      </button>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : (
-            <div className="wr-banner" style={{ marginTop: 16 }}>
-              아직 분석시킨 논문이 없어요. 논문을 올려서 분석해 보면 여기 쌓여요.
+            <div className="wr-card-pad">
+              <div className="wr-banner">
+                아직 분석시킨 논문이 없어요. 논문을 올려서 분석해 보면 여기 쌓여요.
+              </div>
             </div>
           )
         )}

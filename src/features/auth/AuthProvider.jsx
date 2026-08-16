@@ -19,7 +19,11 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // 알 수 없다. 이 구간을 guest로 취급하면, 로그인한 사람이 새로고침할 때마다 로그인
 // 화면이 한 번 번쩍였다가 돌아온다. 가드는 'loading' 동안 판단을 보류해야 한다.
 const LOADING = { status: 'loading', user: null };
-const GUEST = { status: 'guest', user: null };
+const GUEST = { status: 'guest', user: null, signedOut: false };
+// 같은 guest여도 "아직 로그인 안 함/세션 만료"와 "방금 스스로 나감"은 다른 사실이고,
+// 가드가 보낼 곳도 다르다(guards.jsx RequireAuth). 나가겠다고 누른 사람을 로그인
+// 폼 앞에 다시 세우면 안 된다.
+const SIGNED_OUT = { status: 'guest', user: null, signedOut: true };
 
 // 세션 복원은 반드시 끝나야 한다. 서버가 죽은 게 아니라 **느린** 경우(응답을 주지도
 // 끊지도 않는 상태) fetch는 기본적으로 영원히 기다린다. 그러면 status가 'loading'에
@@ -78,7 +82,9 @@ export function AuthProvider({ children }) {
 
   const signOut = useCallback(async () => {
     await logoutRequest(); // 서버 token_version을 올리고 로컬 토큰을 지운다
-    setState(GUEST);
+    // GUEST가 아니라 SIGNED_OUT이다 — 보호 구역에서 눌렀을 때 가드가 로그인 폼이
+    // 아니라 랜딩으로 보내야 하고, 그 둘을 가르는 정보는 여기밖에 없다.
+    setState(SIGNED_OUT);
   }, []);
 
   // 마이페이지에서 닉네임·OpenReview ID를 바꾼 뒤 서버가 돌려준 값으로 갈아끼운다.

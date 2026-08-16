@@ -7,8 +7,20 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <!-- 본문은 Pretendard 하나로 통일한다. 예전엔 Inter(라틴) + Noto Sans KR(한글)
+       조합이었는데, 두 폰트는 x-height와 굵기 축이 달라 "논문 5편"·"ICLR 2024"처럼
+       한글·숫자가 붙는 문자열마다 무게가 어긋났다 — 이 화면은 그런 문자열이 본론이다.
+       Pretendard는 Inter를 바탕으로 한글을 함께 설계한 폰트라 라틴 인상은 거의 그대로
+       두면서 섞임만 없앤다.
+       dynamic-subset을 쓰는 이유: 한글 전체를 담은 단일 woff2는 1MB가 넘는데, 이쪽은
+       unicode-range로 쪼개져 있어 실제로 화면에 뜬 글자의 조각만 받는다. -->
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&display=swap"
     rel="stylesheet"
   />
 </head>

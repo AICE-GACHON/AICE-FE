@@ -19,9 +19,43 @@
   --paper:#fffdfa;
   --amber:#c98a2c;
   --red:#c0524a;
-  --sans:'Inter','Noto Sans KR',sans-serif;
+  /* 한글·라틴을 한 폰트로 — 섞어 쓰면 한 문장 안에서 무게가 어긋난다(index.html 주석).
+     'Pretendard Variable'이 먼저다: variable이 안 받아졌을 때 정적 Pretendard로,
+     그것도 없으면 OS 기본 한글 고딕으로 떨어진다. */
+  --sans:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,
+         'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   --mono:'IBM Plex Mono',monospace;
   --radius:16px;
+
+  /* ---------- 리서치 콘솔 팔레트 (로그인 후 /app 화면 전용) ----------
+     랜딩은 흰 바탕 위 마케팅 지면이고, 워크스페이스는 "도구"다. 크롬(상단바·
+     사이드바)을 딥그린으로 채워 작업 영역과 분리하고, 바탕을 옅은 회녹으로
+     낮춰 흰 카드가 스스로 떠오르게 한다. 색은 새로 만들지 않았다 — 전부
+     기존 teal 계열을 어둡게/밝게 민 값이다. */
+  --console:#0d3b34;        /* 상단바·사이드바 바탕 */
+  --console-2:#124a41;      /* 그 위 선택된 항목 */
+  --console-line:#1b524a;   /* 어두운 면 위의 경계선 */
+  --console-dim:#6fa398;    /* 어두운 면 위 라벨(가장 낮은 대비) */
+  --console-soft:#7fb5a8;   /* 어두운 면 위 보조 텍스트 */
+  --console-fg:#c6ded8;     /* 어두운 면 위 본문 */
+
+  --surface:#f5f7f5;        /* 작업 영역 바탕 */
+  --card-line:#e2e6e1;      /* 카드 테두리 */
+  --rule:#eef0ed;           /* 카드 안 구획선 */
+  --rule-soft:#f3f5f2;      /* 표의 행 구분선 — 구획선보다 더 옅다 */
+  --field:#fafbfa;          /* 표 머리·카드 바닥처럼 살짝 눌린 면 */
+  /* 모노 라벨. 예전 #8b938c는 표 머리 바탕(--field) 대비 3.04:1이라 WCAG AA
+     일반 텍스트 기준(4.5:1)에 못 미쳤다 — 작아서 안 읽히는 줄 알았는데 색이
+     먼저였다. 이 값은 4.78:1(흰 바탕에서는 4.96:1)이고, --muted(5.88:1)보다는
+     여전히 밝아 라벨 < 보조 < 본문 위계는 그대로다. */
+  --label:#6a726b;
+}
+
+/* 데이터를 읽는 화면에서 "이건 값이 아니라 이름표"라고 알리는 유일한 장치.
+   대문자 + 자간 + 모노는 한 벌로 움직인다 — 따로 쓰면 그냥 작은 글씨가 된다. */
+.mono-label{
+  font-family:var(--mono);font-size:11.5px;font-weight:500;
+  letter-spacing:0.14em;color:var(--label);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
@@ -327,78 +361,128 @@ footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
 
 :focus-visible{outline:2px solid var(--teal);outline-offset:3px;}
 
-/* ---------- 로그인 회원 홈 (ChatGPT식: 왼쪽 사이드바 + 중앙 업로드) ---------- */
-.home-chat{display:flex;min-height:100vh;background:var(--bg);overflow-x:hidden;}
+/* ---------- 로그인 회원 홈 (딥그린 콘솔 레일 + 중앙 업로드) ----------
+   사이드바는 워크스페이스 상단바와 같은 딥그린이다. 랜딩에서 넘어온 사람에게
+   "여기부터는 도구"라고 말하는 게 이 한 덩어리의 색이고, 그래서 바탕(흰색)이
+   아니라 크롬을 칠한다. */
+/* min-height가 아니라 height + overflow:hidden이다. 내용이 화면보다 길 때
+   (결과 화면처럼) min-height면 문서 전체가 스크롤되는데, 그러면 레일이 위로
+   같이 밀려 올라가 사라진다 — position:sticky는 "스크롤되는 조상" 안에서만
+   붙는데 그 조상은 .home-chat이고, 정작 스크롤하는 건 문서라 붙을 데가 없다.
+   높이를 뷰포트에 못 박고 스크롤을 .home-main 안으로 들여놓으면 레일은 옆에
+   그대로 서 있고 작업 영역만 흐른다. */
+.home-chat{display:flex;height:100vh;background:var(--surface);overflow:hidden;}
 
 /* 왼쪽 사이드바 — 접을 땐 margin-left로 왼쪽으로 슬라이드해 빠지고, 그만큼
    가운데가 넓어진다(display:none은 툭 끊겨서 안 쓴다). */
 .home-side{
-  flex:0 0 284px;width:284px;display:flex;flex-direction:column;gap:16px;
-  height:100vh;position:sticky;top:0;overflow:hidden;
-  padding:18px 14px;background:#f8f9f8;border-right:1px solid var(--line);
+  flex:0 0 264px;width:264px;display:flex;flex-direction:column;gap:16px;
+  height:100%;overflow:hidden;
+  padding:20px 14px;background:var(--console);color:var(--console-fg);
   transition:margin-left .28s cubic-bezier(.4,0,.2,1);
 }
-.home-chat.is-collapsed .home-side{margin-left:-284px;}
-.home-side-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px;}
-.home-side-brand{font-size:17px;letter-spacing:-0.01em;}
+.home-chat.is-collapsed .home-side{margin-left:-264px;}
+.home-side-top{display:flex;align-items:center;justify-content:space-between;padding:0 6px;}
+.home-side-brand{font-size:17px;letter-spacing:0.02em;color:#fff;}
 .home-side-toggle,.home-side-open{
-  display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
-  border:none;background:none;border-radius:9px;color:var(--muted);font-size:16px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;
+  border:none;background:none;border-radius:8px;color:var(--console-soft);font-size:16px;cursor:pointer;
   transition:background .15s,color .15s;
 }
-.home-side-toggle:hover,.home-side-open:hover{background:#ebedea;color:var(--ink);}
-.home-side-open{position:fixed;top:16px;left:16px;z-index:70;background:#fff;border:1px solid var(--line);
-  box-shadow:0 6px 18px -8px rgba(0,0,0,0.25);}
+.home-side-toggle:hover{background:var(--console-2);color:#fff;}
+/* 사이드바가 빠진 뒤 남는 열기 버튼은 밝은 바탕 위에 홀로 서므로 반대 배색이다. */
+.home-side-open{position:fixed;top:16px;left:16px;z-index:70;background:var(--console);color:#fff;
+  box-shadow:0 6px 18px -8px rgba(0,0,0,0.35);}
+.home-side-open:hover{background:var(--console-2);}
+/* 그 버튼은 position:fixed라 작업 영역 위에 겹쳐 앉는다 — 첫 줄인 띠의 라벨이
+   그 아래 깔려 "PAPER DETAIL"이 "PER DETAIL"로 보였다. 버튼 오른쪽 끝(16+28=44px)을
+   지나도록 그 줄만 민다. 아래 카드까지 통째로 밀면 접은 이유(넓게 보기)가 무색해진다.
+   padding-top도 21px로 올린다 — 버튼은 top:16px+높이28px의 절반이라 세로 중심이
+   뷰포트 기준 30px인데, 띠 기본 padding-top(13px)으로는 라벨 중심이 23px이라
+   버튼과 7px 어긋났다(실측). 21px이면 23 + (21-13) = 31로 30px에 가장 가깝다. */
+.home-chat.is-collapsed .ws-strip{padding-left:60px;padding-top:21px;}
 
 /* 검색 (돋보기 아이콘 내장) */
 .home-side-search{position:relative;display:flex;align-items:center;}
-.home-side-search-icon{position:absolute;left:12px;color:var(--muted);pointer-events:none;}
+.home-side-search-icon{position:absolute;left:12px;color:var(--console-dim);pointer-events:none;}
 .home-side-search-input{
-  width:100%;padding:10px 12px 10px 36px;border:1px solid var(--line);border-radius:12px;
-  font-family:inherit;font-size:13.5px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s;
+  width:100%;padding:9px 11px 9px 34px;border:1px solid var(--console-line);border-radius:8px;
+  font-family:var(--mono);font-size:13px;background:#0a2f2a;color:#fff;
+  transition:border-color .15s;
 }
-.home-side-search-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft);}
+.home-side-search-input::placeholder{color:var(--console-dim);letter-spacing:0.06em;}
+.home-side-search-input:focus{outline:none;border-color:var(--teal-bright);}
 
 /* 이력 리스트 */
 .home-side-history{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;}
 .home-side-section{
-  display:flex;align-items:center;justify-content:space-between;padding:2px 8px 10px;
-  font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;
+  display:flex;align-items:center;justify-content:space-between;padding:0 6px 10px;
+  font-family:var(--mono);font-size:11.5px;font-weight:500;
+  letter-spacing:0.16em;color:var(--console-dim);
 }
-.home-side-all{font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;}
-.home-side-list{list-style:none;display:flex;flex-direction:column;gap:2px;}
+/* 이 링크는 <Link className="txt-link home-side-all">라 .txt-link(14.5px)를
+   먼저 받는데, 여기서 12.5px로 오히려 더 줄이고 있었다 — 사이트 전체에서 가장
+   작은 링크였던 셈이다. 색 자체의 명암비는 이미 괜찜하다(#9ecfc2 on --console
+   7.18:1, AA 4.5 여유 통과) — 문제는 크기와, 어두운 바탕에서 텍스트와 배경이
+   같은 청록 계열이라 색만으로는 "눌러도 되는 것"이라는 신호가 약하다는 점이다.
+   밑줄을 상시로 둬 hover 전에도 링크임을 알 수 있게 한다(.fine a와 같은 관례 —
+   문장 속에 끼는 링크가 아니라 이렇게 혼자 서는 링크는 늘 밑줄). */
+.home-side-all{
+  font-family:var(--sans);font-size:13.5px;font-weight:700;letter-spacing:0;color:#9ecfc2;
+  text-decoration:underline;text-underline-offset:3px;
+}
+.home-side-all:hover{color:#fff;}
+.home-side-list{list-style:none;display:flex;flex-direction:column;gap:3px;}
+/* 두 줄이다: 제목 + 모노 메타(날짜·매칭 수). 한 줄이면 목록이고, 두 줄이면
+   고르기 전에 비교가 된다 — 같은 제목의 재분석이 여러 건일 때 날짜가 유일한 단서다. */
 .home-side-item{
-  width:100%;text-align:left;font-family:inherit;font-size:14px;color:#2c322c;
-  border:none;background:none;padding:10px 12px;border-radius:9px;cursor:pointer;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .13s;
+  width:100%;text-align:left;font-family:inherit;
+  border:none;background:none;padding:10px 11px;border-radius:8px;cursor:pointer;
+  border-left:2px solid transparent;transition:background .13s;
 }
-.home-side-item:hover{background:#ebedea;}
-.home-side-empty{padding:10px;color:var(--muted);font-size:13px;}
+.home-side-item:hover{background:var(--console-2);}
+.home-side-item-title{
+  display:block;font-size:14px;color:var(--console-fg);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.home-side-item:hover .home-side-item-title{color:#fff;}
+.home-side-item-meta{
+  display:block;font-family:var(--mono);font-size:11.5px;color:#5f9084;margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.home-side-empty{padding:10px 6px;color:var(--console-dim);font-size:13.5px;}
 
 /* 하단 사용자 — 이름 클릭 시 마이페이지 */
-.home-side-foot{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:4px;}
+.home-side-foot{border-top:1px solid var(--console-line);padding-top:14px;display:flex;flex-direction:column;gap:2px;}
 .home-side-user-btn{
-  display:flex;align-items:center;gap:10px;width:100%;padding:8px;border-radius:11px;
+  display:flex;align-items:center;gap:10px;width:100%;padding:7px 6px;border-radius:8px;
   border:none;background:none;cursor:pointer;font-family:inherit;transition:background .13s;
 }
-.home-side-user-btn:hover{background:#ebedea;}
+.home-side-user-btn:hover{background:var(--console-2);}
 .home-side-avatar{
-  flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--teal-deep);color:#fff;
-  display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;text-transform:uppercase;
+  flex:0 0 auto;width:28px;height:28px;border-radius:8px;background:var(--teal-bright);color:#06231e;
+  display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13.5px;text-transform:uppercase;
 }
-.home-side-user-name{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.home-side-logout{font-size:12.5px;color:var(--muted);align-self:flex-start;padding:4px 10px;}
+.home-side-user-name{font-size:14px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-side-logout{font-size:12.5px;color:var(--console-soft);align-self:flex-start;padding:4px 6px;}
+.home-side-logout:hover{color:#fff;}
 
-/* 가운데 — 인사 한 줄 + 업로드 화면. margin:auto로 화면 정중앙(세로·가로)에 두고,
-   내용이 뷰포트보다 길면 잘리지 않고 스크롤되게 한다. 카드 글자는 원래 크기 그대로,
-   인사 문구만 조금 크게 둔다. */
-/* 내용은 사이드바 오른쪽 "흰색(메인) 영역" 기준으로 가운데 정렬한다(화면 전체
-   기준 X). margin:auto가 이 영역 안에서 세로·가로 중앙에 두고, 길면 스크롤한다. */
-.home-main{flex:1;min-width:0;display:flex;padding:40px 24px;overflow-y:auto;}
-.home-main-inner{width:100%;max-width:600px;margin:auto;}
-.home-greeting{text-align:center;font-size:28px;font-weight:600;letter-spacing:-0.01em;color:var(--ink);margin-bottom:26px;}
+/* 가운데 — 상단 상태 띠 + 인사 한 줄 + 업로드 화면. 띠는 메인 영역 폭 전체를
+   쓰고(콘솔의 "지금 어느 단계인가" 표시), 그 아래 내용만 가운데로 모은다. */
+.home-main{flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;}
+.home-main-scroll{flex:1;display:flex;padding:32px 24px;min-height:0;}
+.home-main-inner{width:100%;max-width:620px;margin:auto;}
+/* max-width/margin을 되돌리는 건 이게 <h1>이라서다 — 위쪽 랜딩 히어로의
+   h1 규칙(max-width:16ch; margin:0 auto)이 요소 선택자라 여기까지 따라온다.
+   콘솔의 인사말은 가운데 정렬이 아니라 왼쪽 정렬 한 줄이다. */
+.home-greeting{
+  font-size:31px;font-weight:800;letter-spacing:-0.025em;line-height:1.35;color:var(--ink);
+  max-width:none;margin:0;
+}
+.home-greeting-sub{font-size:15.5px;line-height:1.7;color:var(--muted);margin-top:10px;margin-bottom:24px;}
 
 @media (max-width:760px){
-  .home-side{position:fixed;z-index:65;box-shadow:0 0 40px rgba(0,0,0,0.15);}
-  .home-main{padding:40px 16px;}
+  .home-side{position:fixed;z-index:65;box-shadow:0 0 40px rgba(0,0,0,0.25);}
+  .home-main-scroll{padding:28px 16px;}
+  .home-greeting{font-size:25px;}
 }

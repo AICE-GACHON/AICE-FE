@@ -8,7 +8,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getPaperRevisionsBodyDiff } from '@/services/papers';
 import {
-  MEDIA_KIND_LABELS, buildVersionBlocks, computeChangeGroups, summarizeChanges, versionLabel,
+  MEDIA_KIND_LABELS, buildVersionBlocks, computeChangeGroups, dateOnly, summarizeChanges,
+  versionLabel,
 } from './bodyDiff';
 
 const OP_CLASS = {
@@ -320,7 +321,8 @@ export default function BodyDiffPanel({ paperId, layout = 'modal' }) {
                 onClick={() => setSelected(i)}
               >
                 <div className="bodydiff-version-no">{versionLabel(i + 1, versionBlocks.length)}</div>
-                <div className="bodydiff-version-meta">{b.label} · {b.date}</div>
+                {/* 시각은 뗀다 — 이 줄이 탭 폭을 정한다(bodyDiff.js dateOnly 주석) */}
+                <div className="bodydiff-version-meta">{b.label} · {dateOnly(b.date)}</div>
               </button>
             ))}
           </div>

@@ -1,7 +1,7 @@
 // /app 아래 화면들의 공통 껍데기. 예전 Workspace.jsx가 하던 일에서 "지금 어느 화면인지"만
 // 라우터에게 넘겼다 — page state 대신 주소가 답을 갖고 있다.
 import { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import TourOverlay from '@/features/workspace/TourOverlay';
 import WorkspaceShell from './WorkspaceShell';
 import { useAuth } from '@/features/auth/authContext';
@@ -20,8 +20,7 @@ const hasSeenTour = () => {
 };
 
 export default function WorkspaceLayout() {
-  const { user, signOut, setUser } = useAuth();
-  const navigate = useNavigate();
+  const { user, setUser } = useAuth();
   const [showTour, setShowTour] = useState(() => !hasSeenTour());
 
   const dismissTour = () => {
@@ -33,27 +32,19 @@ export default function WorkspaceLayout() {
     setShowTour(false);
   };
 
-  // 순서가 중요하다. signOut을 먼저 하면 status가 guest로 바뀌는 순간 이 화면을
-  // 감싼 RequireAuth가 먼저 발동해서 로그인 화면으로 보내버린다 — 로그아웃했는데
-  // 랜딩이 아니라 로그인 폼 앞에 서게 된다. 보호 구역을 먼저 벗어나면 가드가
-  // 판단할 일 자체가 없어진다.
-  //
-  // replace인 이유는 뒤로가기로 /app에 되돌아갔다가 다시 튕겨나오는 왕복을 막기 위해서다.
-  const handleLogout = async () => {
-    navigate('/', { replace: true });
-    await signOut();
-  };
+  // 로그아웃 뒤 어디로 가는지는 여기서 안 정한다 — RequireAuth가 정한다.
+  // 여기서 navigate('/')를 먼저 부르는 방식은 react-router v7에서 안 통했다
+  // (guards.jsx RequireAuth 주석에 실측과 함께 적어뒀다). 그래서 레일의 로그아웃
+  // 버튼은 signOut만 부르면 되고, 이 컴포넌트가 넘겨줄 것은 아무것도 없다.
 
   // 분석 상태(AnalysisProvider)는 이제 라우터 전체(AppRoutes)가 들고 있다 —
   // 홈 대시보드 중앙에서도 분석을 시작할 수 있어야 해서 한 단계 위로 올렸다.
   return (
     <>
       {showTour && <TourOverlay onDone={dismissTour} />}
-      <WorkspaceShell
-        user={user}
-        onGoHome={() => navigate('/')}
-        onLogout={handleLogout}
-      >
+      {/* user·onGoHome·onLogout을 더 넘기지 않는다 — 레일(ConsoleLayout)이
+          useAuth로 직접 읽고, 로고는 <Link to="/">라 이동도 스스로 한다. */}
+      <WorkspaceShell>
         {/* === false로 비교한다. mock 모드(VITE_API_BASE_URL 미설정)에서는 user가
             null이라, truthy 검사로 두면 백엔드 없이 화면만 보는 개발 중에 이
             띠가 항상 떠 있게 된다. */}
