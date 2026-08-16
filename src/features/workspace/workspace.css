@@ -480,35 +480,38 @@
   flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap;
   padding:11px 0;border-bottom:1px solid var(--rule-soft);
 }
+/* 라벨 열은 132px — "OPENREVIEW ID"가 13px/자간 0.1em에서 118.3px라 128px에도
+   들어가긴 하지만, 남는 폭이 10px뿐이라 폰트 폴백이나 다른 OS의 렌더 차이로
+   바로 줄바꿈될 수 있어 여유를 조금 더 둔다. */
 .mypage-fields .auth-field-label{
-  flex:0 0 128px;
-  font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:0.12em;
+  flex:0 0 132px;
+  font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:0.1em;
   color:var(--label);text-transform:uppercase;
 }
 .mypage-fields .auth-input{
   flex:1;min-width:180px;width:auto;
   border-width:1px;border-color:var(--card-line);border-radius:8px;
-  padding:9px 12px;font-size:15px;
+  padding:9px 12px;font-size:16px;
 }
 /* 오류 문구는 라벨 열을 비우고 입력칸 아래에 붙어야 짝이 보인다. */
-.mypage-fields .auth-field-error{flex:1 0 100%;margin-left:144px;}
+.mypage-fields .auth-field-error{flex:1 0 100%;margin-left:148px;}
 
 .mypage-row{
   display:flex;gap:16px;align-items:baseline;padding:11px 0;
   border-bottom:1px solid var(--rule-soft);
 }
 .mypage-key{
-  flex:0 0 128px;
-  font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:0.12em;color:var(--label);
+  flex:0 0 132px;
+  font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:0.1em;color:var(--label);
 }
-.mypage-val{flex:1;font-size:15px;min-width:0;word-break:break-word;}
-.mypage-note-inline{font-size:13px;color:var(--label);margin-left:8px;}
-.mypage-hint{font-size:13.5px;color:var(--label);line-height:1.65;padding:8px 0 0 144px;}
-.mypage-blank{color:var(--muted);font-size:14.5px;}
+.mypage-val{flex:1;font-size:16px;min-width:0;word-break:break-word;}
+.mypage-note-inline{font-size:14px;color:var(--label);margin-left:8px;}
+.mypage-hint{font-size:14.5px;color:var(--label);line-height:1.65;padding:8px 0 0 148px;}
+.mypage-blank{color:var(--muted);font-size:15px;}
 .mypage-tags{display:flex;gap:6px;flex-wrap:wrap;}
 
 .mypage-subsection{margin-top:20px;padding-top:16px;border-top:1px solid var(--rule);}
-.mypage-subsection-title{font-size:15px;font-weight:800;margin-bottom:4px;}
+.mypage-subsection-title{font-size:16px;font-weight:800;margin-bottom:4px;}
 
 @media (max-width:640px){
   .mypage-row,.mypage-fields .auth-field{flex-direction:column;align-items:stretch;gap:5px;}
