@@ -10,14 +10,14 @@
 // 재구성한다. 그림/표도 마찬가지로 baseline엔 diff가 없으니 v2 transition의
 // before쪽만 단독으로 보여준다.
 //
-// 접근: 개발 서버에서 /dev/body-diff. 이 라우트는 routes.jsx에서 import.meta.env.DEV로
+// 접근: 개발 서버에서 /dev/body-diff. 이 라우트는 routes/index.jsx에서 import.meta.env.DEV로
 // 감싸 두어 배포 번들에는 들어가지 않는다 — 검증이 끝나면 이 파일과 그 라우트를 함께 지운다.
 //
 // 문단·미디어 매칭 로직은 실 서비스 통합판(BodyDiffPanel.jsx)과
 // bodyDiff.js 하나를 공유한다 — 같은 규칙을 두 곳에서 따로 구현하면 어긋나기 쉽다.
 import { useMemo, useState } from 'react';
-import { getPaperRevisionsBodyDiff } from '../api/papers';
-import { buildVersionBlocks, splitSegmentsWithMedia, withSpacing } from '../workspace/story/bodyDiff';
+import { getPaperRevisionsBodyDiff } from '@/services/papers';
+import { buildVersionBlocks, splitSegmentsWithMedia, withSpacing } from '@/features/workspace/story/bodyDiff';
 
 function MediaPiece({ piece, mediaByLabel, mediaByDeleted }) {
   // delete 조각은 항상 자기 자신의(수정 전) 번호로 진짜 삭제된 그림을 찾아야
