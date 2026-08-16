@@ -16,16 +16,28 @@ const STEPS = [
   ['03', 'ANALYZE'],
 ];
 
-/** phase → 지금 서 있는 칸(0-based). done/error는 마지막 칸에 머문다. */
-function activeIndex(phase) {
+/** 지금 서 있는 칸(0-based).
+ *
+ * **phase만으로는 못 정한다.** UploadPage가 화면을 고를 때 쓰는 사실이 phase와
+ * submission 유무 두 가지인데(UploadPage.jsx의 렌더 분기), 여기서 phase만 보면
+ * 같은 phase가 서로 다른 화면을 뜻하는 자리에서 띠와 화면이 갈린다:
+ *   · working + submission 없음 = 업로드하는 중이라 화면은 아직 업로드 폼인데
+ *     띠는 03 ANALYZE를 가리켰다. mock에서는 업로드가 즉시 끝나 안 보이지만
+ *     실제 서버에서는 20MB 업로드 + 추출이라 몇 초씩 어긋난다.
+ *   · done = 결과를 보고 홈으로 돌아온 상태다. 화면은 새 업로드 폼인데 띠는
+ *     03 ANALYZE에 머물러 있었다(실측: 분석 완료 후 홈 이동).
+ *   · error + submission = 3단계에서 실패한 것인데 띠가 첫 칸으로 되돌아갔다.
+ * 그래서 화면을 고르는 것과 같은 사실로 판단한다.
+ */
+function activeIndex(phase, submission) {
   if (phase === 'review') return 1;
-  if (phase === 'working' || phase === 'done') return 2;
+  if ((phase === 'working' || phase === 'error') && submission) return 2;
   return 0;
 }
 
 export default function ConsoleStrip() {
-  const { phase } = useAnalysis();
-  const active = activeIndex(phase);
+  const { phase, submission } = useAnalysis();
+  const active = activeIndex(phase, submission);
 
   // 첫 칸에 서 있을 때는 단계 표시가 정보를 주지 않는다 — 아직 아무것도 안
   // 했으니 "1/3"은 뻔한 말이다. 대신 이 화면이 무엇을 하는 자리인지를 밝힌다.
