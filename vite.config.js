@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -8,7 +9,7 @@ export default defineConfig(({ command, mode }) => {
 
   // ------------------------------------------------------------------ 빌드 가드
   //
-  // 🔴 VITE_API_BASE_URL이 비면 src/api/*.js가 **전부 mock 응답으로 폴백한다**
+  // 🔴 VITE_API_BASE_URL이 비면 src/services/*.js가 **전부 mock 응답으로 폴백한다**
   //    (auth 3곳, submissions 3곳, onboarding 1곳, papers 1곳).
   //
   //    개발 중에는 편리한 기능이지만 배포에서는 최악이다. 가입도 로그인도 분석도
@@ -73,5 +74,16 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     plugins: [react()],
+    // 폴더가 features/ 아래로 한 겹 깊어지면서 '../../../components/BrandMark' 같은
+    // import가 생긴다. 몇 칸을 올라가는지 세는 것은 읽는 쪽에도 옮기는 쪽에도
+    // 비용이라, 경계를 넘는 import는 전부 '@/...'로 적는다.
+    //
+    // 같은 기능 폴더 안에서는 상대 경로를 그대로 쓴다 — 그래야 그 폴더가
+    // 자족적으로 남고, 통째로 옮겨도 안이 깨지지 않는다.
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
+    },
   }
 })
