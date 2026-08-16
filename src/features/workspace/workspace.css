@@ -200,6 +200,20 @@
 .rp-query-abstract{
   font-size:14px;line-height:1.65;color:var(--muted);margin-top:8px;max-width:920px;
 }
+/* "무엇을 우선해 골랐나" 한 줄. 초록보다 작고 조용하게 — 결과의 주인공이 아니라
+   결과가 만들어진 조건이다. 라벨 자체에 가운뎃점이 들어 있어(예: "평가 방식·
+   데이터셋이 비슷한 논문") 구분자로 점을 쓰면 어디까지가 한 항목인지 안 보인다.
+   그래서 칩으로 나눈다. */
+.rp-prefs{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:12px;font-size:13px;color:var(--muted);
+}
+.rp-prefs-chip{
+  padding:2px 9px;border:1px solid var(--rule);border-radius:999px;
+  background:var(--field);color:var(--ink);font-size:12.5px;white-space:nowrap;
+}
+.rp-prefs-tail{font-size:13px;}
+
 /* 수치는 세로선으로 칸을 나눠 오른쪽 끝에 붙인다 — 제목과 같은 흐름에 두면
    문장처럼 읽히고, 칸으로 나누면 계기판처럼 읽힌다. */
 .rp-stats{display:flex;flex:none;}

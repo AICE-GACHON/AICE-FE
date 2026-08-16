@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import AppliedPreferences from './report/AppliedPreferences';
 import ConfidenceBanner from './report/ConfidenceBanner';
 import ReviewedPaperList from './report/ReviewedPaperList';
 import PaperDetail from './report/PaperDetail';
@@ -78,6 +79,9 @@ export default function ResultReport({
               {report.query_abstract.length > 300 ? '…' : ''}
             </div>
           )}
+          {/* 온보딩 답변이 이 결과에 실제로 반영됐다는 유일한 표시. 기본값이면
+              아무것도 그리지 않는다 (AppliedPreferences 주석 참고). */}
+          <AppliedPreferences preferences={report.preferences} />
         </div>
         <div className="rp-stats">
           <div className="rp-stat">

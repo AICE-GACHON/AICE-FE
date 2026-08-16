@@ -10,10 +10,14 @@ export const USER_TYPE_OPTIONS = [
   { value: 'etc', label: '기타' },
 ];
 
-// 유사 논문을 고를 때 "비슷하다"의 기준 중 뭘 더 눈여겨볼지. 지금 리랭크
-// 프롬프트(paper_assistant/graph/nodes.py의 _RERANK_SYSTEM)는 이 셋을 OR로 느슨하게
-// 보고 있어서, 유저가 하나에 가중치를 주면 실제로 다른 5편이 뽑힐 여지가 있다.
-// 다만 백엔드 연결(프롬프트에 반영)은 아직 안 했다 — 지금은 프론트에서만 값을 받는다.
+// 유사 논문을 고를 때 "비슷하다"의 기준 중 뭘 더 눈여겨볼지. 리랭크 프롬프트가
+// 이 셋을 OR로 나열하고 있어서(paper_assistant/graph/nodes.py의 _RERANK_BASE),
+// 하나를 고르면 **그 축의 일치를 더 무겁게 보라**는 문단이 프롬프트에 붙는다
+// (rerank_system). 후보 50편은 그대로고 그 안에서 고르는 기준만 바뀐다 —
+// 1단계 임베딩은 제목+초록이 벡터 하나라 세 축을 구분하지 못한다.
+//
+// ⚠️ value 문자열은 백엔드의 화이트리스트(schemas.SIMILARITY_FOCUS_VALUES)와
+// **정확히** 같아야 한다. 어긋나면 422가 아니라 조용히 balanced로 접힌다.
 export const SIMILARITY_FOCUS_OPTIONS = [
   {
     value: 'problem',
@@ -37,8 +41,17 @@ export const SIMILARITY_FOCUS_OPTIONS = [
   },
 ];
 
-// hybrid_search.py의 고정 가중치(유사도 0.35 · 최신성 0.45 · 인용도 0.20) 중
-// 최신성·인용도 비중을 유저가 조절하는 것. 마찬가지로 백엔드 연결은 아직.
+// hybrid_search.py의 랭킹 가중치를 프리셋으로 갈아 끼운다(RANKING_PRESETS).
+// 가중치 3개만이 아니라 **최신성 반감기까지** 한 벌로 바뀐다 — 인용도는 같은
+// 연도 안의 백분위라, 연도가 퍼지지 않으면 "인용 많은 논문 우선"이 거의 아무
+// 일도 하지 않기 때문이다.
+//
+//   balanced 유사도 0.35 · 최신성 0.45 · 인용도 0.20 · 반감기 3년 (기본)
+//   recent        0.30 ·      0.50 ·      0.20 ·      2년
+//   cited         0.30 ·      0.45 ·      0.25 ·      4년
+//
+// 어떤 프리셋도 "최신성 > 유사도"는 깨지 않는다 — 그건 사용자 선호보다 상위에
+// 있는 요구사항이다(docs/랭킹_가중치_설계.md §1).
 export const RECENCY_BIAS_OPTIONS = [
   { value: 'recent', label: '최신 트렌드 논문' },
   { value: 'cited', label: '검증된(인용 많은) 논문' },
