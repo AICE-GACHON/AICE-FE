@@ -17,11 +17,22 @@ function SessionLoading() {
 
 /** 로그인해야 볼 수 있는 화면. 게스트는 로그인으로 보내되 가려던 곳을 기억한다. */
 export function RequireAuth({ children }) {
-  const { status } = useAuth();
+  const { status, signedOut } = useAuth();
   const location = useLocation();
 
   if (status === 'loading') return <SessionLoading />;
   if (status === 'guest') {
+    // 보호 구역에 서 있다가 스스로 로그아웃한 경우. 로그인 폼으로 되돌리면
+    // 나가겠다고 누른 사람을 문 앞에 다시 세우는 꼴이고, ?next=로 방금 떠난
+    // 화면까지 기억해 두어 "다시 로그인하세요"처럼 읽힌다. 랜딩으로 보낸다.
+    //
+    // **이 판단이 화면 쪽이 아니라 여기 있어야 하는 이유**: 로그아웃 버튼에서
+    // navigate('/')를 먼저 부르는 방식은 react-router v7에서 안 통한다. v7은
+    // 네비게이션 상태 갱신을 startTransition(비긴급)으로 돌리는데 setState(guest)는
+    // 긴급이라 먼저 flush되고, 그 렌더에서 location은 아직 옛 주소라 이 가드가
+    // /login으로 덮어썼다(실측: URL이 /로 바뀐 2ms 뒤 /login?next=/app/mypage).
+    // 순서 경쟁을 없애려면 "어디로 보낼지"를 아는 쪽이 직접 답해야 한다.
+    if (signedOut) return <Navigate to="/" replace />;
     const next = `${location.pathname}${location.search}`;
     return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;
   }
