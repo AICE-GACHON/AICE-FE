@@ -769,8 +769,11 @@
 }
 .bodydiff-version-btn:hover{border-color:var(--teal);}
 .bodydiff-version-btn.is-active{border-color:var(--teal-deep);background:var(--teal-soft);}
-.bodydiff-version-no{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;}
-.bodydiff-version-meta{font-size:12px;color:var(--muted);white-space:nowrap;margin-top:2px;}
+/* 탭에서 시각을 뗀 만큼(BodyDiffPanel의 dateOnly) 남은 폭을 크기로 돌린다.
+   메타 12px는 흰 바탕 대비 6.1:1로 대비는 기준을 넘지만, 그래도 안 읽히던 건
+   크기 탓이었다 — 이 줄은 리비전 종류라 버전명만큼 실질적인 정보다. */
+.bodydiff-version-no{font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;}
+.bodydiff-version-meta{font-size:13.5px;color:var(--muted);white-space:nowrap;margin-top:3px;}
 
 /* 헤더(버전·PDF링크·범례)와 요약 칩은 늘 보이고, 실제 diff 텍스트만 그
    안의 .bodydiff-scroll에서 스크롤한다 — 바깥 .bodydiff-scroll(콜아웃·버전
