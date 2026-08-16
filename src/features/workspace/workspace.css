@@ -933,6 +933,7 @@
 
 .wr-reviews{margin-top:14px;}
 .wr-review-part-label{font-size:12.5px;font-weight:800;color:var(--muted);letter-spacing:.02em;}
+.wr-review-part-caption{margin-top:3px;font-size:12.5px;color:var(--muted);}
 
 .wr-review{border-top:1px solid var(--line);}
 .wr-review-head{

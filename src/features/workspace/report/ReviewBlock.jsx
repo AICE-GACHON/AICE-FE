@@ -119,12 +119,6 @@ export default function ReviewBlock({ review, index, detailMode = false, open: c
       >
         <span className="wr-review-no">리뷰 {index + 1}</span>
         <span className="wr-review-score">{review.rating_raw || score}</span>
-        {review.is_unsplit && (
-          <span className="wr-split-badge"
-                title="이 학회는 강점/약점을 나눠 받지 않아서 리뷰 본문 전체가 들어 있어요">
-            본문 전체
-          </span>
-        )}
         <span className="wr-review-toggle" aria-hidden={detailMode ? 'true' : undefined}>
           {detailMode ? (open ? '−' : '+') : (open ? '접기' : '펼치기')}
         </span>
@@ -170,6 +164,14 @@ export default function ReviewBlock({ review, index, detailMode = false, open: c
               <div className="wr-review-part-label">
                 {review.is_unsplit ? '리뷰 본문' : '지적받은 점'}
               </div>
+              {/* 접힌 머리줄에 배지로 얹었더니 점수 문구가 길 때 두 줄로 접히며
+                  깨졌다 — 펼쳤을 때만, 그리고 실제로 뜻이 통하는 이 자리에서만
+                  캡션으로 설명한다. */}
+              {review.is_unsplit && (
+                <p className="wr-review-part-caption">
+                  이 학회는 강점/약점을 나눠 받지 않아서 리뷰 본문 전체가 들어 있어요
+                </p>
+              )}
               <p>{body.weaknesses}</p>
             </div>
           )}
