@@ -49,7 +49,7 @@ export default function PapersPage({ embedded = false }) {
   const rows = items;
 
   return (
-    <div className="papers-page ws-narrow">
+    <div className="papers-page">
       {/* 분석 상세(PastAnalysisRoute)의 "← 분석 이력으로"가 고정 주소로 여기
           들어온다 — navigate(-1)을 쓰면 그 화면과 여기가 서로를 다시 push하며
           되돌아가는 왕복이 끝없이 쌓인다(상세→여기→상세→…). 여기서도 고정

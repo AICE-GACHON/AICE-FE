@@ -601,7 +601,9 @@ footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
 .share-title{font-size:17px;font-weight:800;color:var(--ink);}
 .share-x{border:none;background:none;font-size:24px;line-height:1;color:var(--muted);cursor:pointer;padding:0 4px;}
 .share-x:hover{color:var(--ink);}
-.share-sub{margin-top:4px;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 이 논문의 제목이다 — "공유하기"(.share-title)의 부제가 아니라 무엇을 공유하는지
+   그 자체다. 흐린 캡션 톤이면 설명 문구로 오해하기 쉬워 제목처럼 읽히게 진하게 둔다. */
+.share-sub{margin-top:4px;color:var(--ink);font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .share-url-row{display:flex;gap:8px;margin-top:16px;}
 .share-url{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-family:var(--mono);font-size:12.5px;color:#2c322c;background:#f8f9f8;}
 .share-copy{flex:0 0 auto;padding:0 16px;border:none;border-radius:10px;background:var(--teal-deep);color:#fff;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:background .15s;}
