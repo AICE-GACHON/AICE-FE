@@ -26,8 +26,11 @@
 .onboard-dot.done{background:var(--teal-deep);}
 .onboard-dot.active{background:var(--teal-bright);}
 
+/* "STEP 1 / 3 · 사용자 유형" — 앞은 라틴, 뒤는 한글이라 한 줄 안에서 폰트가
+   갈린다(--mono 주석). 폰트는 스택이 처리하고, 여기서는 뒤쪽 한글이 읽히도록
+   크기만 반 단계 올린다. */
 .onboard-step-label{
-  font-family:var(--mono);font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;
+  font-family:var(--mono);font-size:12.5px;letter-spacing:0.06em;text-transform:uppercase;
   color:var(--muted);font-weight:600;margin-bottom:28px;
 }
 
@@ -111,7 +114,12 @@
 .onboard-preview-card h2{font-size:clamp(22px,2.6vw,26px);font-weight:800;letter-spacing:-0.01em;margin-top:8px;line-height:1.35;}
 .onboard-summary-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:26px;padding:20px;background:#fafaf8;border-radius:12px;}
 .onboard-summary-grid > div{display:flex;flex-direction:column;gap:4px;}
-.onboard-summary-key{font-family:var(--mono);font-size:10.5px;letter-spacing:0.05em;text-transform:uppercase;color:var(--teal-deep);font-weight:600;}
+/* 이 네 개는 라벨이 전부 한글이다(역할·전공 분야·검색 우선순위·목표 학회).
+   10.5px + 자간은 "작은 대문자 라벨" 관례를 노린 값인데, uppercase가 한글에는
+   아무 효과가 없으니 한글에서는 작기만 하다. 값이 14px인데 라벨이 10.5px면
+   대비가 지나쳐 라벨을 못 읽고 값만 훑게 된다 — 12.5px로 올리고 자간은 줄인다
+   (한글은 자간을 벌리면 글자가 낱개로 흩어져 단어로 안 읽힌다). */
+.onboard-summary-key{font-family:var(--mono);font-size:12.5px;letter-spacing:0.02em;text-transform:uppercase;color:var(--teal-deep);font-weight:600;}
 .onboard-summary-val{font-size:14px;font-weight:700;color:var(--ink);}
 
 .onboard-preview-actions{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:32px;}
