@@ -1,40 +1,35 @@
 import OptionButton from '../OptionButton';
-import { PURPOSE_OPTIONS, PURPOSE_MAX_SELECT } from '../onboardingData';
+import { SIMILARITY_FOCUS_OPTIONS, RECENCY_BIAS_OPTIONS } from '../onboardingData';
 
 export default function StepPurpose({ answers, update }) {
-  const toggle = (value) => {
-    const has = answers.purposes.includes(value);
-    if (has) {
-      update({ purposes: answers.purposes.filter((v) => v !== value) });
-      return;
-    }
-    if (answers.purposes.length >= PURPOSE_MAX_SELECT) return;
-    update({ purposes: [...answers.purposes, value] });
-  };
-
   return (
     <>
-      <h2>지금 가장 필요한 도움은 무엇인가요?</h2>
-      <p className="onboard-desc">
-        선택한 목적에 따라 분석 결과의 우선순위를 조정합니다. 최대 {PURPOSE_MAX_SELECT}개까지 선택할 수 있어요.
-      </p>
+      <h2>유사 논문을 고를 때 뭘 우선할까요?</h2>
+      <p className="onboard-desc">검색에서 참고하는 기준이에요. 건너뛰면 균형있게로 기본 설정돼요.</p>
 
-      <div className="onboard-options" style={{ marginTop: 20 }}>
-        {PURPOSE_OPTIONS.map((opt) => {
-          const selected = answers.purposes.includes(opt.value);
-          const atLimit = !selected && answers.purposes.length >= PURPOSE_MAX_SELECT;
-          return (
-            <OptionButton
-              key={opt.value}
-              multi
-              label={opt.label}
-              desc={opt.desc}
-              selected={selected}
-              disabled={atLimit}
-              onClick={() => toggle(opt.value)}
-            />
-          );
-        })}
+      <h3 className="onboard-subq" style={{ marginTop: 28 }}>어떤 면이 비슷하면 더 눈여겨볼까요?</h3>
+      <div className="onboard-options">
+        {SIMILARITY_FOCUS_OPTIONS.map((opt) => (
+          <OptionButton
+            key={opt.value}
+            label={opt.label}
+            desc={opt.desc}
+            selected={answers.similarityFocus === opt.value}
+            onClick={() => update({ similarityFocus: answers.similarityFocus === opt.value ? null : opt.value })}
+          />
+        ))}
+      </div>
+
+      <h3 className="onboard-subq" style={{ marginTop: 28 }}>최신 논문과 인용이 많은 논문, 뭘 우선할까요?</h3>
+      <div className="onboard-options">
+        {RECENCY_BIAS_OPTIONS.map((opt) => (
+          <OptionButton
+            key={opt.value}
+            label={opt.label}
+            selected={answers.recencyBias === opt.value}
+            onClick={() => update({ recencyBias: answers.recencyBias === opt.value ? null : opt.value })}
+          />
+        ))}
       </div>
     </>
   );

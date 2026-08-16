@@ -187,9 +187,11 @@ function ReportRoute() {
 // 받아온다 — 지금 진행 중인 분석(다른 논문)과 섞이면 안 되고, 애초에 지난
 // 분석은 컨텍스트에 남아있지도 않기 때문이다(새로고침하면 사라짐).
 //
-// "← 목록으로"·"← 분석 이력으로" 둘 다 navigate(-1)이다(ReportRoute와 같은
-// 이유) — 여기 있는 화면들은 전부 papers 목록에서 눌러 들어와야만 도달하는
-// 것들이라, 실제 히스토리를 되짚는 것과 "한 단계 위로"가 항상 같다.
+// "← 목록으로"·"← 돌아가기" 둘 다 navigate(-1)이다(ReportRoute와 같은 이유).
+// "← 돌아가기"는 원래 "← 분석 이력으로"였던 걸 바꾼 것이다 — papers 목록을 거쳐
+// 들어온 경우에는 그 라벨이 맞지만, HomeDashboard가 개별 항목으로 바로
+// 연결해서(목록을 안 거치고) 여기 도달할 수도 있어, 그 경로에서는 뒤로가기가
+// 목록이 아니라 홈으로 간다 — 라벨이 실제 목적지를 약속하면 안 되는 이유다.
 function PastAnalysisRoute() {
   const navigate = useNavigate();
   const { submissionId, paperId } = useParams();
@@ -232,7 +234,7 @@ function PastAnalysisRoute() {
         <div className="wr-card-title">이 분석은 결과가 없어요</div>
         <p className="wr-muted">실패했거나 아직 진행 중인 분석이에요.</p>
         <button type="button" className="onboard-back" onClick={() => navigate(-1)}>
-          ← 분석 이력으로
+          ← 돌아가기
         </button>
       </div>
     );
@@ -245,7 +247,7 @@ function PastAnalysisRoute() {
       onOpenPaper={(id) => navigate(`/app/papers/${submissionId}/${id}`)}
       onClosePaper={() => navigate(-1)}
       onReset={() => navigate(-1)}
-      resetLabel="← 분석 이력으로"
+      resetLabel="← 돌아가기"
     />
   );
 }

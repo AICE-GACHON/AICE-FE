@@ -4,9 +4,11 @@ import { updateMyOnboarding } from '@/services/onboarding';
 import { toOnboardingPayload, answersFromProfile } from '@/features/onboarding/profileMapping';
 import { saveAnswers } from '@/features/onboarding/sessionState';
 import {
-  USER_TYPE_OPTIONS, EXPERIENCE_OPTIONS, PURPOSE_OPTIONS, PURPOSE_MAX_SELECT,
-  FIELD_OPTIONS, FIELD_MAX_SELECT, STAGE_OPTIONS, VENUE_OPTIONS,
-  userTypeLabel, experienceLabel, purposeLabel, fieldLabel, stageLabel, venueLabel,
+  USER_TYPE_OPTIONS,
+  FIELD_OPTIONS, FIELD_MAX_SELECT,
+  SIMILARITY_FOCUS_OPTIONS, RECENCY_BIAS_OPTIONS,
+  VENUE_OPTIONS,
+  userTypeLabel, fieldLabel, similarityFocusLabel, recencyBiasLabel, venueLabel,
 } from '@/features/onboarding/onboardingData';
 
 const Blank = () => <span className="mypage-blank">답하지 않음</span>;
@@ -69,6 +71,7 @@ function MultiChoice({ label, options, values, max, onChange }) {
             label={o.label}
             desc={o.desc}
             multi
+            round
             selected={values.includes(o.value)}
             disabled={!values.includes(o.value) && values.length >= max}
             onClick={() => toggle(o.value)}
@@ -104,9 +107,8 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
     setSaving(true);
     setSaveError('');
     try {
-      // toOnboardingPayload는 '직접 입력'을 자유 문자열로 바꾸고 result_order를
-      // 목적에 맞춰 다시 만든다 — 온보딩 저장과 **같은 함수**를 쓴다. 여기서만
-      // 따로 만들면 두 경로가 서서히 어긋난다.
+      // toOnboardingPayload는 '직접 입력'을 자유 문자열로 바꾼다 — 온보딩
+      // 저장과 **같은 함수**를 쓴다. 여기서만 따로 만들면 두 경로가 서서히 어긋난다.
       const profile = await updateMyOnboarding(toOnboardingPayload(draft));
       const fresh = answersFromProfile(profile);
 
@@ -129,8 +131,27 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
   const fieldNames = (shown?.fields ?? [])
     .map((f) => (f === 'custom' ? shown.fieldCustom : fieldLabel(f)))
     .filter(Boolean);
-  const purposeNames = (shown?.purposes ?? []).map(purposeLabel).filter(Boolean);
-  const venueName = shown?.venue === 'custom' ? shown.venueCustom : venueLabel(shown?.venue);
+  const venueNames = (shown?.venues ?? [])
+    .map((v) => (v === 'custom' ? shown.venueCustom : venueLabel(v)))
+    .filter(Boolean);
+  // 값이 없으면 "균형있게"를 고른 것과 결과가 같으므로, 다른 항목처럼
+  // "답하지 않음"으로 두지 않고 균형있게로 보여준다.
+  const focusText = similarityFocusLabel(shown?.similarityFocus) || '균형있게';
+  const recencyText = recencyBiasLabel(shown?.recencyBias) || '균형있게';
+
+  // "아직 결정하지 않음"은 다른 학회와 같이 고르면 의미가 모순된다 — 서로
+  // 배타적으로 둔다(온보딩 3단계 StepCriteria.jsx와 같은 규칙).
+  const toggleDraftVenue = (value) => {
+    const has = draft.venues.includes(value);
+    if (value === 'undecided') {
+      patch({ venues: has ? [] : ['undecided'] });
+      return;
+    }
+    const withoutUndecided = draft.venues.filter((v) => v !== 'undecided');
+    patch({
+      venues: has ? withoutUndecided.filter((v) => v !== value) : [...withoutUndecided, value],
+    });
+  };
 
   return (
     <div className="wr-card upload-card">
@@ -138,7 +159,7 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
         <div>
           <div className="wr-card-title">온보딩 답변</div>
           <p className="wr-muted" style={{ marginTop: 4 }}>
-            분석 결과를 무엇부터 보여줄지 정하는 데 쓰여요.
+            프로필로 저장되고, 유사 논문을 찾을 때 참고할 기준으로도 쓰여요.
           </p>
         </div>
         {!editing && status !== 'loading' && status !== 'error' && (
@@ -166,11 +187,9 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
       {!editing && status === 'ready' && (
         <div className="mypage-list" style={{ marginTop: 12 }}>
           <Row label="사용자 유형">{userTypeLabel(shown.userType) || <Blank />}</Row>
-          <Row label="논문 경험">{experienceLabel(shown.experience) || <Blank />}</Row>
-          <Row label="이용 목적"><Tags values={purposeNames} /></Row>
-          <Row label="관심 분야"><Tags values={fieldNames} /></Row>
-          <Row label="진행 단계">{stageLabel(shown.stage) || <Blank />}</Row>
-          <Row label="목표 학회">{venueName || <Blank />}</Row>
+          <Row label="전공 분야"><Tags values={fieldNames} /></Row>
+          <Row label="검색 우선순위">관점: {focusText} / 경향: {recencyText}</Row>
+          <Row label="목표 학회"><Tags values={venueNames} /></Row>
         </div>
       )}
 
@@ -181,17 +200,8 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
             label="사용자 유형" options={USER_TYPE_OPTIONS}
             value={draft.userType} onChange={(v) => patch({ userType: v })}
           />
-          <SingleChoice
-            label="논문 경험" options={EXPERIENCE_OPTIONS}
-            value={draft.experience} onChange={(v) => patch({ experience: v })}
-          />
           <MultiChoice
-            label="이용 목적" options={PURPOSE_OPTIONS} max={PURPOSE_MAX_SELECT}
-            values={draft.purposes} onChange={(v) => patch({ purposes: v })}
-          />
-
-          <MultiChoice
-            label="관심 분야" options={FIELD_OPTIONS} max={FIELD_MAX_SELECT}
+            label="전공 분야" options={FIELD_OPTIONS} max={FIELD_MAX_SELECT}
             values={draft.fields} onChange={(v) => patch({ fields: v })}
           />
           {draft.fields.includes('custom') && (
@@ -199,21 +209,36 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
               className="auth-input mypage-custom-input"
               value={draft.fieldCustom}
               onChange={(e) => patch({ fieldCustom: e.target.value })}
-              placeholder="관심 분야를 직접 입력해 주세요"
+              placeholder="전공 분야를 직접 입력해 주세요"
               maxLength={100}
             />
           )}
 
           <SingleChoice
-            label="진행 단계" options={STAGE_OPTIONS}
-            value={draft.stage} onChange={(v) => patch({ stage: v })}
+            label="관점" options={SIMILARITY_FOCUS_OPTIONS}
+            value={draft.similarityFocus} onChange={(v) => patch({ similarityFocus: v })}
+          />
+          <SingleChoice
+            label="경향" options={RECENCY_BIAS_OPTIONS}
+            value={draft.recencyBias} onChange={(v) => patch({ recencyBias: v })}
           />
 
-          <SingleChoice
-            label="목표 학회" options={VENUE_OPTIONS}
-            value={draft.venue} onChange={(v) => patch({ venue: v })}
-          />
-          {draft.venue === 'custom' && (
+          <div className="mypage-edit-group">
+            <div className="mypage-edit-label">목표 학회</div>
+            <div className="mypage-edit-options">
+              {VENUE_OPTIONS.map((o) => (
+                <OptionButton
+                  key={o.value}
+                  multi
+                  round
+                  label={o.label}
+                  selected={draft.venues.includes(o.value)}
+                  onClick={() => toggleDraftVenue(o.value)}
+                />
+              ))}
+            </div>
+          </div>
+          {draft.venues.includes('custom') && (
             <input
               className="auth-input mypage-custom-input"
               value={draft.venueCustom}

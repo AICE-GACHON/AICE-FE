@@ -44,8 +44,6 @@ export default function ResultReport({
           paper={openPaper}
           useMock={preview}
           onBack={closePaper}
-          onReset={onReset}
-          resetLabel={resetLabel}
         />
       </>
     );

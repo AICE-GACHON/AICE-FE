@@ -5,10 +5,12 @@
 export const TOTAL_STEPS = 4;
 
 // 단계 N에 들어가려면 무엇이 답해져 있어야 하는가. 1단계는 조건이 없다.
+// 나머지 단계는 전부 필수다 — 답 없이 넘어가려면 "건너뛰기"를 눌러야 한다.
+// "균형있게"·"아직 결정하지 않음"도 명시적으로 골라야 하는 유효한 답이다.
 const REQUIREMENT = {
-  2: (answers) => Boolean(answers.userType),
-  3: (answers) => answers.purposes.length > 0,
-  4: (answers) => Boolean(answers.stage),
+  2: (answers) => Boolean(answers.userType) && answers.fields.length > 0,
+  3: (answers) => Boolean(answers.similarityFocus) && Boolean(answers.recencyBias),
+  4: (answers) => answers.venues.length > 0,
 };
 
 /** 지금 단계에서 '다음'을 누를 수 있는가 = 다음 단계의 입장 조건을 채웠는가. */
