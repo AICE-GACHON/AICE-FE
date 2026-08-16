@@ -114,7 +114,9 @@ export default function HomeDashboard() {
       <main className="home-main">
         <div className="home-main-inner">
           <p className="home-greeting">어떤 논문을 분석해 볼까요?</p>
-          <UploadPage />
+          {/* embedded — 바로 위 인사 문구가 이미 제목 역할을 해서, 폼 안의
+              "논문 분석" 제목·설명까지 그리면 같은 말이 두 번 쌓인다. */}
+          <UploadPage embedded />
         </div>
       </main>
     </div>
