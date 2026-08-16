@@ -91,15 +91,8 @@ export default function PaperDetail({ paper, useMock, onBack }) {
                 둘 다 필요하다 — 요약만 보고 판단하면 근거를 확인할 수 없다. */}
             {paper.reviews?.length > 0 && (
               <div className="wr-card">
-                {/* 점수만 먼저 늘어놓는다 — 펼치기 전에 "합의된 평가인가
-                    갈린 평가인가"가 이 한 줄로 판가름난다. */}
                 <div className="wr-card-head" style={{ padding: '0 0 10px' }}>
                   <span className="wr-card-title">이 논문이 받은 리뷰 {paper.reviews.length}건</span>
-                  <span className="wr-card-head-meta">
-                    {paper.reviews
-                      .map((r) => (r.rating != null ? r.rating : '—'))
-                      .join(' · ')}
-                  </span>
                 </div>
                 <div className="wr-reviews">
                   {paper.reviews.map((review, index) => (
