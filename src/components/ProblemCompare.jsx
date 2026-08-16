@@ -21,9 +21,9 @@ export default function ProblemCompare() {
             <h4>PAIR</h4>
             <ul>
               <li>Reads your full PDF — method, experiments, reference list — to pick what's genuinely close</li>
-              <li>Tells you in a sentence why each paper was picked, and picks fewer when fewer match</li>
-              <li>Hands you the reviews those papers received, in full, with the reviewers' own words</li>
-              <li>Opens any of them into the whole story — rebuttals, revisions, what happened next</li>
+              <li>Tells you why each paper was picked, and how it ended — accepted, rejected, or a split decision</li>
+              <li>Hands you every review in full, then sums up what reviewers kept raising across all of them — each point traced to its source</li>
+              <li>Opens any of them into the whole story — rebuttals, revisions, what changed between drafts</li>
             </ul>
           </div>
         </div>

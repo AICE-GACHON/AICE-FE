@@ -15,20 +15,21 @@ export default function Header() {
   return (
     <header>
       <nav>
-        <div className="brand"><BrandMark />PAIR</div>
+        <Link to="/" className="brand"><BrandMark />PAIR</Link>
+        {/* 페이지 아래 섹션들로 순서대로 스크롤한다. 라벨은 각 섹션 내용에 맞춘다. */}
         <div className="navlinks">
-          <a href="#features">Product <span className="chev">▾</span></a>
-          <a href="#process">Use Cases <span className="chev">▾</span></a>
-          <a href="#scope">Conferences <span className="chev">▾</span></a>
-          <a href="#pricing">Pricing</a>
-          <a href="#simulator">Resources <span className="chev">▾</span></a>
+          <a href="#problem">Why PAIR</a>
+          <a href="#simulator">Live demo</a>
+          <a href="#process">How it works</a>
+          <a href="#features">Our approach</a>
+          <a href="#pricing">Get started</a>
         </div>
         <div className="navright">
           {loading ? null : authed ? (
             <>
               {/* 로그아웃은 이동이 아니라 즉시 실행되는 동작이라 버튼이다 — 링크가 아니다. */}
               <button type="button" className="txt-link" onClick={() => signOut()}>Log out</button>
-              <Link to="/app/upload" className="pill">Analyze your paper <span>→</span></Link>
+              <Link to="/app" className="pill">Analyze your paper <span>→</span></Link>
             </>
           ) : (
             <>

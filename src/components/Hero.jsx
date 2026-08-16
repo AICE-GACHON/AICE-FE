@@ -12,13 +12,13 @@ export default function Hero() {
       <h1>Read the reviews <span className="accent">papers like yours got.</span></h1>
       <p className="hero-sub">
         Upload your paper as a PDF. We read it — method, experiments, reference list — to pick the papers <br className="hero-sub-break" />
-        that are genuinely closest to it, then show you the reviews those papers actually received, in full.
+        genuinely closest to it, then show you the reviews they got, whether each one was accepted, and what reviewers kept asking for.
       </p>
       <div className="hero-actions">
         {loading ? null : authed ? (
           // 로그인 상태면 "Log in"·"Get started free" 둘 다 말이 안 된다(이미
           // 로그인했고 이미 시작했다) — 할 일이 하나뿐이니 버튼도 하나만 둔다.
-          <Link to="/app/upload" className="pill btn-lg">Analyze your paper <span>→</span></Link>
+          <Link to="/app" className="pill btn-lg">Analyze your paper <span>→</span></Link>
         ) : (
           <>
             <Link to="/onboarding" className="pill btn-lg">Get started free <span>→</span></Link>

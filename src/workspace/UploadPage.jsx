@@ -24,7 +24,9 @@ function UploadIcon() {
 // 분석이 날아가지 않아야 하기 때문이다. 여기 남은 state는 이 화면이 살아 있는
 // 동안에만 뜻이 있는 것들뿐이다: 드래그 중인지, 그리고 <input type=file> 엘리먼트.
 // 상단바는 WorkspaceShell이 그린다 (내 정보 화면과 공유).
-export default function UploadPage() {
+// embedded=true면 홈 대시보드 중앙에 얹힌 상태 — 홈이 자체 제목/설명을 이미
+// 갖고 있어서 폼 단계의 "논문 분석" 제목·설명은 감춘다(중복 방지).
+export default function UploadPage({ embedded = false }) {
   const {
     pdfFile, pdfError, submission, phase, statusText, progress, errorMsg,
     acceptFile, clearFile, upload, analyze, reset,
@@ -97,10 +99,14 @@ export default function UploadPage() {
         {(phase === 'form' || phase === 'done'
           || (phase === 'error' && !submission) || (phase === 'working' && !submission)) && (
           <div className="wr-card upload-card">
-            <div className="wr-card-title">논문 분석</div>
-            <p className="onboard-desc">
-              논문 PDF를 올리면 <b>비슷한 논문들이 실제로 어떤 리뷰를 받았는지</b> 보여드려요.
-            </p>
+            {!embedded && (
+              <>
+                <div className="wr-card-title">논문 분석</div>
+                <p className="onboard-desc">
+                  논문 PDF를 올리면 <b>비슷한 논문들이 실제로 어떤 리뷰를 받았는지</b> 보여드려요.
+                </p>
+              </>
+            )}
 
             <form onSubmit={handleUpload}>
               <div className="upload-pdf-head">

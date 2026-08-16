@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import LandingPage from './LandingPage';
+import HomeDashboard from './workspace/HomeDashboard';
 import OnboardingFlow from './onboarding/OnboardingFlow';
 import SignupPage from './auth/SignupPage';
 import LoginPage from './auth/LoginPage';
@@ -19,7 +20,8 @@ import ResultReport from './workspace/ResultReport';
 import MyPage from './workspace/MyPage';
 import PapersPage from './workspace/PapersPage';
 import { useAnalysis } from './workspace/analysisContext';
-import { getAnalysis } from './api/submissions';
+import { AnalysisProvider } from './workspace/AnalysisProvider';
+import { getAnalysis, listSubmissions } from './api/submissions';
 import LegalPage from './legal/LegalPage';
 import BodyDiffTest from './dev/BodyDiffTest';
 import TranslateTest from './dev/TranslateTest';
@@ -248,6 +250,74 @@ function PastAnalysisRoute() {
   );
 }
 
+// /app의 기본 진입점(이슈 #26). 예전엔 무조건 업로드 폼으로 넘겼지만, 사용자는
+// 두 부류다 — 처음 온 사람은 업로드 폼이 맞고, 이미 분석한 게 있는 재방문자는
+// 그 결과("내 논문")부터 보고 싶다. 그래서 먼저 이력이 있는지 물어 갈림길을 만든다:
+//   이력 있으면 → /app/papers, 없으면 → /app/upload.
+//
+// 헤더의 "새로운 논문 분석하기"는 이 분기를 타지 않고 늘 /app/upload로 간다
+// (WorkspaceLayout.onGoUpload) — "기본 진입점"과 "새로 시작 버튼"의 목적지는 다르다.
+//
+// 목록 조회가 실패해도(네트워크·서버 오류) 업로드 폼으로 보낸다 — 이력이 없어도
+// 늘 뜻이 있는 안전한 기본값이라서다. 분기 판단 때문에 진입 직후 짧은 로딩이 한 번
+// 생기는데, 그 대신 재방문자가 매번 업로드 폼을 거쳐 "분석 이력"을 또 눌러야 하던
+// 불필요한 단계가 사라진다.
+function AppEntry() {
+  const [target, setTarget] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    listSubmissions()
+      .then((subs) => {
+        if (alive) setTarget(Array.isArray(subs) && subs.length > 0 ? '/app/papers' : '/app/upload');
+      })
+      .catch(() => { if (alive) setTarget('/app/upload'); });
+    return () => { alive = false; };
+  }, []);
+
+  if (target === null) {
+    return (
+      <div className="story-loading">
+        <div className="story-spinner" />
+        <p className="wr-muted">불러오는 중…</p>
+      </div>
+    );
+  }
+  return <Navigate to={target} replace />;
+}
+
+// 홈("/")은 로그인 여부 + "이 기기에서 홈을 처음 보는가"로 갈린다.
+//   · 게스트/로그인 전         → 마케팅 랜딩(LandingPage)
+//   · 로그인했지만 첫 방문(첫 로그인) → 마케팅 랜딩을 한 번 더 (환영 성격)
+//   · 로그인 + 재방문           → 대시보드 홈(HomeDashboard)
+// "첫 로그인"을 계정별로 아는 서버 필드가 없어, 기기 단위 플래그로 근사한다.
+const HOME_VISITED_KEY = 'paper-trace:home_visited';
+function hasVisitedHome() {
+  try { return localStorage.getItem(HOME_VISITED_KEY) === '1'; } catch { return false; }
+}
+function markHomeVisited() {
+  try { localStorage.setItem(HOME_VISITED_KEY, '1'); } catch { /* 저장 불가 — 다음에도 랜딩을 한 번 더 볼 뿐 */ }
+}
+
+function HomeRoute() {
+  const { status } = useAuth();
+  // 첫 방문 여부는 렌더 중 한 번만 고정한다 — 아래 effect가 곧바로 플래그를
+  // 세우므로, 렌더 중에 다시 읽으면 첫 방문에도 대시보드로 튄다.
+  const [firstVisit] = useState(() => !hasVisitedHome());
+  useEffect(() => { if (status === 'authed') markHomeVisited(); }, [status]);
+
+  if (status === 'loading') {
+    return (
+      <div className="story-loading">
+        <div className="story-spinner" />
+        <p className="wr-muted">불러오는 중…</p>
+      </div>
+    );
+  }
+  if (status !== 'authed' || firstVisit) return <LandingPage />;
+  return <HomeDashboard />;
+}
+
 // 약관·개인정보처리방침의 단독 주소. 가드를 걸지 않는다 — 가입 전에도, 탈퇴한
 // 뒤에도 읽을 수 있어야 하는 문서다.
 //
@@ -266,9 +336,15 @@ function LegalRoute({ documentName }) {
 }
 
 export default function AppRoutes() {
+  // 분석 상태(AnalysisProvider)는 예전엔 WorkspaceLayout 안에만 있었다. 이제 홈
+  // 대시보드 중앙에서도 UploadPage로 바로 분석을 시작할 수 있어야 하고, 분석이
+  // 끝나면 analyze()가 /app/report로 옮겨 같은 report를 읽는다 — 홈과 /app가 같은
+  // Provider를 공유해야 그 report가 넘어간다. 그래서 라우터 전체를 감싼다(게스트
+  // 화면에서도 마운트되지만, 마운트만으로는 아무 요청도 하지 않아 무해하다).
   return (
+    <AnalysisProvider>
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<HomeRoute />} />
       {/* 랜딩의 "시작하기"는 /onboarding으로 온다. replace라서 1단계에서 뒤로가면 랜딩이다. */}
       <Route path="/onboarding" element={<Navigate to="/onboarding/1" replace />} />
       <Route path="/onboarding/:step" element={<OnboardingRoute />} />
@@ -283,7 +359,7 @@ export default function AppRoutes() {
       <Route path="/privacy" element={<LegalRoute documentName="privacy" />} />
 
       <Route path="/app" element={<RequireAuth><WorkspaceLayout /></RequireAuth>}>
-        <Route index element={<Navigate to="/app/upload" replace />} />
+        <Route index element={<AppEntry />} />
         <Route path="upload" element={<UploadPage />} />
         <Route path="report" element={<ReportRoute />} />
         <Route path="report/:paperId" element={<ReportRoute />} />
@@ -301,5 +377,6 @@ export default function AppRoutes() {
       {/* 없는 주소는 랜딩으로. replace라서 뒤로가기가 죽은 주소로 되돌아가지 않는다. */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </AnalysisProvider>
   );
 }

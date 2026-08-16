@@ -10,7 +10,12 @@
   padding:18px 32px;border-bottom:1px solid var(--line);
 }
 .workspace-topbar-right{display:flex;align-items:center;gap:16px;}
-.workspace-user{font-size:13.5px;font-weight:600;color:var(--muted);}
+/* 사이드바와 같은 아바타 + 이름. gap·align으로 아바타·이름·로그아웃이 한 줄 세로 중앙. */
+.workspace-user{display:inline-flex;align-items:center;gap:9px;font-size:14px;font-weight:600;color:var(--ink);}
+.workspace-avatar{
+  flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--teal-deep);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;text-transform:uppercase;
+}
 
 .workspace-body{max-width:720px;margin:0 auto;padding:40px 24px 80px;}
 

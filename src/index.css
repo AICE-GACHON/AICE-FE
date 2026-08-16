@@ -58,6 +58,8 @@ img,svg{display:block;}
 
 /* ---------- NAV ---------- */
 header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+/* 상단 nav 링크로 섹션에 스크롤할 때, sticky 헤더에 가리지 않게 지점을 내려 잡는다. */
+#problem,#simulator,#process,#features,#pricing{scroll-margin-top:80px;}
 nav{display:flex;align-items:center;gap:36px;padding:16px 32px;max-width:1180px;margin:0 auto;}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:-0.01em;margin-right:8px;}
 .mark{width:30px;height:30px;border-radius:22%;background:var(--teal-deep);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;font-family:var(--mono);flex:0 0 auto;}
@@ -92,142 +94,103 @@ h1 .accent{color:var(--teal-deep);}
 
 /* ---------- HERO CARD GALLERY (실제 결과 화면을 인용한 카드들) ----------
    밝은 원목 상판 위에 카드를 늘어놓은 느낌. 결(grain)은 feTurbulence를 가로로
-   길게 늘인 SVG 노이즈이고, multiply로 얹어 상판 색만 어둡게 훑고 지나간다. */
+   길게 늘인 SVG 노이즈이고, multiply로 얹어 상판 색만 어둡게 훑고 지나간다.
+   카드는 5장을 두 벌(원본+clone) 이어 붙여 무한 벨트로 흐르게 하고, 화면에
+   들어올 때 IntersectionObserver로 순서대로 떠오른다. */
 .gallery-stage{
   position:relative;margin-top:64px;padding-top:52px;
   background:
-    radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,0.7), rgba(255,255,255,0) 62%),
+    radial-gradient(120% 80% at 50% 0%, #ffffffb3, #fff0 62%),
     linear-gradient(178deg, var(--wood-1), var(--wood-2));
   border-top:1px solid var(--wood-line);
   border-bottom:1px solid var(--wood-line);
   overflow:hidden;
 }
-.gallery-stage::before{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+.gallery-stage:before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1400' height='320'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.003 0.12' numOctaves='2' seed='11'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='1400' height='320' filter='url(%23g)'/%3E%3C/svg%3E");
-  background-size:1400px 320px;
-  opacity:0.36;mix-blend-mode:multiply;
+  background-size:1400px 320px;opacity:.36;mix-blend-mode:multiply;
 }
-/* 판재 이음매 — 아주 옅게 두 줄만 */
-.gallery-stage::after{
-  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:repeating-linear-gradient(
-    180deg,
-    rgba(255,255,255,0) 0 208px,
-    rgba(255,255,255,0.5) 208px 209px,
-    rgba(139,105,63,0.10) 209px 211px,
-    rgba(255,255,255,0) 211px 420px
-  );
+.gallery-stage:after{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(#fff0 0 208px,#ffffff80 208px 209px,#8b693f1a 209px 211px,#fff0 211px 420px);
 }
+
+/* 안내 문구 — 화면에 들어올 때 함께 떠오른다 */
 .gallery-note{
   position:relative;z-index:1;
   max-width:62ch;margin:0 auto 30px;padding:0 32px;text-align:center;
   font-size:14px;line-height:1.7;color:var(--wood-ink);
+  opacity:0;transform:translateY(12px);
+  transition:opacity .55s,transform .55s cubic-bezier(.22,.61,.36,1);
 }
+.gallery-stage.is-in .gallery-note{opacity:1;transform:none;}
 
-.gallery{
-  position:relative;z-index:1;
-  display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x proximity;
-  padding:0 32px 56px;max-width:1180px;margin:0 auto;
-  -webkit-overflow-scrolling:touch;
+/* 뷰포트는 넘치는 벨트를 숨기고 양옆을 마스크로 흐린다 */
+.gallery-viewport{
+  position:relative;z-index:1;overflow:hidden;padding-bottom:30px;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(90deg,#0000 0,#000 72px calc(100% - 72px),#0000 100%);
+  mask-image:linear-gradient(90deg,#0000 0,#000 72px calc(100% - 72px),#0000 100%);
 }
-.gallery::-webkit-scrollbar{height:8px;}
-.gallery::-webkit-scrollbar-thumb{background:rgba(139,105,63,0.22);border-radius:4px;}
+.gallery-viewport::-webkit-scrollbar{height:0;}
+
+/* 두 벌을 이어 붙여 무한 벨트를 만든다. 마우스 올리거나 포커스 들어오면 멈춘다 */
+.gallery-belt{display:flex;width:max-content;will-change:transform;animation:64s linear infinite gallery-belt;}
+.gallery-viewport:hover .gallery-belt,
+.gallery-viewport:focus-within .gallery-belt{animation-play-state:paused;}
+.gallery-set{display:flex;gap:22px;padding-right:22px;}
+@keyframes gallery-belt{0%{transform:translateX(-50%);}to{transform:translateX(0);}}
+
+/* 카드 — 처음엔 숨겨두고 화면에 들어올 때 순서대로 떠오른다(is-in),
+   등장이 끝나면 is-settled로 애니메이션을 걷어 벨트 흐름만 남긴다 */
 .gcard{
-  position:relative;flex:0 0 auto;width:min(72vw,420px);height:372px;
-  border-radius:20px;overflow:hidden;scroll-snap-align:start;
-  box-shadow:0 2px 4px rgba(72,52,30,0.08), 0 26px 44px -28px rgba(72,52,30,0.6);
+  position:relative;flex:none;width:min(72vw,420px);height:372px;
+  border-radius:20px;overflow:hidden;opacity:0;
+  box-shadow:0 2px 4px #48341e14,0 26px 44px -28px #48341e99;
 }
-/* 카드가 좁아지면 패널 안 글이 줄바꿈되면서 길어져 라벨과 겹친다 — 높이를 늘려준다 */
-@media (max-width:760px){ .gcard{height:424px;} }
+@keyframes gcard-in{0%{opacity:0;transform:translateY(34px) scale(.96);}to{opacity:1;transform:none;}}
+.gallery-stage.is-in .gcard{
+  opacity:1;transform:none;
+  transition:opacity .45s,transform .45s cubic-bezier(.22,.61,.36,1),box-shadow .35s;
+  animation:.62s cubic-bezier(.22,.61,.36,1) backwards gcard-in;
+}
+.gallery-stage.is-in .gcard:first-child{animation-delay:0s;}
+.gallery-stage.is-in .gcard:nth-child(2){animation-delay:90ms;}
+.gallery-stage.is-in .gcard:nth-child(3){animation-delay:.18s;}
+.gallery-stage.is-in .gcard:nth-child(4){animation-delay:.27s;}
+.gallery-stage.is-in .gcard:nth-child(5){animation-delay:.36s;}
+.gallery-stage.is-settled .gcard{animation:none;}
+.gallery-stage.is-in .gcard:hover{
+  opacity:1;transform:translateY(-6px);
+  box-shadow:0 6px 12px #48341e1f,0 40px 64px -26px #48341ec7;
+}
 .gcard.tone-deep{background:linear-gradient(160deg,var(--card-dark),var(--card-dark-2));}
 .gcard.tone-cream{background:linear-gradient(160deg,#f6ece0,#ead9c4);}
 .gcard.tone-sage{background:linear-gradient(160deg,#dde8e0,#c6dbcd);}
-.gcard-more{display:flex;align-items:flex-end;opacity:0.75;}
 
+/* 카드 속 흰 패널 = 결과 화면 캡처처럼 */
 .float-panel{
-  position:absolute;left:50%;top:30px;transform:translateX(-50%);width:84%;
-  background:var(--paper);border-radius:12px;overflow:hidden;
-  box-shadow:0 20px 40px -12px rgba(45,32,18,0.42);
+  position:absolute;top:30px;left:50%;transform:translateX(-50%);
+  width:84%;border-radius:12px;overflow:hidden;background:var(--paper);
+  box-shadow:0 20px 40px -12px #2d20126b;
+  transition:transform .4s cubic-bezier(.22,.61,.36,1),box-shadow .4s;
 }
-/* 인용문 카드는 패널이 짧아서 조금 내려 앉힌다 */
+.gcard:hover .float-panel{transform:translateX(-50%) translateY(-5px);box-shadow:0 30px 56px -14px #2d201280;}
 .gcard.tone-cream .float-panel{top:66px;}
-.screen-bar{
-  display:flex;align-items:center;gap:9px;padding:8px 12px;
-  border-bottom:1px solid #efe9e0;background:#fbf8f4;
-}
+.screen-bar{display:flex;align-items:center;gap:9px;padding:8px 12px;background:#fbf8f4;border-bottom:1px solid #efe9e0;}
 .screen-dots{display:flex;gap:4px;flex:0 0 auto;}
 .screen-dots i{width:7px;height:7px;border-radius:50%;background:#e0d8cc;}
-.screen-label{
-  font-size:10.5px;font-weight:600;color:#8d8375;font-family:var(--mono);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
+.screen-label{font-family:var(--mono);font-size:10.5px;font-weight:600;color:#8d8375;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .screen-body{padding:14px 16px 16px;}
 
 .gcard-label{
-  position:absolute;left:26px;right:26px;bottom:20px;z-index:1;
-  font-size:13px;font-weight:600;line-height:1.45;color:#fff;opacity:0.92;
+  position:absolute;bottom:20px;left:26px;right:26px;z-index:1;
+  font-size:13px;font-weight:600;line-height:1.45;color:#fff;opacity:.92;
+  transition:opacity .3s,transform .4s cubic-bezier(.22,.61,.36,1);
 }
+.gcard:hover .gcard-label{opacity:1;transform:translateY(-3px);}
 .gcard.tone-cream .gcard-label,
 .gcard.tone-sage .gcard-label{color:#4a4132;opacity:1;}
-
-.gallery-nav{
-  position:absolute;right:32px;bottom:20px;z-index:2;width:46px;height:46px;border-radius:50%;
-  background:#fff;border:1px solid rgba(139,105,63,0.22);display:flex;align-items:center;justify-content:center;
-  font-size:18px;color:var(--ink);box-shadow:0 6px 16px rgba(72,52,30,0.16);
-  cursor:pointer;font-family:inherit;transition:transform .2s, box-shadow .2s;
-}
-.gallery-nav:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(72,52,30,0.22);}
-@media (max-width:700px){ .gallery-nav{display:none;} }
-
-/* 카드 안 결과 화면 인용 (sc = showcase) — workspace의 .wr-* 스타일을 축소해 옮긴 것 */
-.sc-head{display:flex;align-items:center;gap:7px;margin-bottom:10px;}
-.sc-title{font-size:13px;font-weight:800;}
-.sc-pill{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--teal-soft);color:var(--teal-deep);}
-.sc-paper-top{display:flex;gap:7px;align-items:baseline;}
-.sc-rank{font-family:var(--mono);font-size:12px;color:var(--muted);}
-.sc-paper-title{
-  flex:1;font-size:13px;font-weight:700;line-height:1.4;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
-.sc-decision{font-size:11px;font-weight:700;color:var(--red);white-space:nowrap;}
-.sc-decision.accept{color:var(--teal-deep);}
-.sc-meta{font-size:11.5px;color:var(--muted);margin-top:4px;}
-.sc-badge{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:9px;background:var(--teal-soft);color:var(--teal-deep);margin-left:5px;}
-.sc-reason{
-  margin-top:9px;padding:9px 11px;border-radius:9px;background:#faf7f2;border:1px solid #f0ebe3;
-  font-size:11.5px;line-height:1.6;color:#3d4139;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
-.sc-reason b{color:var(--teal-deep);margin-right:4px;}
-.sc-review{
-  display:flex;align-items:center;gap:8px;margin-top:9px;padding:7px 11px;
-  border:1px solid #efe9e0;border-radius:9px;font-size:11px;
-}
-.sc-review-no{font-weight:700;}
-.sc-review-score{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sc-chev{color:var(--teal-deep);font-weight:600;}
-
-.sc-quote{
-  font-size:13.5px;line-height:1.7;color:#2c302a;font-weight:500;
-  border-left:2.5px solid var(--teal-bright);padding-left:12px;
-}
-.sc-quote-src{margin-top:11px;font-size:11px;color:var(--muted);font-family:var(--mono);}
-
-.sc-timeline{display:flex;flex-direction:column;}
-.sc-event{display:flex;align-items:flex-start;gap:9px;padding:7px 0;font-size:11.5px;}
-.sc-event + .sc-event{border-top:1px solid #f4efe8;}
-.sc-dot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex:0 0 auto;background:#c9c2b6;}
-.sc-dot.dot-review{background:#5b8fd4;}
-.sc-dot.dot-author{background:var(--teal-bright);}
-.sc-dot.dot-decision{background:var(--teal-deep);}
-.sc-dot.dot-revision{background:#8bbf7a;}
-.sc-dot.dot-meta{background:var(--amber);}
-.sc-event-date{font-family:var(--mono);font-size:10.5px;color:var(--muted);flex:0 0 auto;padding-top:1px;}
-.sc-event-headline{
-  color:#33372f;line-height:1.45;
-  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;
-}
 
 /* 결과 화면 인용 (sc = showcase) — workspace의 .wr-* 스타일을 축소해 옮긴 것 */
 .sc-head{display:flex;align-items:center;gap:8px;}
@@ -278,6 +241,28 @@ h1 .accent{color:var(--teal-deep);}
   color:#33372f;line-height:1.5;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
+
+/* 종합 요약 카드(④) + 근거 카드(⑤) */
+.sc-sum-head{font-size:13px;font-weight:800;line-height:1.4;color:var(--ink);margin-bottom:8px;}
+.sc-sum-p{
+  font-size:12px;line-height:1.65;color:#3d4139;
+  display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;
+}
+.sc-sum-p + .sc-sum-p{margin-top:8px;}
+.sc-sum-p b{color:var(--teal-deep);}
+.sc-sum-lead{-webkit-line-clamp:3;color:#2c302a;font-weight:600;line-height:1.55;}
+.sc-ev-list{display:flex;flex-direction:column;gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid #f0ebe3;}
+.sc-ev{display:flex;align-items:flex-start;gap:8px;}
+.sc-ev-label{
+  font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;
+  background:var(--teal-soft);color:var(--teal-deep);flex:0 0 auto;margin-top:1px;
+}
+.sc-ev-main{display:flex;flex-direction:column;flex:1;min-width:0;}
+.sc-ev-text{
+  font-size:11.5px;line-height:1.45;color:#41473f;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+.sc-ev-src{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-top:1px;}
 
 /* ---------- SCOPE STRIP ---------- */
 .scope-strip{background:var(--teal-soft);padding:16px 0;text-align:center;}
@@ -341,3 +326,79 @@ footer .brand{font-size:16px;}
 footer .fine2{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
 
 :focus-visible{outline:2px solid var(--teal);outline-offset:3px;}
+
+/* ---------- 로그인 회원 홈 (ChatGPT식: 왼쪽 사이드바 + 중앙 업로드) ---------- */
+.home-chat{display:flex;min-height:100vh;background:var(--bg);overflow-x:hidden;}
+
+/* 왼쪽 사이드바 — 접을 땐 margin-left로 왼쪽으로 슬라이드해 빠지고, 그만큼
+   가운데가 넓어진다(display:none은 툭 끊겨서 안 쓴다). */
+.home-side{
+  flex:0 0 284px;width:284px;display:flex;flex-direction:column;gap:16px;
+  height:100vh;position:sticky;top:0;overflow:hidden;
+  padding:18px 14px;background:#f8f9f8;border-right:1px solid var(--line);
+  transition:margin-left .28s cubic-bezier(.4,0,.2,1);
+}
+.home-chat.is-collapsed .home-side{margin-left:-284px;}
+.home-side-top{display:flex;align-items:center;justify-content:space-between;padding:0 4px;}
+.home-side-brand{font-size:17px;letter-spacing:-0.01em;}
+.home-side-toggle,.home-side-open{
+  display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+  border:none;background:none;border-radius:9px;color:var(--muted);font-size:16px;cursor:pointer;
+  transition:background .15s,color .15s;
+}
+.home-side-toggle:hover,.home-side-open:hover{background:#ebedea;color:var(--ink);}
+.home-side-open{position:fixed;top:16px;left:16px;z-index:70;background:#fff;border:1px solid var(--line);
+  box-shadow:0 6px 18px -8px rgba(0,0,0,0.25);}
+
+/* 검색 (돋보기 아이콘 내장) */
+.home-side-search{position:relative;display:flex;align-items:center;}
+.home-side-search-icon{position:absolute;left:12px;color:var(--muted);pointer-events:none;}
+.home-side-search-input{
+  width:100%;padding:10px 12px 10px 36px;border:1px solid var(--line);border-radius:12px;
+  font-family:inherit;font-size:13.5px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s;
+}
+.home-side-search-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft);}
+
+/* 이력 리스트 */
+.home-side-history{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;}
+.home-side-section{
+  display:flex;align-items:center;justify-content:space-between;padding:2px 8px 10px;
+  font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;
+}
+.home-side-all{font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;}
+.home-side-list{list-style:none;display:flex;flex-direction:column;gap:2px;}
+.home-side-item{
+  width:100%;text-align:left;font-family:inherit;font-size:14px;color:#2c322c;
+  border:none;background:none;padding:10px 12px;border-radius:9px;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .13s;
+}
+.home-side-item:hover{background:#ebedea;}
+.home-side-empty{padding:10px;color:var(--muted);font-size:13px;}
+
+/* 하단 사용자 — 이름 클릭 시 마이페이지 */
+.home-side-foot{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:4px;}
+.home-side-user-btn{
+  display:flex;align-items:center;gap:10px;width:100%;padding:8px;border-radius:11px;
+  border:none;background:none;cursor:pointer;font-family:inherit;transition:background .13s;
+}
+.home-side-user-btn:hover{background:#ebedea;}
+.home-side-avatar{
+  flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--teal-deep);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;text-transform:uppercase;
+}
+.home-side-user-name{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-side-logout{font-size:12.5px;color:var(--muted);align-self:flex-start;padding:4px 10px;}
+
+/* 가운데 — 인사 한 줄 + 업로드 화면. margin:auto로 화면 정중앙(세로·가로)에 두고,
+   내용이 뷰포트보다 길면 잘리지 않고 스크롤되게 한다. 카드 글자는 원래 크기 그대로,
+   인사 문구만 조금 크게 둔다. */
+/* 내용은 사이드바 오른쪽 "흰색(메인) 영역" 기준으로 가운데 정렬한다(화면 전체
+   기준 X). margin:auto가 이 영역 안에서 세로·가로 중앙에 두고, 길면 스크롤한다. */
+.home-main{flex:1;min-width:0;display:flex;padding:40px 24px;overflow-y:auto;}
+.home-main-inner{width:100%;max-width:600px;margin:auto;}
+.home-greeting{text-align:center;font-size:28px;font-weight:600;letter-spacing:-0.01em;color:var(--ink);margin-bottom:26px;}
+
+@media (max-width:760px){
+  .home-side{position:fixed;z-index:65;box-shadow:0 0 40px rgba(0,0,0,0.15);}
+  .home-main{padding:40px 16px;}
+}

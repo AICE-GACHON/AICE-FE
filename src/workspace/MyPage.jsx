@@ -6,7 +6,8 @@ import AccountSection from './mypage/AccountSection';
 import OnboardingSection from './mypage/OnboardingSection';
 import DeleteAccountSection from './mypage/DeleteAccountSection';
 
-export default function MyPage({ user, onUserChange, onAccountDeleted }) {
+// embedded=true면 홈 대시보드 칸 안에 얹힌 상태 — "← 돌아가기"는 감춘다.
+export default function MyPage({ user, onUserChange, onAccountDeleted, embedded = false }) {
   const navigate = useNavigate();
   const [state, setState] = useState({ status: 'loading', answers: null, error: '' });
 
@@ -28,9 +29,11 @@ export default function MyPage({ user, onUserChange, onAccountDeleted }) {
 
   return (
     <>
-      <button type="button" className="onboard-back" onClick={() => navigate(-1)} style={{ marginBottom: 16 }}>
-        ← 돌아가기
-      </button>
+      {!embedded && (
+        <button type="button" className="onboard-back" onClick={() => navigate(-1)} style={{ marginBottom: 16 }}>
+          ← 돌아가기
+        </button>
+      )}
 
       <AccountSection user={user} onUserChange={onUserChange} />
 
