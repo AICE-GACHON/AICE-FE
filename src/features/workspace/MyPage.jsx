@@ -42,7 +42,7 @@ export default function MyPage({ user, onUserChange, onAccountDeleted, embedded 
         answers={state.answers}
         error={state.error}
         // 저장에 성공하면 서버가 돌려준 값으로 갈아끼운다. 로컬 draft를 그대로
-        // 쓰면 서버가 정규화한 결과(예: result_order 재생성)와 화면이 어긋난다.
+        // 쓰면 서버가 정규화한 결과와 화면이 어긋날 수 있다.
         onSaved={(answers) => setState({ status: 'ready', answers, error: '' })}
       />
 

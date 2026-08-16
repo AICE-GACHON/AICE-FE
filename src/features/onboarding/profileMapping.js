@@ -12,24 +12,21 @@ const isKnownOption = (options, value) => options.some((o) => o.value === value)
 /**
  * 화면 답변 → POST /api/onboarding 본문 (OnboardingCreate와 같은 snake_case).
  *
- * similarityFocus·recencyBias는 아직 프론트에서만 받는 값이다 — 백엔드
- * 스키마(OnboardingCreate)에 대응하는 필드가 없어서 안 보낸다. purposes·
- * result_order는 서버 쪽이 여전히 기대하는 필드라 빈 값으로 채워 보낸다
- * (둘 다 default=[]라 비워 보내도 422가 나지 않는다).
+ * similarity_focus·recency_bias·venue(배열)는 백엔드 스키마에 필드가 생겨서
+ * (alembic 0016) 이제 실제로 저장된다. 다만 검색 로직(hybrid_search.py·
+ * _RERANK_SYSTEM)에는 아직 반영 안 됨 — 계정에 남기만 한다.
  *
- * venue도 서버는 아직 문자열 하나만 받는다(OnboardingCreate.venue: str | None).
- * 화면은 여러 개 고를 수 있게 했지만, 서버에는 **첫 번째로 고른 것만** 보낸다 —
- * 나머지는 화면(sessionStorage)에는 남아있지만 계정에는 저장되지 않는다.
+ * purposes·result_order는 백엔드에서 완전히 삭제됐다(0017, 쓰는 곳이 없던
+ * 죽은 필드). 더 이상 안 보낸다.
  */
 export function toOnboardingPayload(answers) {
-  const firstVenue = answers.venues[0] ?? null;
   return {
     user_type: answers.userType,
-    purposes: [],
     // '직접 입력'은 옵션 값이 아니라 사용자가 친 문자열로 바꿔 보낸다.
     fields: answers.fields.map((f) => (f === 'custom' ? answers.fieldCustom : f)).filter(Boolean),
-    venue: firstVenue === 'custom' ? answers.venueCustom : firstVenue,
-    result_order: [],
+    similarity_focus: answers.similarityFocus,
+    recency_bias: answers.recencyBias,
+    venue: answers.venues.map((v) => (v === 'custom' ? answers.venueCustom : v)).filter(Boolean),
   };
 }
 
@@ -46,6 +43,8 @@ export function answersFromProfile(profile) {
 
   answers.userType = profile.user_type ?? null;
   answers.onboardingId = profile.onboarding_id ?? null;
+  answers.similarityFocus = profile.similarity_focus ?? null;
+  answers.recencyBias = profile.recency_bias ?? null;
 
   const fields = [];
   for (const value of profile.fields ?? []) {
@@ -58,14 +57,17 @@ export function answersFromProfile(profile) {
   }
   answers.fields = fields;
 
-  // 서버는 venue를 하나만 들고 있다 — 여기서는 그 하나를 배열의 첫 항목으로 되읽는다.
-  const venue = profile.venue ?? null;
-  if (venue && !isKnownOption(VENUE_OPTIONS, venue)) {
-    answers.venues = ['custom'];
-    answers.venueCustom = venue;
-  } else if (venue) {
-    answers.venues = [venue];
+  // fields와 같은 패턴 — venue도 이제 배열이다(alembic 0016 이전엔 문자열 하나였다).
+  const venues = [];
+  for (const value of profile.venue ?? []) {
+    if (isKnownOption(VENUE_OPTIONS, value)) {
+      venues.push(value);
+    } else {
+      venues.push('custom');
+      answers.venueCustom = value;
+    }
   }
+  answers.venues = venues;
 
   return answers;
 }

@@ -106,9 +106,8 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
     setSaving(true);
     setSaveError('');
     try {
-      // toOnboardingPayload는 '직접 입력'을 자유 문자열로 바꾸고 result_order를
-      // 목적에 맞춰 다시 만든다 — 온보딩 저장과 **같은 함수**를 쓴다. 여기서만
-      // 따로 만들면 두 경로가 서서히 어긋난다.
+      // toOnboardingPayload는 '직접 입력'을 자유 문자열로 바꾼다 — 온보딩
+      // 저장과 **같은 함수**를 쓴다. 여기서만 따로 만들면 두 경로가 서서히 어긋난다.
       const profile = await updateMyOnboarding(toOnboardingPayload(draft));
       const fresh = answersFromProfile(profile);
 
