@@ -51,17 +51,45 @@ export default function ResultReport({
     );
   }
 
+  // 리뷰 총계는 선정 논문에서 직접 센다 — 서버가 따로 내려주지 않고, 표 위의
+  // 요약 수치가 표의 합과 어긋나면 둘 중 어느 쪽도 못 믿게 된다.
+  const reviewCount = papers.reduce((sum, p) => sum + (p.rating_count || 0), 0);
+
   return (
-    <div className="wr-stack rp-report-wide">
-      {onReset && (
-        <button type="button" className="onboard-back" onClick={onReset}>{resetLabel}</button>
-      )}
+    <div className="wr-stack">
+      <div className="ws-backrow">
+        {onReset && (
+          <button type="button" className="onboard-back" onClick={onReset}>{resetLabel}</button>
+        )}
+        <span className="ws-backrow-meta">
+          {papers.length > 0 ? `${papers.length} PAPERS · ${reviewCount} REVIEWS` : 'NO MATCH'}
+        </span>
+      </div>
+
+      {/* 머리 카드 — 무엇을 올렸고 그 결과가 몇 건인가. 수치를 오른쪽에 세로선으로
+          나눠 세우면 제목과 겨루지 않으면서 한눈에 잡힌다. */}
       <div className="wr-card rp-query-card">
-        <div className="wr-card-title">올리신 논문</div>
-        <div className="wr-query-title">{report.query_title || <span className="wr-muted">제목 없음</span>}</div>
-        <div className="wr-muted" style={{ marginTop: 6 }}>
-          {(report.query_abstract || '').slice(0, 300)}
-          {(report.query_abstract || '').length > 300 ? '…' : ''}
+        <div className="rp-query-main">
+          <div className="mono-label">QUERY PAPER</div>
+          <div className="rp-query-title">
+            {report.query_title || <span className="wr-muted">제목 없음</span>}
+          </div>
+          {report.query_abstract && (
+            <div className="rp-query-abstract">
+              {report.query_abstract.slice(0, 300)}
+              {report.query_abstract.length > 300 ? '…' : ''}
+            </div>
+          )}
+        </div>
+        <div className="rp-stats">
+          <div className="rp-stat">
+            <div className="mono-label">MATCHED</div>
+            <div className="rp-stat-value">{papers.length}</div>
+          </div>
+          <div className="rp-stat">
+            <div className="mono-label">REVIEWS</div>
+            <div className="rp-stat-value">{reviewCount}</div>
+          </div>
         </div>
       </div>
 
@@ -72,26 +100,34 @@ export default function ResultReport({
         <ReviewedPaperList
           papers={papers}
           summary={<Summary.Body markdown={report.summary_markdown} />}
+          reviewCount={reviewCount}
           onOpen={openPaperById}
+          candidatePool={(
+            <CandidatePool
+              candidates={report.similar_papers}
+              selectedIds={real.map((p) => p.paper_id)}
+            />
+          )}
         />
       ) : (
-        <div className="wr-card">
-          {/* 빈 목록은 실패가 아니라 답이다 — 후보로 대신 채우지 않는다. */}
-          <div className="wr-card-title">비슷한 논문을 찾지 못했어요</div>
-          <p className="wr-muted">
-            검색에는 걸렸지만 본문을 대조해 보니 같은 문제를 다루는 논문이 아니었어요.
-            코퍼스는 ICLR·NeurIPS 논문 43,000여 편이라 그 밖의 주제는 비어 있을 수 있어요.
-          </p>
-          <button type="button" className="rp-preview-btn" onClick={() => setPreview(true)}>
-            더미 데이터로 화면 미리보기 (개발용)
-          </button>
-        </div>
+        <>
+          <div className="wr-card">
+            {/* 빈 목록은 실패가 아니라 답이다 — 후보로 대신 채우지 않는다. */}
+            <div className="wr-card-title">비슷한 논문을 찾지 못했어요</div>
+            <p className="wr-muted">
+              검색에는 걸렸지만 본문을 대조해 보니 같은 문제를 다루는 논문이 아니었어요.
+              코퍼스는 ICLR·NeurIPS 논문 43,000여 편이라 그 밖의 주제는 비어 있을 수 있어요.
+            </p>
+            <button type="button" className="rp-preview-btn" onClick={() => setPreview(true)}>
+              더미 데이터로 화면 미리보기 (개발용)
+            </button>
+          </div>
+          <CandidatePool
+            candidates={report.similar_papers}
+            selectedIds={real.map((p) => p.paper_id)}
+          />
+        </>
       )}
-
-      <CandidatePool
-        candidates={report.similar_papers}
-        selectedIds={real.map((p) => p.paper_id)}
-      />
     </div>
   );
 }

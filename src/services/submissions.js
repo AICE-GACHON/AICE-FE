@@ -8,6 +8,15 @@
 // 다섯 다 인증 필요(Authorization: Bearer). report 스키마는 paper_assistant/schemas.py의 Report 그대로라
 // http://127.0.0.1:8000/api/analyze(데모 서버)로 실측한 응답과 필드가 동일하다.
 //
+// selected_papers[]의 `revision_count: int | null` — 결과 표의 "본문 수정" 열이 쓴다.
+// 저자가 **본문 PDF를 교체한 횟수**다. 리비전 총 개수가 아니다 — 제목·초록만 고친
+// edit은 안 센다(AICE-BE query/revisions.py의 count_body_revisions).
+// **null과 0은 다른 값이다**: null은 "볼 수 없다"(2023년 이전 학회는 수정 이력이
+// 공개되지 않는다 — ICLR 2023 이하·NeurIPS 2022 이하가 여기 해당), 0은 "확인해 보니
+// 본문을 안 고쳤다". 화면도 "—"와 "없음"으로 다르게 그린다.
+// 목록에서 body-diff를 논문마다 부르지 않는 이유는 papers.js 머리 주석 참고(첫 조회
+// 수 초) — 백엔드가 분석 파이프라인 안에서 미리 세어 report에 실어 보낸다.
+//
 // PDF 업로드: title/abstract를 비워서 보내면 서버가 paper_assistant의 추출기로 채운다.
 // 20MB 초과/PDF가 아닌 파일/추출 실패는 서버가 422로 거부한다(app/routers/submission.py).
 import { authorizedFetch } from './auth';

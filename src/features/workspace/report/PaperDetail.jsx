@@ -32,31 +32,50 @@ export default function PaperDetail({ paper, useMock, onBack, onReset, resetLabe
 
   return (
     <div className="pd-wide">
-      <div className="pd-back-row">
+      <div className="ws-backrow">
         <button type="button" className="onboard-back" onClick={onBack}>← 목록으로</button>
-        {onReset && <button type="button" className="onboard-back" onClick={onReset}>{resetLabel}</button>}
+        {onReset && (
+          <>
+            <span className="ws-backrow-sep">|</span>
+            <button type="button" className="onboard-back" onClick={onReset}>{resetLabel}</button>
+          </>
+        )}
       </div>
 
-      <div className="wr-card">
+      <div className="wr-card pd-head-card">
         <div className="pd-title-row">
-          <div>
-            <div className="wr-paper-meta" style={{ marginBottom: 6 }}>
-              {paper.venue}
-              <span className={`pd-final-decision ${decisionTone(paper.decision)}`}>
-                최종 결과 · {decisionLabel(paper.decision)}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* 학회 · 최종 결과 · 리뷰 수를 한 줄에 세운다 — 상세로 들어온 순간
+                가장 먼저 확인하는 세 가지이고, 표에서 보던 순서와 같다.
+                수정 횟수는 여기 안 넣는다 — 바로 아래 BodyDiffPanel의 버전 탭이
+                그 횟수 자체이고, 숫자를 두 번 쓰면 어긋날 자리만 늘어난다. */}
+            <div className="pd-head-meta">
+              <span className="pd-head-venue">{paper.venue}</span>
+              {/* "최종 결과"는 칩 밖의 라벨이다 — 안에 넣으면 "최종 결과 · 채택 ·
+                  Poster"처럼 가운뎃점이 두 겹이 되어 어디까지가 이름이고 어디부터가
+                  값인지 흐려진다. */}
+              <span className="pd-head-decision">
+                <span className="mono-label">최종 결과</span>
+                <span className={`ws-chip ${decisionTone(paper.decision)}`}>
+                  {decisionLabel(paper.decision)}
+                </span>
               </span>
+              {paper.rating_count != null && (
+                <span className="pd-head-stats">리뷰 {paper.rating_count}건</span>
+              )}
             </div>
-            <h2 className="rp-detail-title">{paper.title}</h2>
+            <h2 className="pd-head-title">{paper.title}</h2>
           </div>
           {paper.openreview_url && (
             <a className="pd-openreview-link" href={paper.openreview_url} target="_blank" rel="noreferrer">
-              OpenReview에서 전체 내용 보기 ↗
+              OpenReview에서 전체 보기 ↗
             </a>
           )}
         </div>
         {paper.reason && (
-          <div className="wr-selection-reason" style={{ marginTop: 12 }}>
-            <b>왜 비슷한가</b> {paper.reason}
+          <div className="pd-why">
+            <span className="pd-why-label">WHY</span>
+            <span className="pd-why-text">{paper.reason}</span>
           </div>
         )}
       </div>
@@ -75,7 +94,16 @@ export default function PaperDetail({ paper, useMock, onBack, onReset, resetLabe
                 둘 다 필요하다 — 요약만 보고 판단하면 근거를 확인할 수 없다. */}
             {paper.reviews?.length > 0 && (
               <div className="wr-card">
-                <div className="wr-card-title">이 논문이 받은 리뷰 {paper.reviews.length}건</div>
+                {/* 점수만 먼저 늘어놓는다 — 펼치기 전에 "합의된 평가인가
+                    갈린 평가인가"가 이 한 줄로 판가름난다. */}
+                <div className="wr-card-head" style={{ padding: '0 0 10px' }}>
+                  <span className="wr-card-title">이 논문이 받은 리뷰 {paper.reviews.length}건</span>
+                  <span className="wr-card-head-meta">
+                    {paper.reviews
+                      .map((r) => (r.rating != null ? r.rating : '—'))
+                      .join(' · ')}
+                  </span>
+                </div>
                 <div className="wr-reviews">
                   {paper.reviews.map((review, index) => (
                     <ReviewBlock

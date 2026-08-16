@@ -7,6 +7,11 @@
 //
 // 스키마는 paper_assistant/schemas.py의 Report다. 통계 레이어(review_patterns·
 // venue_trends·rating_context·resubmission_flows)는 제거됐으니 여기에도 없다.
+//
+// ⚠️ 딱 하나 예외: `revision_count`는 실측이 아니다. 이 응답을 뜬 뒤에 생긴
+// 필드라 값을 손으로 채웠다. 다만 **학회에 모순되지 않게** 골랐다 — ICLR 2022는
+// 구 API라 수정 이력을 볼 수 없어 null이고(services/submissions.js 주석), 나머지
+// 둘은 ICLR 2024라 실제 값이 나올 수 있다. 세 칸이 "—/없음/N회"를 각각 보여준다.
 export const MOCK_REPORT = {
   query_title: 'LoRA: Low-Rank Adaptation of Large Language Models',
   query_abstract:
@@ -34,6 +39,7 @@ export const MOCK_REPORT = {
       avg_rating: 7.0,
       rating_count: 4,
       rating_spread: 2.0,
+      revision_count: null, // ICLR 2022 = 구 API, 이력을 볼 수 없다 → 화면은 "—"
       reviews: [
         {
           rating: 8, rating_raw: '8: Top 50% of accepted papers', confidence: 4,
@@ -66,6 +72,7 @@ export const MOCK_REPORT = {
       avg_rating: 5.75,
       rating_count: 4,
       rating_spread: 1.0,
+      revision_count: 0, // 이력은 읽혔는데 본문은 안 고침 → 화면은 "없음"
       reviews: [
         {
           rating: 6, rating_raw: '6: marginally above the acceptance threshold', confidence: 4,
@@ -93,6 +100,7 @@ export const MOCK_REPORT = {
       avg_rating: 5.33,
       rating_count: 3,
       rating_spread: 1.0,
+      revision_count: 3, // 본문 PDF를 세 번 갈아끼움 → 화면은 "3회"
       reviews: [
         {
           rating: 5, rating_raw: '5: marginally below the acceptance threshold', confidence: 4,
