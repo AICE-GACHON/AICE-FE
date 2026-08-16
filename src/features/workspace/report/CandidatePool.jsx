@@ -51,6 +51,15 @@ export default function CandidatePool({ candidates, selectedIds }) {
         </>
       )}
 
+      {/* 펼친 뒤에도 비율은 남긴다. 후보가 50편이면 화면에 열 몇 줄만 보이고
+          나머지는 스크롤 밖이라, 지금 보고 있는 줄이 전체 중 어디쯤인지 알려주는
+          숫자가 없으면 "몇 중 몇이 골라졌나"를 세면서 읽게 된다. */}
+      {open && (
+        <div className="wr-candidate-ratio wr-candidate-ratio-open">
+          {chosen.size} SELECTED / {candidates.length} CANDIDATES
+        </div>
+      )}
+
       {open && (
         <div className="wr-candidate-list">
           {candidates.map((c) => {

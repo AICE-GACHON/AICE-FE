@@ -253,7 +253,12 @@
    각 칸을 grid-column으로 **명시해서** 놓는다. 숨긴 칸(display:none)은 자동
    배치에서 빠지므로, 자동 배치에 맡기면 남은 칸들이 한 자리씩 밀려 엉뚱한
    열에 앉는다. */
-@media (max-width:820px){
+/* 뷰포트가 아니라 표가 받은 폭으로 가른다. 수치 열들이 전부 고정 폭이라
+   제목 열은 "컨테이너 − 524px"(고정 열 396 + gap 84 + 행 padding 44)로 정해지는데,
+   레일(264px)이 /app 화면에 올라온 뒤로 뷰포트는 900px이어도 표에 돌아오는 폭은
+   569px인 상황이 생겼다. 뷰포트 820px 경계는 그때 발동하지 않아 제목 열이 43px로
+   눌렸다(실측). 720px은 제목에 200px은 남는 지점이다. */
+@container (max-width:720px){
   .rp-row{grid-template-columns:28px minmax(0,1fr) auto;gap:4px 10px;padding:13px 16px;}
   .rp-row-head{display:none;}
   .rp-venue,.rp-count,.rp-chev{display:none;}
@@ -268,6 +273,14 @@
   display:grid;grid-template-columns:minmax(0,1fr) 360px;align-items:start;gap:14px;
 }
 .rp-result-grid > .wr-card{min-width:0;}
+/* 후보 풀을 펼치면 줄이 한 칸으로 선다. 접힌 곁칸(360px)은 비율 막대와 숫자
+   두 줄이면 충분하지만, 펼친 목록은 후보 수십 편의 제목이라 그 폭에서는 제목이
+   먼저 잘린다 — 검색이 뽑은 것과 골라진 것을 대조하라고 있는 목록인데 대조할
+   글자가 안 보인다.
+   :has로 거는 이유: 펼침 여부는 CandidatePool 안의 state다. 바깥 그리드에
+   알리려면 state를 ResultReport까지 끌어올려야 하는데, 그건 두 화면이 공유할
+   이유가 없는 값이다. 펼쳤을 때만 생기는 .wr-candidate-list의 존재가 곧 그 답이다. */
+.rp-result-grid:has(.wr-candidate-list){grid-template-columns:minmax(0,1fr);}
 @media (max-width:960px){
   .rp-result-grid{grid-template-columns:minmax(0,1fr);}
 }
@@ -553,7 +566,9 @@
   white-space:nowrap;flex:none;
 }
 /* 머리·바닥 줄을 카드 폭 끝까지 붙이려면 카드 자체의 padding을 걷어야 한다. */
-.wr-card-flush{padding:0;overflow:hidden;}
+/* 표가 실제로 받은 폭을 재는 기준점. 아래 좁은 화면 전환이 뷰포트가 아니라
+   이 폭을 보고 판단한다(.rp-row의 @container 참고). */
+.wr-card-flush{padding:0;overflow:hidden;container-type:inline-size;}
 .wr-card-foot{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   padding:13px 22px;background:var(--field);border-top:1px solid var(--rule);
@@ -957,9 +972,14 @@
 .wr-candidate-ratio{
   font-family:var(--mono);font-size:11.5px;letter-spacing:0.08em;color:var(--label);margin-top:7px;
 }
-.wr-candidate-list{margin-top:10px;max-height:420px;overflow-y:auto;}
+/* 펼친 상태에서는 목록의 머리글 노릇을 하므로 목록과 붙여 세운다. */
+.wr-candidate-ratio-open{margin-top:10px;padding-bottom:2px;}
+/* 화면 높이에 맡긴다 — 420px 고정은 큰 모니터에서도 한 번에 8줄쯤만 보여줘,
+   50편을 훑는 데 스크롤을 계속 굴리게 했다. vh로 두되 상한을 걸어 아주 긴
+   화면에서 목록 하나가 페이지를 통째로 차지하지는 않게 한다. */
+.wr-candidate-list{margin-top:10px;max-height:min(62vh,620px);overflow-y:auto;}
 .wr-candidate{
-  display:flex;align-items:baseline;gap:10px;padding:7px 0;
+  display:flex;align-items:baseline;gap:12px;padding:9px 2px;
   border-top:1px solid var(--rule-soft);font-size:13.5px;
 }
 .wr-candidate.picked{background:var(--teal-soft);border-radius:6px;padding-left:8px;}
@@ -1054,6 +1074,10 @@
 }
 
 @media (max-width:700px){
-  .wr-candidate{flex-wrap:wrap;}
-  .wr-candidate-meta{white-space:normal;}
+  /* 좁은 화면에서는 한 줄에 순위·제목·메타가 다 못 들어간다. flex-wrap만으로는
+     안 되는데, 제목이 min-width:0이라 줄을 바꾸는 대신 끝까지 짓눌리기 때문이다
+     (실측: 375px에서 제목 칸 126px, 한 줄이 6줄로 접힘). 메타의 basis를 100%로
+     줘서 항상 아랫줄로 내리면 첫 줄이 통째로 제목 몫이 된다. */
+  .wr-candidate{flex-wrap:wrap;row-gap:3px;}
+  .wr-candidate-meta{white-space:normal;flex-basis:100%;padding-left:32px;}
 }
