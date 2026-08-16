@@ -212,13 +212,20 @@
 .rp-row{
   /* 마지막 칩 열은 가장 긴 라벨("채택 · Spotlight")이 줄바꿈 없이 들어가는
      폭이다 — 칩은 white-space:nowrap이라 좁으면 열 밖으로 삐져나온다. */
-  display:grid;grid-template-columns:34px minmax(0,1fr) 104px 66px 56px 118px 18px;
+  /* "본문 수정" 열이 66px이 아니라 76px인 이유: 이 열의 폭을 정하는 건 값
+     ("3회"·"없음")이 아니라 머리글이다. 12.5px 모노 + 자간이면 머리글에만
+     65.8px이 들어가 66px에서는 여유가 0.3px밖에 안 남는다 — 폰트가 로드되기 전
+     폴백으로 그려지는 한 프레임이나 다른 OS의 자간 반올림에 바로 넘친다. */
+  display:grid;grid-template-columns:34px minmax(0,1fr) 104px 76px 56px 118px 18px;
   gap:14px;align-items:center;padding:14px 22px;width:100%;text-align:left;
 }
 .rp-row-head{
   padding-top:9px;padding-bottom:9px;background:var(--field);
   border-bottom:1px solid var(--rule);
-  font-family:var(--mono);font-size:11.5px;letter-spacing:0.12em;color:var(--label);
+  /* 자간을 0.12em → 0.1em으로 함께 줄인다. 열 폭이 px로 고정돼 있어(66px 등)
+     글씨만 키우면 "본문 수정"이 칸을 넘는데, 자간이 그 차이를 도로 메워준다.
+     모노 + 자간은 "값이 아니라 이름표"라는 신호라 없애지는 않는다. */
+  font-family:var(--mono);font-size:12.5px;letter-spacing:0.1em;color:var(--label);
 }
 .rp-row-item{
   background:none;border:none;border-bottom:1px solid var(--rule-soft);
@@ -556,13 +563,18 @@
 
 /* 카드 안 구획 — 제목 줄 오른쪽에 모노 메타를 붙여 "이 카드가 무엇으로
    만들어졌는지"(개수·출처·정렬 기준)를 값처럼 밝힌다. */
+/* 제목과 모노 메타가 한 줄이 기본이되, 자리가 없으면 메타가 아래로 내려간다.
+   메타는 nowrap + flex:none이라 안 줄어들고 제목만 일방적으로 깎여서, 좁은
+   화면에서 "비슷한 논문 5편"이 29px 열에 갇혔다(375px 실측). 제목에 최소 폭을
+   주면 그 아래로는 줄을 바꾼다 — .pd-title-row와 같은 처방이다. */
 .wr-card-head{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
   padding:13px 22px;border-bottom:1px solid var(--rule);
 }
+.wr-card-head .wr-card-title{flex:1 1 0;min-width:min(100%,150px);}
 .wr-card-head .wr-card-title{margin-bottom:0;}
 .wr-card-head-meta{
-  font-family:var(--mono);font-size:11.5px;letter-spacing:0.1em;color:var(--label);
+  font-family:var(--mono);font-size:12.5px;letter-spacing:0.08em;color:var(--label);
   white-space:nowrap;flex:none;
 }
 /* 머리·바닥 줄을 카드 폭 끝까지 붙이려면 카드 자체의 padding을 걷어야 한다. */
