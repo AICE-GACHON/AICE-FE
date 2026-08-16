@@ -1,6 +1,6 @@
 // 백엔드 연동 지점 — 회원가입 전 온보딩(3단계) 결과 저장.
 // AICE-BE 실제 스펙 기준 (app/routers/onboarding.py, app/schemas/onboarding.py):
-//   POST /api/onboarding { user_type, experience, purposes, fields, stage, venue, result_order }
+//   POST /api/onboarding { user_type, experience, fields, similarity_focus, recency_bias, venue }
 //   -> 201, OnboardingResponse { onboarding_id, ... } (인증 불필요)
 //
 // 쿠키 세션이 아니라, 응답의 onboarding_id를 프론트가 들고 있다가 회원가입 요청
@@ -15,7 +15,7 @@ import { authorizedFetch } from './auth';
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 /**
- * @param {object} payload - OnboardingCreate와 동일한 snake_case 키(user_type, result_order 등)
+ * @param {object} payload - OnboardingCreate와 동일한 snake_case 키(user_type, venue 등)
  * @returns {Promise<{onboarding_id: string, ...object}>}
  */
 export async function saveOnboardingProfile(payload) {
@@ -65,7 +65,7 @@ export async function fetchMyOnboarding() {
  * 새로 만들어진다 — upsert다. 온보딩은 가입 전에만 지나가는 흐름이라 "먼저
  * 만들고 오세요"가 성립하지 않기 때문이다.
  *
- * ⚠️ 리스트 항목(purposes/fields/result_order)에 null을 보내면 **무시된다.**
+ * ⚠️ 리스트 항목(fields/venue)에 null을 보내면 **무시된다.**
  * 비우려는 의도라면 빈 배열 []을 보내야 한다 — 서버 쪽 컬럼이 not null이라
  * null과 "안 보냄"을 같이 취급한다.
  *

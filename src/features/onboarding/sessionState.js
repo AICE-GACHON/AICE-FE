@@ -4,12 +4,11 @@ const KEY = 'paper-trace:onboarding';
 
 export const emptyAnswers = () => ({
   userType: null,
-  experience: null,
-  purposes: [],
+  similarityFocus: null,
+  recencyBias: null,
   fields: [],
   fieldCustom: '',
-  stage: null,
-  venue: null,
+  venues: [],
   venueCustom: '',
   onboardingId: null, // POST /api/onboarding 성공 시 채워짐 — 회원가입 요청에 실어 보내 계정에 연결한다
 });
