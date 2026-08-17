@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listSubmissions, deleteSubmission } from '@/services/submissions';
+import { useSubmissionsHistory } from './submissionsContext';
 
 // 교수님 피드백 1번 — "분석시켰던 결과를 저장해서 다시 보고 싶다"는 요청으로
 // 추가한 화면. 처음엔 마이 페이지 안에 얹었다가, 성격이 다른 화면이라
@@ -20,37 +20,24 @@ function formatDate(iso) {
     + `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// embedded=true면 홈 대시보드 칸 안에 얹힌 상태다 — 그 경우 "← 돌아가기"와
+// embedded=true면 홈 대시보드 칸 안에 얹힌 상태다 — 그 경우 "← 메인으로"와
 // 자체 제목/설명은 감춘다(대시보드 칸이 제목·전체보기 링크를 대신 갖는다).
 export default function PapersPage({ embedded = false }) {
   const navigate = useNavigate();
-  const [state, setState] = useState({ status: 'loading', submissions: [], error: '' });
+  // 목록은 SubmissionsProvider가 라우터 전체 위에서 들고 있다 — 여기서 지우면
+  // 홈 사이드바(ConsoleLayout)도 같은 배열을 보고 있어 새로고침 없이 곧바로 반영된다.
+  const { items, status, removeSubmission } = useSubmissionsHistory();
   // 삭제는 되돌릴 수 없다(FK CASCADE로 분석 결과까지 같이 지워진다) — 누르자마자
   // 지우지 않고, 그 자리에서 한 번 더 확인받는다. confirmingId가 열린 줄을 가리킨다.
   const [confirmingId, setConfirmingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [deleteError, setDeleteError] = useState('');
 
-  useEffect(() => {
-    let alive = true;
-    listSubmissions()
-      .then((data) => { if (alive) setState({ status: 'ready', submissions: data, error: '' }); })
-      .catch((err) => {
-        if (!alive) return;
-        setState({ status: 'error', submissions: [], error: err.message || '불러오지 못했어요.' });
-      });
-    return () => { alive = false; };
-  }, []);
-
   const handleDelete = async (submissionId) => {
     setDeletingId(submissionId);
     setDeleteError('');
     try {
-      await deleteSubmission(submissionId);
-      setState((s) => ({
-        ...s,
-        submissions: s.submissions.filter((sub) => sub.submission_id !== submissionId),
-      }));
+      await removeSubmission(submissionId);
       setConfirmingId(null);
     } catch (err) {
       setDeleteError(err.message || '지우지 못했어요.');
@@ -59,16 +46,17 @@ export default function PapersPage({ embedded = false }) {
     }
   };
 
-  const rows = state.submissions;
+  const rows = items;
 
   return (
-    <div className="papers-page ws-narrow">
-      {/* 종합 리뷰·상세 화면에서 "← 분석 이력으로"를 눌러 여기 들어온 경우,
-          그 화면으로 되짚어 갈 방법이 없었다 — navigate(-1)로 왔던 곳(리포트든
-          업로드 화면이든)을 그대로 돌려준다. */}
+    <div className="papers-page">
+      {/* 분석 상세(PastAnalysisRoute)의 "← 분석 이력으로"가 고정 주소로 여기
+          들어온다 — navigate(-1)을 쓰면 그 화면과 여기가 서로를 다시 push하며
+          되돌아가는 왕복이 끝없이 쌓인다(상세→여기→상세→…). 여기서도 고정
+          주소(메인)로 나가야 그 고리가 끊긴다. */}
       {!embedded && (
         <div className="ws-backrow">
-          <button type="button" className="onboard-back" onClick={() => navigate(-1)}>← 돌아가기</button>
+          <button type="button" className="onboard-back" onClick={() => navigate('/')}>← 메인으로</button>
         </div>
       )}
 
@@ -85,17 +73,17 @@ export default function PapersPage({ embedded = false }) {
           </div>
         )}
 
-        {state.status === 'loading' && (
+        {status === 'loading' && (
           <p className="wr-muted wr-card-pad">불러오는 중…</p>
         )}
-        {state.status === 'error' && (
-          <div className="wr-card-pad"><div className="auth-submit-error">{state.error}</div></div>
+        {status === 'error' && (
+          <div className="wr-card-pad"><div className="auth-submit-error">불러오지 못했어요.</div></div>
         )}
         {deleteError && (
           <div className="wr-card-pad"><div className="auth-submit-error">{deleteError}</div></div>
         )}
 
-        {state.status === 'ready' && (
+        {status === 'ready' && (
           rows.length > 0 ? (
             <>
               <div className="papers-row papers-row-head">

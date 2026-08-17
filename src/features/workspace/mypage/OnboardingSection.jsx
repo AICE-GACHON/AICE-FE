@@ -188,7 +188,10 @@ export default function OnboardingSection({ status, answers, error, onSaved }) {
         <div className="mypage-list" style={{ marginTop: 12 }}>
           <Row label="사용자 유형">{userTypeLabel(shown.userType) || <Blank />}</Row>
           <Row label="전공 분야"><Tags values={fieldNames} /></Row>
-          <Row label="검색 우선순위">관점: {focusText} / 경향: {recencyText}</Row>
+          <Row label="검색 우선순위">
+            <span style={{ display: 'block' }}>관점: {focusText}</span>
+            <span style={{ display: 'block' }}>경향: {recencyText}</span>
+          </Row>
           <Row label="목표 학회"><Tags values={venueNames} /></Row>
         </div>
       )}

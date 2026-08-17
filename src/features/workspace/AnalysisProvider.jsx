@@ -20,6 +20,7 @@ import {
 import { loadAnswers } from '@/features/onboarding/sessionState';
 import { fieldLabel } from '@/features/onboarding/onboardingData';
 import { AnalysisContext } from './analysisContext';
+import { useSubmissionsHistory } from './submissionsContext';
 
 // 온보딩에서 고른 연구 분야가 있으면 업로드 시 field 기본값으로 이어 쓴다.
 // sessionStorage는 로그인 직후 서버 답변으로 다시 채워진다(profileMapping.js의
@@ -45,6 +46,7 @@ const isPdf = (file) =>
 // phase: form(업로드) → review(추출 확인) → working(분석) → done | error
 export function AnalysisProvider({ children }) {
   const navigate = useNavigate();
+  const { addSubmission } = useSubmissionsHistory();
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfError, setPdfError] = useState('');
   const [submission, setSubmission] = useState(null);
@@ -97,7 +99,10 @@ export function AnalysisProvider({ children }) {
   // **분석을 시작하는 경로와 새로고침 뒤 이어받는 경로가 같은 함수를 쓴다.** 둘이
   // 갈라지면 "직접 돌렸을 때는 결과로 넘어가는데 새로고침하고 기다린 경우에는
   // 안 넘어간다" 같은, 재현 조건이 좁아서 오래 살아남는 버그가 생긴다.
-  const watchUntilDone = useCallback(async (submissionId, controller) => {
+  // submissionMeta: 이 분석이 끝나면 사이드바·분석 이력 목록에 끼워 넣을 항목.
+  // 업로드 시점이 아니라 **분석이 실제로 끝난 시점**에 넣는다 — "분석 이력"인데
+  // 아직 결과가 없는 항목이 먼저 보이면, 그걸 눌렀을 때 볼 게 없다.
+  const watchUntilDone = useCallback(async (submissionId, controller, submissionMeta) => {
     const result = await pollAnalysis(submissionId, {
       signal: controller.signal,
       onTick: (data) => {
@@ -115,12 +120,13 @@ export function AnalysisProvider({ children }) {
     }
     setReport(result.report);
     setPhase('done');
+    if (submissionMeta) addSubmission(submissionMeta);
     // 결과를 별도 주소(/app/report)로 옮겨야 뒤로가기가 이 화면(업로드 폼)로
     // 돌아간다 — 그전엔 목록/상세가 전부 /app/upload 하나의 state 전환이라
     // 브라우저 히스토리에 아무 기록도 안 남았다. /app/upload 밑이 아니라
     // 별도 경로인 이유는 routes/index.jsx의 ReportRoute 주석 참고.
     navigate('/app/report');
-  }, [navigate]);
+  }, [navigate, addSubmission]);
 
   // 새로고침·탭 재접속 뒤 진행 중이던 분석을 이어받는다.
   //
@@ -147,7 +153,7 @@ export function AnalysisProvider({ children }) {
         setProgress(data.progress ?? []);
         setStatusText(STATUS_LABEL[data.status] ?? data.status);
         setPhase('working');
-        await watchUntilDone(latest.submission_id, controller);
+        await watchUntilDone(latest.submission_id, controller, latest);
       } catch (err) {
         // 이어받기는 **되면 좋은 것**이다. 분석을 한 번도 안 돌린 초안이면 404가
         // 나고, 목록 조회가 실패할 수도 있다. 어느 쪽이든 사용자에게는 평소의 빈
@@ -196,7 +202,7 @@ export function AnalysisProvider({ children }) {
 
     try {
       await startAnalysis(submission.submission_id);
-      await watchUntilDone(submission.submission_id, controller);
+      await watchUntilDone(submission.submission_id, controller, submission);
     } catch (err) {
       // 우리가 끊은 것 — 워크스페이스를 떠났다는 뜻이라 보여줄 화면도 이미 없다.
       if (err.name === 'AbortError') return;

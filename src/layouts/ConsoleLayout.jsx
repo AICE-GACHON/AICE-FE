@@ -5,10 +5,11 @@
 // 뒤다 — 홈에만 있으면 결과 화면에서 이력을 보려고 한 번 홈으로 나갔다가
 // 다시 들어와야 했다. 그래서 껍데기로 올려 /app 화면들이 같이 쓴다.
 //
-// 이력 목록과 접힘 상태는 이 컴포넌트가 들고 있다. 홈(/)과 /app은 서로 다른
-// 라우트라 옮겨 다니면 이 컴포넌트가 다시 마운트되고 상태도 초기화되는데,
-// 그 편이 맞다 — 목록은 그 사이 늘어났을 수 있고, 접어둔 건 그 화면에서의
-// 선택이다.
+// 이력 목록 자체는 SubmissionsProvider가 라우터 전체 위에서 들고 있다 — 분석
+// 이력 페이지(PapersPage)에서 지운 게 여기 사이드바에도 곧바로 반영되려면 두
+// 화면이 같은 배열을 봐야 하기 때문이다. 접힘 상태는 이 컴포넌트 자신이 들고
+// 있다 — 홈(/)과 /app은 서로 다른 라우트라 옮겨 다니면 이 컴포넌트가 다시
+// 마운트되는데, 접어둔 건 그 화면에서의 선택이라 초기화되는 편이 맞다.
 //
 // 고정·파일(폴더)·이름 바꾸기·공유는 front 브랜치에서 옮겨온 기능이다. 그쪽은
 // 레일이 아직 HomeDashboard 안에 있던 시절이라 그 파일에 붙어 있었는데, 레일이
@@ -22,7 +23,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import BrandMark from '@/components/BrandMark';
 import { useAuth } from '@/features/auth/authContext';
-import { listSubmissions, deleteSubmission } from '@/services/submissions';
+import { useSubmissionsHistory } from '@/features/workspace/submissionsContext';
 import { useOrganize } from '@/features/workspace/organizeStore';
 import ShareDialog from '@/features/workspace/ShareDialog';
 
@@ -55,7 +56,9 @@ export default function ConsoleLayout({ children }) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [query, setQuery] = useState('');
-  const [history, setHistory] = useState({ status: 'loading', items: [] });
+  // allSubmissions로 부른다 — org.folders.map() 안에서 "이 파일에 든 항목"을
+  // 가리키는 지역 변수 items와 이름이 겹치면 헷갈린다.
+  const { items: allSubmissions, status, removeSubmission } = useSubmissionsHistory();
 
   const userKey = user?.user_id || user?.email || 'anon';
   const org = useOrganize(userKey);
@@ -78,14 +81,6 @@ export default function ConsoleLayout({ children }) {
     menuRef.current?.scrollIntoView({ block: 'nearest' });
   }, [menuFor]);
 
-  useEffect(() => {
-    let alive = true;
-    listSubmissions()
-      .then((data) => { if (alive) setHistory({ status: 'ready', items: Array.isArray(data) ? data : [] }); })
-      .catch(() => { if (alive) setHistory({ status: 'error', items: [] }); });
-    return () => { alive = false; };
-  }, []);
-
   const nickname = user?.nickname || '사용자';
   // 이름을 바꾼 항목은 그 이름으로 부른다 — 서버 제목은 그대로 두고 표시만 덮는다.
   const titleOf = (s) => org.titles[s.submission_id] || s.title || '제목 없음';
@@ -93,7 +88,7 @@ export default function ConsoleLayout({ children }) {
   // 섹션 분류: 고정됨 → 파일별 → 나머지(분석 이력). 검색은 그 앞에서 한 번 거른다.
   const { pinned, byFolder, loose } = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const items = history.items.filter((s) => !q || titleOf(s).toLowerCase().includes(q));
+    const items = allSubmissions.filter((s) => !q || titleOf(s).toLowerCase().includes(q));
     const pinnedSet = new Set(org.pinned);
     const pinnedItems = items.filter((s) => pinnedSet.has(s.submission_id));
     const rest = items.filter((s) => !pinnedSet.has(s.submission_id));
@@ -107,14 +102,13 @@ export default function ConsoleLayout({ children }) {
     }
     return { pinned: pinnedItems, byFolder: folderMap, loose: looseItems };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history.items, org.pinned, org.folders, org.membership, org.titles, query]);
+  }, [allSubmissions, org.pinned, org.folders, org.membership, org.titles, query]);
 
   async function handleDelete(s) {
     if (!window.confirm(`"${titleOf(s)}"을(를) 삭제할까요? 분석 결과도 함께 지워집니다.`)) return;
     setMenuFor(null);
     try {
-      await deleteSubmission(s.submission_id);
-      setHistory((h) => ({ ...h, items: h.items.filter((x) => x.submission_id !== s.submission_id) }));
+      await removeSubmission(s.submission_id);
       org.forget(s.submission_id);
     } catch {
       alert('삭제하지 못했어요. 잠시 후 다시 시도해 주세요.');
@@ -244,7 +238,7 @@ export default function ConsoleLayout({ children }) {
     );
   };
 
-  const ready = history.status === 'ready';
+  const ready = status === 'ready';
 
   return (
     <div className={`home-chat${collapsed ? ' is-collapsed' : ''}`}>
@@ -275,8 +269,8 @@ export default function ConsoleLayout({ children }) {
         </div>
 
         <div className="home-side-history">
-          {history.status === 'loading' && <p className="home-side-empty">불러오는 중…</p>}
-          {history.status === 'error' && <p className="home-side-empty">불러오지 못했어요.</p>}
+          {status === 'loading' && <p className="home-side-empty">불러오는 중…</p>}
+          {status === 'error' && <p className="home-side-empty">불러오지 못했어요.</p>}
 
           {/* 고정됨 — 하나도 없으면 줄 자체를 안 그린다. 빈 섹션은 자리만 먹는다. */}
           {ready && pinned.length > 0 && (

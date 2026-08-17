@@ -21,6 +21,7 @@ import MyPage from '@/features/workspace/MyPage';
 import PapersPage from '@/features/workspace/PapersPage';
 import { useAnalysis } from '@/features/workspace/analysisContext';
 import { AnalysisProvider } from '@/features/workspace/AnalysisProvider';
+import { SubmissionsProvider } from '@/features/workspace/SubmissionsProvider';
 import { getAnalysis, listSubmissions } from '@/services/submissions';
 import LegalPage from '@/features/legal/LegalPage';
 import SharedReportPage from '@/features/share/SharedReportPage';
@@ -84,12 +85,15 @@ function SignupRoute() {
 
 function LoginRoute() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { signIn } = useAuth();
   return (
     <LoginPage
       onExit={() => navigate('/')}
-      onSwitchToSignup={() => navigate({ pathname: '/signup', search: location.search })}
+      // 랜딩의 "시작하기"와 같은 문으로 보낸다 — 계정을 새로 만드는 길은 어디서
+      // 눌러도 온보딩을 먼저 거쳐야 한다. 곧장 /signup으로 보내면 여기서 시작한
+      // 사람만 온보딩 답변 없이(관심 분야·학회 없이) 가입하게 되어 온보딩이
+      // "가입 전 필수 단계"가 아니라 "홈에서만 보이는 선택 단계"가 돼버린다.
+      onSwitchToSignup={() => navigate('/onboarding')}
       onForgotPassword={() => navigate('/forgot-password')}
       onSuccess={signIn}
     />
@@ -162,11 +166,12 @@ function MyPageRoute() {
 // 버튼이 서로 다른 걸 하게 되어, 번갈아 누르면 같은 자리를 왕복하며 못
 // 빠져나가는 문제가 있었다(분석 이력↔상세 무한 왕복 버그).
 //
-// onReset(="← 새로운 논문 분석하기" 화면 안 버튼)은 일부러 안 준다 — 헤더의
-// "새로운 논문 분석하기"가 이제 모든 화면에서 항상 보이므로 완전히 중복이었다.
-// 헤더로 가면 reset()은 안 불리지만 문제없다: UploadPage가 phase==='done'일
-// 때도 폼을 보여주도록 이미 되어 있고(파일이 남아있어도 "제거·바꾸기"로 정리
-// 가능), 다음 분석이 끝나면 이 report/submission은 어차피 덮어써진다.
+// onReset("← 메인으로", 목록 화면에서만 보임)은 사이드바 말고도 이 화면을
+// 벗어날 방법을 하나 더 준다. 여기도 PastAnalysisRoute의 onReset과 같은 이유로
+// navigate(-1)이 아니라 고정 주소다 — 이 화면에 들어오는 길이 사이드바 항목
+// 클릭 등 여러 갈래라, 되짚으면 어디로 갈지 예측할 수 없다. reset()을 안
+// 부르는 이유는 그대로다: UploadPage가 phase==='done'이어도 새 폼을 보여주게
+// 이미 돼 있고, 다음 분석이 끝나면 이 report는 어차피 덮어써진다.
 function ReportRoute() {
   const navigate = useNavigate();
   const { report } = useAnalysis();
@@ -180,6 +185,8 @@ function ReportRoute() {
       paperId={paperId != null ? Number(paperId) : null}
       onOpenPaper={(id) => navigate(`/app/report/${id}`)}
       onClosePaper={() => navigate(-1)}
+      onReset={() => navigate('/')}
+      resetLabel="← 메인으로"
     />
   );
 }
@@ -189,21 +196,28 @@ function ReportRoute() {
 // 받아온다 — 지금 진행 중인 분석(다른 논문)과 섞이면 안 되고, 애초에 지난
 // 분석은 컨텍스트에 남아있지도 않기 때문이다(새로고침하면 사라짐).
 //
-// "← 목록으로"·"← 돌아가기" 둘 다 navigate(-1)이다(ReportRoute와 같은 이유).
-// "← 돌아가기"는 원래 "← 분석 이력으로"였던 걸 바꾼 것이다 — papers 목록을 거쳐
-// 들어온 경우에는 그 라벨이 맞지만, HomeDashboard가 개별 항목으로 바로
-// 연결해서(목록을 안 거치고) 여기 도달할 수도 있어, 그 경로에서는 뒤로가기가
-// 목록이 아니라 홈으로 간다 — 라벨이 실제 목적지를 약속하면 안 되는 이유다.
+// 논문 하나를 열었다 닫는 "← 목록으로"(onClosePaper)는 navigate(-1)이다 —
+// 여는 길이 이 화면 안의 onOpenPaper 하나뿐이라(ReportRoute와 같은 이유) 되짚는
+// 것과 목록으로 가는 것이 정확히 같다.
+//
+// 하지만 submission 전체를 떠나는 "← 분석 이력으로"(onReset)는 **고정 주소**로
+// 보낸다, navigate(-1)이 아니라. 여기 들어오는 길은 하나가 아니다 — papers
+// 목록을 거쳐서도, 홈 사이드바에서 항목을 바로 눌러서도 온다. 게다가 사이드바는
+// 모든 /app/* 화면에 늘 떠 있어서 "목록 → 상세 → 목록 → 마이페이지 → 상세" 같은
+// 조합이 얼마든지 쌓인다. 그 위에서 navigate(-1)을 쓰면 두 문제가 생긴다:
+// (1) 어디로 갈지 예측할 수 없어 라벨이 약속을 못 지키고, (2) 쌓인 히스토리를
+// 오갈 뿐인 쓸모없는 왕복이 된다. 고정 주소면 들어온 길과 무관하게 늘 같은 곳
+// (분석 이력 목록)으로 나가므로 둘 다 사라진다.
 function PastAnalysisRoute() {
   const navigate = useNavigate();
   const { submissionId, paperId } = useParams();
-  const [state, setState] = useState({ status: 'loading', report: null, error: '' });
+  const [state, setState] = useState({ status: 'loading', report: null, error: '', notFound: false });
   // submissionId가 바뀌었는데 이 컴포넌트가 재사용되는(언마운트 안 되는) 경우
   // 로딩 상태로 되돌린다 — effect 안에서 setState하면 안 되니 렌더 중에 비교한다.
   const [loadedFor, setLoadedFor] = useState(submissionId);
   if (submissionId !== loadedFor) {
     setLoadedFor(submissionId);
-    setState({ status: 'loading', report: null, error: '' });
+    setState({ status: 'loading', report: null, error: '', notFound: false });
   }
 
   useEffect(() => {
@@ -212,14 +226,23 @@ function PastAnalysisRoute() {
       .then((data) => {
         if (!alive) return;
         if (data.status !== 'done' || !data.report) {
-          setState({ status: 'unavailable', report: null, error: '' });
+          setState({ status: 'unavailable', report: null, error: '', notFound: false });
           return;
         }
-        setState({ status: 'ready', report: data.report, error: '' });
+        setState({ status: 'ready', report: data.report, error: '', notFound: false });
       })
       .catch((err) => {
         if (!alive) return;
-        setState({ status: 'error', report: null, error: err.message || '불러오지 못했어요.' });
+        // 지운 논문의 상세 주소가 히스토리에 남아있으면(예: 목록에서 지운 뒤
+        // 뒤로가기로 여기 되돌아오는 경우) 서버가 404를 준다 — 이건 오류가
+        // 아니라 "더 이상 없음"이므로 메시지를 달리 준다.
+        const notFound = err.status === 404;
+        setState({
+          status: 'error',
+          report: null,
+          error: notFound ? '' : (err.message || '불러오지 못했어요.'),
+          notFound,
+        });
       });
     return () => { alive = false; };
   }, [submissionId]);
@@ -227,16 +250,31 @@ function PastAnalysisRoute() {
   if (state.status === 'loading') {
     return <p className="wr-muted" style={{ marginTop: 24 }}>불러오는 중…</p>;
   }
+  if (state.status === 'error' && state.notFound) {
+    // 지워진 논문이다 — 오류 카드를 보여주고 사용자가 버튼을 눌러야 빠져나가게
+    // 하는 대신, 곧바로 분석 이력 목록으로 넘긴다. replace라서 히스토리에 이
+    // 죽은 주소가 새로 쌓이지 않는다 — 뒤로가기로 여기 도착했다면, 그 자리가
+    // 목록으로 바뀌어치기 될 뿐이라 다음 뒤로가기는 이 주소를 다시 만나지 않는다.
+    return <Navigate to="/app/papers" replace />;
+  }
   if (state.status === 'error') {
-    return <div className="auth-submit-error" style={{ marginTop: 24 }}>{state.error}</div>;
+    return (
+      <div className="wr-card" style={{ marginTop: 24 }}>
+        <div className="wr-card-title">불러오지 못했어요</div>
+        <p className="wr-muted">{state.error}</p>
+        <button type="button" className="onboard-back" onClick={() => navigate('/app/papers')}>
+          ← 분석 이력으로
+        </button>
+      </div>
+    );
   }
   if (state.status === 'unavailable') {
     return (
       <div className="wr-card" style={{ marginTop: 24 }}>
         <div className="wr-card-title">이 분석은 결과가 없어요</div>
         <p className="wr-muted">실패했거나 아직 진행 중인 분석이에요.</p>
-        <button type="button" className="onboard-back" onClick={() => navigate(-1)}>
-          ← 돌아가기
+        <button type="button" className="onboard-back" onClick={() => navigate('/app/papers')}>
+          ← 분석 이력으로
         </button>
       </div>
     );
@@ -248,8 +286,8 @@ function PastAnalysisRoute() {
       paperId={paperId != null ? Number(paperId) : null}
       onOpenPaper={(id) => navigate(`/app/papers/${submissionId}/${id}`)}
       onClosePaper={() => navigate(-1)}
-      onReset={() => navigate(-1)}
-      resetLabel="← 돌아가기"
+      onReset={() => navigate('/app/papers')}
+      resetLabel="← 분석 이력으로"
     />
   );
 }
@@ -346,6 +384,7 @@ export default function AppRoutes() {
   // Provider를 공유해야 그 report가 넘어간다. 그래서 라우터 전체를 감싼다(게스트
   // 화면에서도 마운트되지만, 마운트만으로는 아무 요청도 하지 않아 무해하다).
   return (
+    <SubmissionsProvider>
     <AnalysisProvider>
     <Routes>
       <Route path="/" element={<HomeRoute />} />
@@ -390,5 +429,6 @@ export default function AppRoutes() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </AnalysisProvider>
+    </SubmissionsProvider>
   );
 }

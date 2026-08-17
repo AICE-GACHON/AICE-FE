@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MOCK_REPORT } from '@/services/mocks/mockReport';
 import { MOCK_STORY } from '@/services/mocks/mockStory';
+import { decisionLabel, decisionTone } from '@/features/workspace/report/decision';
 
 const [lora] = MOCK_REPORT.selected_papers;
 const loraTopReview = lora.reviews[0];
@@ -26,12 +27,18 @@ const KIND_DOT = {
   comment: 'dot-muted', author_revision: 'dot-revision', meta_review: 'dot-meta', decision: 'dot-decision',
 };
 
-// 종합 요약은 마크다운을 문단(빈 줄) 단위로 나눠 인용한다. 첫 줄은 제목(## …),
-// 그다음 한 줄(리드 문장)은 카드에 넣지 않고, 나머지 문단만 쓴다. 마지막 문단은
-// "종합·근거" 카드의 리드로, 그 앞 문단들은 "총 리뷰 요약" 카드 본문으로 간다.
-const [summaryHeading, , ...summaryRest] = MOCK_REPORT.summary_markdown.split('\n\n');
-const summaryLead = summaryRest[summaryRest.length - 1];
-const summaryParagraphs = summaryRest.slice(0, -1);
+// 종합 요약은 마크다운을 문단(빈 줄) 단위로 나눠 인용한다. 첫 줄은 제목(## …)이고
+// 나머지는 실제 화면(ReviewedPaperList)의 "총 리뷰 요약" 카드가 보여주는 그대로
+// 전부 한 카드에 담는다 — 마지막 문단만 떼어 별도 카드로 나누면, 실제로는 한
+// 카드인 걸 두 장으로 쪼개 보여주는 셈이라 그것도 화면과 달라진다.
+const [summaryHeading, , ...summaryParagraphs] = MOCK_REPORT.summary_markdown.split('\n\n');
+
+// "본문 변경 이력"(BodyDiffPanel)은 실제 API로 그때그때 받아오는 화면이라 정적
+// 목업이 없다 — 대신 같은 단어 단위 diff 표기(diff-ins/diff-del)를 쓰는 저자
+// 수정 이력(RevisionDiff, PaperStoryPanel의 심사 타임라인 안)에서 실제 목업
+// 문장을 그대로 인용한다.
+const revisionEvent = MOCK_STORY.timeline.find((e) => e.kind === 'author_revision' && !e.is_baseline);
+const revisionChange = revisionEvent.changes[0];
 
 // **굵게** 표기만 살려서 렌더한다. [E1] 같은 인용 표시는 본문 그대로 둔다.
 function renderInline(text) {
@@ -65,21 +72,23 @@ function GallerySet({ clone = false }) {
             <span className="sc-title">📄 비슷한 논문</span>
             <span className="sc-pill">{MOCK_REPORT.selected_papers.length}편</span>
           </div>
-          <div className="sc-paper-top">
-            <span className="sc-rank">1.</span>
-            <span className="sc-paper-title">{lora.title}</span>
-            <span className="sc-decision accept">{lora.decision}</span>
+          {/* 표 형태다 — 실제 화면(ReviewedPaperList)이 카드 한 장씩이 아니라
+              표로 목록을 세운다. 여기서도 같은 모양을 인용한다. */}
+          <div className="sc-table">
+            <div className="sc-table-head">
+              <span>#</span><span>TITLE</span><span>최종 결과</span>
+            </div>
+            {MOCK_REPORT.selected_papers.map((p) => (
+              <div key={p.paper_id} className="sc-table-row">
+                <span className="sc-rank">{p.rank}</span>
+                <span className="sc-table-title">{p.title}</span>
+                <span className={`sc-decision${decisionTone(p.decision) === 'accept' ? ' accept' : ''}`}>
+                  {decisionLabel(p.decision)}
+                </span>
+              </div>
+            ))}
           </div>
-          <div className="sc-meta">
-            {lora.venue}<span className="sc-badge">확실</span>
-            {` · 평균 ${lora.avg_rating}점 · 리뷰 ${lora.rating_count}건`}
-          </div>
-          <div className="sc-reason"><b>왜 비슷한가</b> {lora.reason}</div>
-          <div className="sc-review">
-            <span className="sc-review-no">리뷰 1</span>
-            <span className="sc-review-score">{loraTopReview.rating_raw}</span>
-            <span className="sc-chev">펼치기</span>
-          </div>
+          <div className="sc-reason"><b>WHY</b> {lora.reason}</div>
         </ScreenPanel>
         <div className="gcard-label">Every pick comes with the reason it was picked</div>
       </article>
@@ -118,22 +127,21 @@ function GallerySet({ clone = false }) {
         <div className="gcard-label">One summary across every review, not one per paper</div>
       </article>
 
-      <article className="gcard tone-sage">
-        <ScreenPanel label="📝 종합 · 근거">
-          <p className="sc-sum-p sc-sum-lead">{renderInline(summaryLead)}</p>
-          <div className="sc-ev-list">
-            {MOCK_REPORT.evidence.map((e) => (
-              <div key={e.label} className="sc-ev">
-                <span className="sc-ev-label">{e.label}</span>
-                <span className="sc-ev-main">
-                  <span className="sc-ev-text">{e.text}</span>
-                  <span className="sc-ev-src">{e.paper_title}</span>
-                </span>
-              </div>
-            ))}
+      <article className="gcard tone-sage is-centered">
+        <ScreenPanel label={`✎ 본문 변경 이력 · ${revisionEvent.headline}`}>
+          <div className="sc-revision-label">
+            {revisionChange.label}
+            <span className="wr-muted"> — 유사도 {revisionChange.similarity.toFixed(2)}</span>
           </div>
+          <p className="sc-revision-text">
+            {revisionChange.segments.map((s, i) => (
+              <span key={i} className={s.op === 'insert' ? 'diff-ins' : s.op === 'delete' ? 'diff-del' : undefined}>
+                {s.text}
+              </span>
+            ))}
+          </p>
         </ScreenPanel>
-        <div className="gcard-label">Every claim points back to the review it came from</div>
+        <div className="gcard-label">Every revision, word for word — nothing paraphrased</div>
       </article>
     </div>
   );

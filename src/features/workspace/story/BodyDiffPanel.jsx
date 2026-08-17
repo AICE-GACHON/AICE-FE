@@ -296,11 +296,10 @@ export default function BodyDiffPanel({ paperId, layout = 'modal' }) {
         </div>
       )}
 
-      {phase === 'error' && (
-        <div className="story-loading">
-          <p className="auth-submit-error">{errorMsg}</p>
-        </div>
-      )}
+      {/* 로딩 스피너와 달리 실패는 큰 상자로 가운데 띄우면 눈에 너무 튄다 —
+          바로 아래 "비교 불가" 상태(phase==='done' && !supported)와 같은
+          자리·같은 톤으로 캡션 한 줄이면 충분하다. */}
+      {phase === 'error' && <p className="wr-muted">{errorMsg}</p>}
 
       {phase === 'done' && data && !data.supported && (
         <p className="wr-muted">{data.message || '이 논문은 본문 수정 이력을 확인할 수 없어요.'}</p>
