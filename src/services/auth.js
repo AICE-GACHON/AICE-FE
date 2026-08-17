@@ -1,0 +1,367 @@
+// 백엔드 연동 지점 — 회원가입/로그인/구글 로그인/토큰 재발급/로그아웃.
+// AICE-BE 실제 스펙 기준 (app/routers/auth.py, app/schemas/auth.py, DEVELOPMENT.md §7):
+//   POST /api/auth/signup  { email, password, nickname, openreview_id, agreed_to_terms, onboarding_id? } -> UserResponse (201, 토큰 없음)
+//   POST /api/auth/login   { email, password }               -> { access_token, refresh_token, token_type }
+//   POST /api/auth/google  { id_token, openreview_id?, agreed_to_terms? } -> { access_token, refresh_token, token_type }
+//   POST /api/user/me/consent (인증 필요)                     -> UserResponse (약관 개정 후 재동의)
+//   POST /api/auth/refresh { refresh_token }                 -> { access_token, refresh_token, token_type } (회전)
+//   POST /api/auth/logout  (인증 필요)                        -> 서버가 token_version을 올려 이전 refresh_token을 전부 무효화
+//   GET  /api/user/me      (인증 필요)                        -> UserResponse
+//   POST /api/auth/password/forgot { email }                 -> 200 (가입 여부와 무관하게 항상 200)
+//   POST /api/auth/password/reset  { token, new_password }   -> 200 / 400(만료·재사용 토큰)
+// 모든 응답은 { success, data, error: {code, message} | null } 공통 포맷(ApiResponse[T])으로 온다.
+// 인증 없는 5개 엔드포인트(signup/login/google/refresh/onboarding)에는 IP 기준 rate limit이
+// 걸려 있어 너무 자주 호출하면 429 + "요청이 너무 많습니다..." 메시지가 온다 — 그대로 노출하면 됨.
+import { saveTokens, loadAccessToken, loadRefreshToken, clearTokens } from './tokenStorage';
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// mock 모드 전용 — 백엔드 없이 signup → login을 이어서 테스트할 때 닉네임을 기억해두기 위함
+const mockNicknameByEmail = new Map();
+
+async function unwrap(res) {
+  // 204는 정의상 body가 없다(예: DELETE /api/submissions/{id}) — res.json()이
+  // 빈 문자열을 파싱하다 실패해서 body=null이 되고, 그걸 실패로 오해해 던지게 된다.
+  if (res.status === 204) {
+    if (!res.ok) throw Object.assign(new Error(`요청에 실패했어요 (${res.status})`), { status: res.status });
+    return null;
+  }
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body || body.success === false) {
+    const err = new Error(body?.error?.message || `요청에 실패했어요 (${res.status})`);
+    // 호출부가 상태로 갈라야 할 때가 있다 — 예를 들어 온보딩 답변 404는 오류가
+    // 아니라 "아직 없음"이다. 메시지 문자열로 판별하게 두면 서버 문구가 바뀌는
+    // 순간 조용히 깨진다.
+    err.status = res.status;
+    throw err;
+  }
+  return body.data;
+}
+
+/**
+ * inviteCode는 배포 환경에서 **필수**다. 서버가 SIGNUP_INVITE_CODE를 설정한 채로
+ * 떠 있으면(배포 기본값) 코드 없이 보낸 가입은 403 "초대 코드가 필요합니다"로
+ * 거절된다. 개발 서버는 보통 비어 있어서 이 값을 무시한다.
+ *
+ * agreedToTerms는 **환경과 무관하게 항상 필수**다. false거나 빠지면 서버가 400으로
+ * 거절한다(app/routers/auth.py _require_consent). 여기서 true를 박아넣지 않고
+ * 호출부에서 받아 넘기는 이유는, 그러면 사용자가 체크박스를 눌렀는지와 무관하게
+ * API 계층이 "동의했다"고 서버에 말하게 되기 때문이다 — 동의 이력을 남기는 목적
+ * 자체가 무너진다.
+ *
+ * @param {{email: string, password: string, nickname: string, openreviewId?: string, inviteCode?: string, onboardingId?: string|null, agreedToTerms: boolean}} payload
+ */
+export async function signup({ email, password, nickname, openreviewId, inviteCode, onboardingId, agreedToTerms }) {
+  if (!BASE_URL) {
+    console.info('[auth] VITE_API_BASE_URL 미설정 — 회원가입 mock 성공 처리:', { email, nickname, openreviewId, onboardingId });
+    mockNicknameByEmail.set(email, nickname);
+    return { user_id: 'mock-user', email, nickname, openreview_id: openreviewId, google_linked: false };
+  }
+
+  const res = await fetch(`${BASE_URL}/api/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email,
+      password,
+      nickname,
+      openreview_id: openreviewId,
+      agreed_to_terms: Boolean(agreedToTerms),
+      ...(inviteCode ? { invite_code: inviteCode } : {}),
+      ...(onboardingId ? { onboarding_id: onboardingId } : {}),
+    }),
+  });
+  return unwrap(res); // UserResponse — 자동 로그인은 안 되므로 뒤이어 login()을 호출해야 함
+}
+
+/** @param {{email: string, password: string}} payload */
+export async function login({ email, password }) {
+  if (!BASE_URL) {
+    console.info('[auth] VITE_API_BASE_URL 미설정 — 로그인 mock 성공 처리:', { email });
+    saveTokens({ access_token: 'mock-access-token', refresh_token: 'mock-refresh-token' });
+    return { email, nickname: mockNicknameByEmail.get(email) ?? null };
+  }
+
+  const res = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const tokens = await unwrap(res); // TokenResponse
+  saveTokens(tokens);
+
+  // 로그인 응답에는 토큰만 있고 닉네임이 없어서, 화면에 보여줄 사용자 정보는 /me로 한 번 더 받아온다.
+  try {
+    return await fetchMe();
+  } catch {
+    return { email, nickname: null };
+  }
+}
+
+/**
+ * 구글 로그인 — Google Identity Services가 발급한 id_token을 그대로 서버에 넘긴다.
+ * 처음 구글로 가입하는 경우에만 openreview_id가 필요하고, 없이 호출하면 백엔드가
+ * 400으로 이를 알려준다 — 이때 err.needsOpenreviewId를 true로 표시해 호출부가
+ * openreview_id를 입력받아 같은 id_token으로 재시도할 수 있게 한다.
+ * 처음 구글로 가입하는 계정에만 openreviewId·inviteCode·agreedToTerms가 필요하다.
+ * 이미 가입한 사람의 로그인에는 서버가 셋 다 요구하지 않는다 — 초대받아 가입한
+ * 사람이 로그인할 때마다 코드를 다시 입력해야 한다면 그건 초대가 아니라
+ * 비밀번호이고, 약관도 로그인할 때마다 물으면 동의가 아니라 확인 버튼이다.
+ *
+ * **처음 호출할 때는 셋 다 없이 보낸다.** 이 계정이 신규인지 기존인지는 서버만
+ * 알기 때문이다. 신규라서 거절당하면(needsInvite / needsConsent) 그때 화면이
+ * 한 번에 받아서 같은 id_token으로 재시도한다.
+ *
+ * @param {string} idToken
+ * @param {string} [openreviewId]
+ * @param {string} [inviteCode]
+ * @param {boolean} [agreedToTerms]
+ */
+export async function loginWithGoogle(idToken, openreviewId, inviteCode, agreedToTerms) {
+  if (!BASE_URL) {
+    console.info('[auth] VITE_API_BASE_URL 미설정 — 구글 로그인 mock 성공 처리');
+    saveTokens({ access_token: 'mock-access-token', refresh_token: 'mock-refresh-token' });
+    return { email: 'google-mock@example.com', nickname: '구글 사용자' };
+  }
+
+  const res = await fetch(`${BASE_URL}/api/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id_token: idToken,
+      agreed_to_terms: Boolean(agreedToTerms),
+      ...(openreviewId ? { openreview_id: openreviewId } : {}),
+      ...(inviteCode ? { invite_code: inviteCode } : {}),
+    }),
+  });
+  const body = await res.json().catch(() => null);
+
+  // 서버는 신규 가입일 때만 이것들을 요구한다. 순서가 있다 — 초대 코드를 먼저
+  // 보고(403), 통과하면 약관 동의를 본다(400). 화면에서는 한 번에 받는다.
+  if (res.status === 403) {
+    const err = new Error(body?.error?.message || '초대 코드가 필요합니다.');
+    err.needsInvite = true;
+    throw err;
+  }
+  // ⚠️ 400은 이유가 여럿이라(동의 누락, 구글 계정에 이메일 없음) 메시지로 가른다.
+  // 서버 문구가 바뀌면 조용히 깨지는 종류의 판별이므로, 못 갈라도 아래 일반
+  // 에러로 떨어져 사용자에게 서버 메시지가 그대로 보이게 해뒀다 — 화면이 멈추지는
+  // 않는다. 서버 문구: "이용약관과 개인정보처리방침에 동의해야 가입할 수 있습니다."
+  if (res.status === 400 && body?.error?.message?.includes('동의')) {
+    const err = new Error(body.error.message);
+    err.needsConsent = true;
+    throw err;
+  }
+  if (res.status === 400 && body?.error?.message?.includes('openreview_id')) {
+    const err = new Error(body.error.message);
+    err.needsOpenreviewId = true;
+    throw err;
+  }
+  if (!res.ok || !body || body.success === false) {
+    throw new Error(body?.error?.message || `구글 로그인에 실패했어요 (${res.status})`);
+  }
+
+  saveTokens(body.data);
+  try {
+    return await fetchMe();
+  } catch {
+    return { nickname: null };
+  }
+}
+
+/**
+ * refresh_token으로 access_token을 재발급받는다 (refresh_token도 함께 회전).
+ * @param {{signal?: AbortSignal}} [options] 호출부가 건 타임아웃이 재발급 왕복까지
+ *   덮게 하려면 같은 signal을 넘겨야 한다 — 안 그러면 여기서 다시 무한정 기다린다.
+ */
+export async function refreshAccessToken({ signal } = {}) {
+  const refresh_token = loadRefreshToken();
+  if (!refresh_token) throw new Error('로그인이 필요해요.');
+
+  const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token }),
+    signal,
+  });
+  const tokens = await unwrap(res);
+  saveTokens(tokens);
+  return tokens;
+}
+
+/**
+ * 인증이 필요한 API 호출을 감싼다. access_token을 자동으로 싣고, 401이면
+ * refresh_token으로 한 번 재발급을 시도한 뒤 같은 요청을 재시도한다.
+ */
+export async function authorizedFetch(path, options = {}, _retried = false) {
+  const token = loadAccessToken();
+  if (!token) throw new Error('로그인이 필요해요.');
+
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      // FormData는 브라우저가 boundary를 포함한 Content-Type을 직접 만들어야 하므로 지정하지 않는다.
+      ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
+      ...options.headers,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (res.status === 401 && !_retried) {
+    try {
+      await refreshAccessToken({ signal: options.signal });
+    } catch {
+      clearTokens();
+      throw new Error('로그인이 만료됐어요. 다시 로그인해 주세요.');
+    }
+    return authorizedFetch(path, options, true);
+  }
+  return unwrap(res);
+}
+
+/**
+ * GET /api/user/me
+ * @param {RequestInit} [options] 앱 시작 시 세션 복원처럼 무한정 기다릴 수 없는
+ *   호출을 위해 signal 등을 넘길 수 있게 열어둔다.
+ */
+export function fetchMe(options) {
+  return authorizedFetch('/api/user/me', options);
+}
+
+/**
+ * PATCH /api/user/me — 보낸 필드만 갱신한다.
+ *
+ * 비밀번호는 currentPassword와 newPassword를 **함께** 보내야 바뀐다. 하나만
+ * 보내면 서버가 422로 막는다(스키마 단계). 현재 비밀번호를 확인하는 이유는
+ * 탈취된 access_token 하나로 계정을 통째로 빼앗지 못하게 하기 위해서다.
+ *
+ * ⚠️ **비밀번호를 바꾸면 서버가 기존 refresh_token을 전부 폐기한다**(token_version
+ * 증가). 지금 쓰는 access_token은 만료 전까지 살아 있지만, 만료 뒤 자동 재발급이
+ * 실패해 로그아웃된다. 화면에서 그 사실을 알려야 한다.
+ *
+ * 409는 openreview_id 중복이다 — 사용자가 고칠 수 있는 입력 오류라 필드 옆에
+ * 붙일 수 있게 err.duplicateOpenreviewId로 표시한다. 401은 현재 비밀번호가 틀린
+ * 것이고, 400은 구글 전용 계정이 비밀번호를 설정하려 한 경우다.
+ *
+ * @param {{nickname?: string, openreviewId?: string|null, currentPassword?: string, newPassword?: string}} payload
+ */
+export async function updateMe({ nickname, openreviewId, currentPassword, newPassword }) {
+  const body = {
+    ...(nickname !== undefined ? { nickname } : {}),
+    ...(openreviewId !== undefined ? { openreview_id: openreviewId } : {}),
+    ...(currentPassword !== undefined ? { current_password: currentPassword } : {}),
+    ...(newPassword !== undefined ? { new_password: newPassword } : {}),
+  };
+
+  try {
+    return await authorizedFetch('/api/user/me', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    if (err.status === 409) err.duplicateOpenreviewId = true;
+    throw err;
+  }
+}
+
+/**
+ * DELETE /api/user/me — 되돌릴 수 없다.
+ *
+ * ⚠️ **비밀번호가 있는 계정(has_password=true)은 password가 필수다.** 안 보내면
+ * 400이다. 구글 전용 계정은 대조할 비밀번호가 없어 없이 보내야 한다 — 요구하면
+ * 그 계정은 영영 탈퇴할 수 없다.
+ *
+ * 성공하면 계정이 사라지므로 남은 토큰은 아무 데도 쓸 수 없다. 호출부가 반드시
+ * 토큰을 지우고 로그아웃 화면으로 보내야 한다.
+ *
+ * @param {{password?: string}} payload
+ */
+export function deleteMe({ password } = {}) {
+  return authorizedFetch('/api/user/me', {
+    method: 'DELETE',
+    // 구글 전용 계정은 body 자체를 안 보낸다 (서버가 Body(default=None)로 받는다).
+    ...(password ? { body: JSON.stringify({ password }) } : {}),
+  });
+}
+
+/**
+ * 비밀번호 재설정 메일 요청.
+ *
+ * 서버는 가입되지 않은 이메일에도 200을 준다 — 어떤 이메일이 가입돼 있는지
+ * 알아내는 통로가 되면 안 되기 때문이다. 그래서 이 함수도 "보냈다/못 보냈다"를
+ * 구분해 돌려주지 않는다. 화면 문구도 마찬가지로 단정하면 안 된다.
+ *
+ * @param {{email: string}} payload
+ */
+export async function requestPasswordReset({ email }) {
+  if (!BASE_URL) {
+    console.info('[auth] VITE_API_BASE_URL 미설정 — 비밀번호 찾기 mock 처리:', { email });
+    return;
+  }
+
+  const res = await fetch(`${BASE_URL}/api/auth/password/forgot`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  await unwrap(res); // 200 외에는 네트워크/서버 장애뿐이라 그대로 에러로 올린다
+}
+
+/**
+ * 메일 링크(/reset-password?token=...)로 받은 토큰과 새 비밀번호를 보낸다.
+ * 만료됐거나 이미 쓴 토큰이면 400 — 이건 사용자가 고칠 수 없는 상태라
+ * err.tokenInvalid로 표시해서, 화면이 "다시 시도"가 아니라 "링크를 다시 받기"를
+ * 안내하게 한다.
+ *
+ * @param {{token: string, newPassword: string}} payload
+ */
+export async function resetPassword({ token, newPassword }) {
+  if (!BASE_URL) {
+    console.info('[auth] VITE_API_BASE_URL 미설정 — 비밀번호 재설정 mock 성공 처리');
+    return;
+  }
+
+  const res = await fetch(`${BASE_URL}/api/auth/password/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+  const body = await res.json().catch(() => null);
+
+  if (res.status === 400) {
+    const err = new Error(
+      body?.error?.message || '링크가 만료됐거나 이미 사용됐어요.',
+    );
+    err.tokenInvalid = true;
+    throw err;
+  }
+  if (!res.ok || !body || body.success === false) {
+    throw new Error(body?.error?.message || `비밀번호 재설정에 실패했어요 (${res.status})`);
+  }
+}
+
+/**
+ * POST /api/user/me/consent — 개정된 약관에 다시 동의한다. 갱신된 UserResponse를 준다.
+ *
+ * body가 없다. 이 경로를 호출한 것 자체가 동의다 (서버도 같은 이유로 body를 받지
+ * 않는다 — app/routers/user.py). 동의 철회는 이 API가 아니라 탈퇴다.
+ *
+ * ⚠️ **응답으로 받은 user를 반드시 화면 상태에 반영해야 한다.** 안 그러면
+ * consent_up_to_date가 여전히 false인 옛 user가 남아, 방금 동의한 사람에게
+ * 재동의 배너가 계속 보인다.
+ */
+export function agreeToCurrentTerms() {
+  return authorizedFetch('/api/user/me/consent', { method: 'POST' });
+}
+
+export async function logout() {
+  if (BASE_URL) {
+    try {
+      await authorizedFetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // 토큰이 이미 만료됐거나 네트워크 문제여도 로컬 토큰은 지우고 로그아웃 처리한다
+    }
+  }
+  clearTokens();
+}

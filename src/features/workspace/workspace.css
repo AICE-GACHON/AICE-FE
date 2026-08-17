@@ -1,0 +1,1185 @@
+/* ---------- WORKSPACE (업로드 + 분석 결과) ----------
+   1b "리서치 콘솔" 방향. 규칙은 셋뿐이고 아래 전부가 그 셋의 반복이다:
+     1. 크롬은 딥그린, 작업 영역은 옅은 회녹(--surface), 내용은 흰 카드.
+     2. 값이 아닌 것(열 이름·구획 이름·단위)은 전부 모노 대문자 라벨.
+     3. 여러 건을 훑는 자리는 카드가 아니라 표 — 같은 열이 세로로 정렬돼야
+        비교가 된다. 카드는 한 건을 읽는 자리에만 쓴다. */
+
+/* 딥그린 상단바(.workspace-topbar/-brand/-user/-logout/-context)는 걷어냈다.
+   레일(ConsoleLayout)이 /app까지 올라오면서 로고·사용자·로그아웃이 전부 거기
+   있게 됐고, 상단바가 유일하게 갖고 있던 "지금 어느 화면인가"는 작업 영역 맨
+   위 .ws-strip으로 옮겼다. 껍데기 자체(.workspace-shell)도 .home-chat이 대신한다. */
+
+/* 폭은 화면마다 다르다(업로드는 좁고 리포트는 넓다) — 껍데기는 최대 폭만
+   잡아주고 실제 폭은 각 화면이 정한다.
+   flex:none인 이유: 부모(.home-main)가 flex column이라 기본값이면 내용이 길 때
+   눌린다 — 여기는 눌리지 말고 넘친 만큼 .home-main이 스크롤해야 한다. */
+.workspace-body{flex:none;width:100%;max-width:1240px;margin:0 auto;padding:22px 26px 44px;}
+
+/* 화면 상단 되돌아가기 줄 — 링크 여러 개가 세로선으로 나뉜다 */
+.ws-backrow{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;
+  font-size:14px;font-weight:600;color:var(--muted);
+}
+.ws-backrow .onboard-back{font-size:14px;padding:0;}
+.ws-backrow-sep{color:#c3cac4;}
+.ws-backrow-meta{margin-left:auto;font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--label);}
+
+/* 좁은 화면(업로드 폼·마이페이지 등)을 콘솔 폭 안에서 다시 좁히는 자리 */
+.ws-narrow{max-width:840px;}
+
+@media (max-width:640px){
+  .workspace-body{padding:16px 16px 36px;}
+}
+
+.upload-card{padding:20px 22px;}
+.upload-textarea{min-height:120px;resize:vertical;}
+.upload-pdf-clear{
+  border:1px solid var(--card-line);background:#fff;border-radius:8px;padding:4px 12px;
+  font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;
+}
+
+/* ---------- 콘솔 공용 부품 (ws = workspace) ---------- */
+
+/* 상태 띠 — 작업 영역 맨 위, 카드 바깥. 흰 바탕에 아래 경계선 하나로 크롬과
+   내용을 가른다. */
+.ws-strip{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:13px 26px;background:#fff;border-bottom:1px solid var(--card-line);
+}
+.ws-strip-label{
+  font-family:var(--mono);font-size:12px;letter-spacing:0.14em;color:var(--muted);font-weight:500;
+}
+.ws-strip-corpus{
+  font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--teal-deep);
+}
+.ws-strip-steps{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+/* ConsoleStrip.jsx가 슬래시+단계를 감싼 클래스 없는 <span> 하나하나 — 그게
+   .ws-strip-steps의 flex item이라 블록화되지만, 그 안의 .ws-strip-step 자신은
+   여전히 인라인이다. 인라인 요소는 getBoundingClientRect가 line-height가 아니라
+   글자 자체 높이(실측 15px)를 돌려주는데, 옆의 .ws-strip-label은 flex item이라
+   블록화돼 line-height 그대로(19px)를 돌려준다 — 같은 12px 글씨인데 라벨과
+   단계 줄의 세로 중심이 서로 다르게 잡히는 이유다. 이 span도 flex로 만들면
+   안의 slash·step이 마저 블록화돼 같은 19px 박스가 되고, 접었을 때 열기
+   버튼과 맞추는 계산(.home-chat.is-collapsed .ws-strip)이 두 형태(라벨 줄 ·
+   단계 줄) 모두에 같은 값으로 통한다. */
+.ws-strip-steps > span{display:flex;align-items:center;}
+.ws-strip-slash{font-family:var(--mono);font-size:12px;color:#c3cac4;margin-right:10px;}
+.ws-strip-step{font-family:var(--mono);font-size:12px;letter-spacing:0.12em;color:#a7ada7;}
+/* 끝난 칸은 브랜드색, 지금 칸은 잉크색 + 굵게. 셋이 전부 회색이면 어디 서 있는지
+   알 수 없고, 셋이 전부 색이 있으면 아무 데도 강조가 없다. */
+.ws-strip-step.is-done{color:var(--teal-deep);}
+.ws-strip-step.is-current{color:var(--ink);font-weight:700;}
+
+/* 콘솔 버튼 — 각진 8px. 랜딩의 알약(.pill)과 일부러 다르게 둔다. */
+.ws-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  border:none;border-radius:8px;background:var(--teal-deep);color:#fff;
+  font-family:inherit;font-size:15px;font-weight:700;padding:11px 26px;cursor:pointer;
+  transition:background .16s;
+}
+.ws-btn:hover:not(:disabled){background:var(--teal);}
+.ws-btn:disabled{opacity:0.45;cursor:not-allowed;}
+.ws-btn-block{width:100%;padding:13px;font-size:15.5px;}
+.ws-btn-ghost{
+  background:#fff;color:var(--teal-deep);border:1px solid var(--card-line);
+}
+.ws-btn-ghost:hover:not(:disabled){background:var(--teal-soft);border-color:var(--teal);}
+
+/* 안내 문구 — 본문과 같은 크기로 흐르면 읽히지 않고, 회색 작은 글씨로 두면
+   안 읽힌다. 옅은 면 + 모노 머리글자로 "곁의 말"이라고 표시한다. */
+.ws-note{
+  display:flex;gap:9px;margin-top:14px;padding:11px 13px;border-radius:8px;
+  background:#f3f6f4;font-size:13.5px;line-height:1.65;color:var(--muted);
+}
+.ws-note-mark{font-family:var(--mono);font-weight:700;color:var(--teal-deep);flex:none;}
+
+/* 경고 — 값(쪽수 등)을 칩으로 앞세우고 이유를 뒤에 붙인다 */
+.ws-warn{
+  display:flex;align-items:center;gap:10px;margin-top:18px;padding:11px 14px;border-radius:8px;
+  background:#fdf6ec;border:1px solid #f0dcbb;color:#8a5b18;font-size:14px;line-height:1.6;
+}
+.ws-warn-chip{
+  flex:none;font-family:var(--mono);font-weight:700;font-size:12px;
+  background:#8a5b18;color:#fdf6ec;padding:2px 7px;border-radius:4px;
+}
+
+/* ---------- 업로드 흐름 ---------- */
+/* 홈에 얹힐 땐 폭을 홈이 정하고(620px), 단독 화면일 땐 스스로 가운데로 모인다. */
+.upload-flow{display:flex;flex-direction:column;}
+/* 띠 **하나만** .workspace-body의 padding을 되돌려 작업 영역 폭 전체를 쓴다.
+   컨테이너째 끌어내면(예전 방식) 아래 카드까지 딸려 나가 테두리가 화면 가장자리에
+   딱 붙는다 — 카드는 안쪽 여백을 지킨 채로 가운데 모여야 한다. */
+.upload-flow-standalone > .ws-strip{margin:-22px -26px 0;}
+.upload-flow-standalone > .ws-strip + *{margin-top:32px;}
+.upload-flow-standalone > *:not(.ws-strip){
+  width:100%;max-width:620px;margin-left:auto;margin-right:auto;
+}
+.upload-intro{margin-bottom:24px;}
+
+.upload-confirm-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+.upload-confirm-title{font-size:25px;font-weight:800;letter-spacing:-0.02em;}
+
+/* 추출 결과 — 카드 안에서 TITLE / ABSTRACT 두 구획으로 잘린다 */
+.upload-extract-block{padding:16px 20px;border-bottom:1px solid var(--rule);}
+.upload-extract-block.is-last{border-bottom:none;}
+.upload-extract-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+.upload-extract-count{font-family:var(--mono);font-size:11.5px;color:#c3cac4;}
+.upload-extract-title{font-size:18px;font-weight:700;line-height:1.5;margin-top:7px;}
+.upload-extract-abstract{
+  font-size:14.5px;line-height:1.8;color:#3a413a;margin-top:8px;
+  max-height:230px;overflow-y:auto;
+}
+
+@media (max-width:640px){
+  /* .workspace-body의 모바일 padding(16px)과 짝을 맞춘다. */
+  .upload-flow-standalone > .ws-strip{margin:-16px -16px 0;}
+  .ws-strip{padding:12px 16px;}
+}
+.upload-pdf-clear:hover:not(:disabled){border-color:var(--teal);color:var(--teal-deep);}
+.upload-pdf-clear:last-child:hover:not(:disabled){border-color:var(--red);color:var(--red);}
+.upload-pdf-clear:disabled{opacity:0.45;cursor:not-allowed;}
+
+/* ---------- PDF 드롭존 ---------- */
+.upload-drop{
+  position:relative;
+  border:1.5px dashed #cfd6d0;border-radius:10px;background:#fbfcfb;
+  padding:38px 20px;text-align:center;cursor:pointer;
+  transition:border-color .18s, background .18s;
+}
+.upload-drop:hover{border-color:var(--teal);background:var(--teal-soft);}
+.upload-drop.is-dragging{border-color:var(--teal-deep);background:var(--teal-soft);}
+/* 파일이 들어오면 "비어 있으니 채우라"는 점선을 거둔다. */
+.upload-drop.has-file{
+  border-style:solid;border-color:var(--teal);background:var(--teal-soft);
+  cursor:default;padding:18px 20px;
+}
+.upload-drop.is-disabled{cursor:not-allowed;opacity:0.6;}
+.upload-drop.is-disabled:hover{border-color:#cfd6d0;background:#fbfcfb;}
+.upload-drop.has-file.is-disabled:hover{border-color:var(--teal);background:var(--teal-soft);}
+/* 네이티브 입력은 숨기고 클릭만 프로그램으로 넘긴다 (display:none이면 일부
+   브라우저에서 .click()이 안 먹어 화면 밖으로 밀어둔다). */
+.upload-drop-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+
+.upload-drop-icon{margin:0 auto 12px;color:var(--teal-deep);}
+.upload-drop-title{font-size:15.5px;font-weight:700;}
+.upload-drop-hint{margin-top:5px;font-size:13.5px;color:var(--muted);}
+.upload-drop-browse{
+  margin-top:13px;border:1px solid #dfe3dd;background:#fff;border-radius:8px;
+  padding:8px 18px;font-size:14px;font-weight:700;color:var(--teal-deep);
+  cursor:pointer;font-family:inherit;transition:border-color .18s;
+}
+.upload-drop-browse:hover:not(:disabled){border-color:var(--teal);}
+.upload-drop-browse:disabled{opacity:0.5;cursor:not-allowed;}
+
+.upload-file{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  flex-wrap:wrap;text-align:left;
+}
+.upload-file-name{font-size:15px;font-weight:700;word-break:break-all;}
+.upload-file-size{margin-top:2px;font-size:13.5px;color:var(--muted);}
+.upload-file-actions{display:flex;gap:8px;flex-shrink:0;}
+
+/* ---------- 결과: 종합 요약 본문 ---------- */
+.wr-summary{margin-top:10px;font-size:15px;line-height:1.75;}
+.wr-summary h4{font-size:15.5px;font-weight:800;margin:14px 0 6px;}
+.wr-summary h4:first-child{margin-top:0;}
+.wr-summary p{margin:8px 0;}
+.wr-summary ul{margin:8px 0;padding-left:20px;}
+.wr-summary li{margin:4px 0;}
+/* 서버가 weak 신뢰도 경고를 인용문으로 보낸다 — 본문과 확실히 구분돼야 한다. */
+.wr-quote{
+  margin:10px 0;padding:10px 14px;border-left:3px solid #e0b3ad;
+  background:#fbeceb;color:#8a2f26;border-radius:0 8px 8px 0;font-size:14.5px;
+}
+
+/* ---------- 결과: 머리 카드 (올린 논문 + 총계) ---------- */
+.rp-query-card{display:flex;align-items:center;gap:28px;}
+.rp-query-main{flex:1;min-width:0;}
+.rp-query-title{font-size:18px;font-weight:800;line-height:1.45;letter-spacing:-0.01em;margin-top:6px;}
+.rp-query-abstract{
+  font-size:14px;line-height:1.65;color:var(--muted);margin-top:8px;max-width:920px;
+}
+/* "무엇을 우선해 골랐나" 한 줄. 초록보다 작고 조용하게 — 결과의 주인공이 아니라
+   결과가 만들어진 조건이다. 라벨 자체에 가운뎃점이 들어 있어(예: "평가 방식·
+   데이터셋이 비슷한 논문") 구분자로 점을 쓰면 어디까지가 한 항목인지 안 보인다.
+   그래서 칩으로 나눈다. */
+.rp-prefs{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:12px;font-size:13px;color:var(--muted);
+}
+.rp-prefs-chip{
+  padding:2px 9px;border:1px solid var(--rule);border-radius:999px;
+  background:var(--field);color:var(--ink);font-size:12.5px;white-space:nowrap;
+}
+.rp-prefs-tail{font-size:13px;}
+
+/* 수치는 세로선으로 칸을 나눠 오른쪽 끝에 붙인다 — 제목과 같은 흐름에 두면
+   문장처럼 읽히고, 칸으로 나누면 계기판처럼 읽힌다. */
+.rp-stats{display:flex;flex:none;}
+.rp-stat{padding:0 22px;border-left:1px solid var(--rule);text-align:right;}
+.rp-stat:last-child{padding-right:0;}
+.rp-stat-value{font-size:23px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;}
+.rp-stat-value.is-accent{color:var(--teal-deep);}
+
+@media (max-width:860px){
+  .rp-query-card{flex-direction:column;align-items:stretch;gap:16px;}
+  .rp-stats{border-top:1px solid var(--rule);padding-top:14px;}
+  .rp-stat:first-child{padding-left:0;border-left:none;}
+}
+
+/* ---------- 결과: 선정 논문 표 ----------
+   grid로 만든 표. 제목만 늘어나고 나머지는 고정 폭이라 열이 흔들리지 않는다.
+   시맨틱 <table>이 아닌 이유는 각 행 전체가 하나의 버튼(상세로 이동)이어야
+   하는데, table 안에 행 전체를 감싸는 버튼을 넣을 방법이 없어서다. */
+.rp-table{list-style:none;margin:0;padding:0;}
+.rp-row{
+  /* 마지막 칩 열은 가장 긴 라벨("채택 · Spotlight")이 줄바꿈 없이 들어가는
+     폭이다 — 칩은 white-space:nowrap이라 좁으면 열 밖으로 삐져나온다. */
+  /* "본문 수정" 열이 66px이 아니라 76px인 이유: 이 열의 폭을 정하는 건 값
+     ("3회"·"없음")이 아니라 머리글이다. 12.5px 모노 + 자간이면 머리글에만
+     65.8px이 들어가 66px에서는 여유가 0.3px밖에 안 남는다 — 폰트가 로드되기 전
+     폴백으로 그려지는 한 프레임이나 다른 OS의 자간 반올림에 바로 넘친다. */
+  display:grid;grid-template-columns:34px minmax(0,1fr) 104px 76px 56px 118px 18px;
+  gap:14px;align-items:center;padding:14px 22px;width:100%;text-align:left;
+}
+.rp-row-head{
+  padding-top:9px;padding-bottom:9px;background:var(--field);
+  border-bottom:1px solid var(--rule);
+  /* 자간을 0.12em → 0.1em으로 함께 줄인다. 열 폭이 px로 고정돼 있어(66px 등)
+     글씨만 키우면 "본문 수정"이 칸을 넘는데, 자간이 그 차이를 도로 메워준다.
+     모노 + 자간은 "값이 아니라 이름표"라는 신호라 없애지는 않는다. */
+  font-family:var(--mono);font-size:12.5px;letter-spacing:0.1em;color:var(--label);
+}
+.rp-row-item{
+  background:none;border:none;border-bottom:1px solid var(--rule-soft);
+  cursor:pointer;font-family:inherit;transition:background .15s;
+}
+.rp-table li:last-child .rp-row-item{border-bottom:none;}
+.rp-row-item:hover{background:var(--teal-soft);}
+/* 거절·철회 행에 아주 옅은 붉은 기를 깐다 — 칩만으로도 읽히지만, 표를 훑을 때
+   "어느 줄이 잘 안 된 사례인가"가 스캔 한 번에 잡힌다. */
+.rp-row-item.is-negative{background:#fffbfb;}
+.rp-row-item.is-negative:hover{background:var(--teal-soft);}
+
+.rp-rank{font-family:var(--mono);font-size:13.5px;color:#a7ada7;}
+.rp-main{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.rp-title{font-size:15px;font-weight:700;line-height:1.4;}
+.rp-row-item:hover .rp-title{color:var(--teal-deep);}
+.rp-sub{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--label);}
+.rp-venue{font-family:var(--mono);font-size:13px;color:var(--muted);}
+.rp-num{text-align:right;}
+/* 수정 횟수는 이 표의 판단 기준이라 굵게 세운다. "없음"만 흐리게 — 0은 비교
+   대상에서 빠지는 값이라 나머지 숫자와 같은 무게로 서면 안 된다. */
+.rp-revisions{font-family:var(--mono);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;}
+.rp-revisions.is-none{font-weight:400;color:var(--muted);}
+.rp-count{font-family:var(--mono);font-size:14px;color:var(--muted);}
+.rp-chev{color:#c3cac4;text-align:right;font-size:17px;line-height:1;}
+.rp-detail-title{font-size:21px;font-weight:800;line-height:1.35;letter-spacing:-0.01em;}
+
+/* 좁은 화면에서는 표가 성립하지 않는다(가로 스크롤은 비교를 더 어렵게 한다) —
+   순위·제목·평균 한 줄, 그 아래 결과 칩으로 접는다. 학회·리뷰 수·화살표는
+   버린다: 좁은 화면에서 끝까지 남겨야 할 건 "무엇이고, 몇 점이고, 됐는가" 셋뿐이다.
+
+   각 칸을 grid-column으로 **명시해서** 놓는다. 숨긴 칸(display:none)은 자동
+   배치에서 빠지므로, 자동 배치에 맡기면 남은 칸들이 한 자리씩 밀려 엉뚱한
+   열에 앉는다. */
+/* 뷰포트가 아니라 표가 받은 폭으로 가른다. 수치 열들이 전부 고정 폭이라
+   제목 열은 "컨테이너 − 524px"(고정 열 396 + gap 84 + 행 padding 44)로 정해지는데,
+   레일(264px)이 /app 화면에 올라온 뒤로 뷰포트는 900px이어도 표에 돌아오는 폭은
+   569px인 상황이 생겼다. 뷰포트 820px 경계는 그때 발동하지 않아 제목 열이 43px로
+   눌렸다(실측). 720px은 제목에 200px은 남는 지점이다. */
+@container (max-width:720px){
+  .rp-row{grid-template-columns:28px minmax(0,1fr) auto;gap:4px 10px;padding:13px 16px;}
+  .rp-row-head{display:none;}
+  .rp-venue,.rp-count,.rp-chev{display:none;}
+  .rp-rank{grid-column:1;grid-row:1;}
+  .rp-main{grid-column:2;grid-row:1;}
+  .rp-revisions{grid-column:3;grid-row:1;}
+  .rp-decision{grid-column:2 / 4;grid-row:2;text-align:left;}
+}
+
+/* 요약 + 후보 풀 나란히 */
+.rp-result-grid{
+  display:grid;grid-template-columns:minmax(0,1fr) 360px;align-items:start;gap:14px;
+}
+.rp-result-grid > .wr-card{min-width:0;}
+/* 후보 풀을 펼치면 줄이 한 칸으로 선다. 접힌 곁칸(360px)은 비율 막대와 숫자
+   두 줄이면 충분하지만, 펼친 목록은 후보 수십 편의 제목이라 그 폭에서는 제목이
+   먼저 잘린다 — 검색이 뽑은 것과 골라진 것을 대조하라고 있는 목록인데 대조할
+   글자가 안 보인다.
+   :has로 거는 이유: 펼침 여부는 CandidatePool 안의 state다. 바깥 그리드에
+   알리려면 state를 ResultReport까지 끌어올려야 하는데, 그건 두 화면이 공유할
+   이유가 없는 값이다. 펼쳤을 때만 생기는 .wr-candidate-list의 존재가 곧 그 답이다. */
+.rp-result-grid:has(.wr-candidate-list){grid-template-columns:minmax(0,1fr);}
+@media (max-width:960px){
+  .rp-result-grid{grid-template-columns:minmax(0,1fr);}
+}
+
+/* ---------- 분석 이력 (PapersPage) — 제목 · 날짜 · 삭제 표 ---------- */
+.papers-list{list-style:none;margin:0;padding:0;}
+.papers-row{
+  display:grid;grid-template-columns:minmax(0,1fr) 150px 74px 18px;gap:14px;
+  align-items:center;padding:15px 22px;
+}
+.papers-row-head{
+  padding-top:9px;padding-bottom:9px;background:var(--field);
+  border-bottom:1px solid var(--rule);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:0.12em;color:var(--label);
+}
+.papers-row-item{border-bottom:1px solid var(--rule-soft);}
+.papers-list li:last-child .papers-row-item{border-bottom:none;}
+/* 줄 전체가 아니라 제목만 버튼이다 — 같은 줄에 삭제 버튼이 있어서, 줄 전체를
+   눌리게 하면 삭제를 누르려다 상세로 들어가는 사고가 난다. */
+.papers-open-btn{
+  min-width:0;text-align:left;border:none;background:none;padding:0;
+  cursor:pointer;font-family:inherit;
+}
+.papers-title{
+  display:block;font-size:15.5px;font-weight:700;line-height:1.45;color:var(--ink);
+}
+.papers-open-btn:hover .papers-title{color:var(--teal-deep);}
+.papers-field{display:block;font-size:13px;color:var(--label);margin-top:3px;}
+.papers-date{font-family:var(--mono);font-size:13px;color:var(--muted);}
+.papers-delete-btn{
+  border:1px solid var(--card-line);background:#fff;border-radius:999px;
+  padding:5px 13px;font-size:13.5px;font-weight:600;color:#8f2f28;
+  cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s;
+}
+.papers-delete-btn:hover{background:#fdeceb;border-color:#f2c9c5;}
+/* 확인 줄은 그 줄을 통째로 대신한다 — 붉은 면으로 갈아 끼워 "지금 이 줄이
+   위험한 상태"라고 말한다. */
+.papers-confirm{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:15px 22px;background:#fdf6f5;border-bottom:1px solid var(--rule-soft);
+  font-size:14.5px;color:#8f2f28;
+}
+.papers-confirm-actions{display:flex;gap:8px;flex:none;}
+.papers-confirm-cancel{padding:7px 18px;font-size:14px;border-radius:999px;}
+.papers-delete-confirm-btn{
+  border:none;background:#c0392b;color:#fff;border-radius:999px;
+  padding:7px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+}
+.papers-delete-confirm-btn:disabled{opacity:.6;cursor:default;}
+
+/* 위 .rp-row와 같은 이유로 각 칸을 명시해서 놓는다 — 화살표를 숨기면 자동
+   배치가 한 칸씩 밀린다. 제목·삭제가 윗줄, 날짜가 아랫줄. */
+@media (max-width:640px){
+  .papers-row{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:13px 16px;}
+  .papers-row-head{display:none;}
+  .papers-row-item .rp-chev{display:none;}
+  .papers-open-btn{grid-column:1;grid-row:1;}
+  .papers-delete-btn{grid-column:2;grid-row:1;}
+  .papers-date{grid-column:1 / 3;grid-row:2;font-size:12.5px;}
+  .papers-confirm{padding:13px 16px;}
+}
+
+/* 더미 데이터 미리보기 — 실제 결과로 오해할 수 없게 계속 눈에 띄어야 한다. */
+.rp-preview-btn{
+  margin-top:14px;border:1.5px dashed var(--line);background:#fff;border-radius:999px;
+  padding:8px 18px;font-size:14px;font-weight:600;color:var(--muted);
+  cursor:pointer;font-family:inherit;
+}
+.rp-preview-btn:hover{border-color:var(--teal);color:var(--teal-deep);}
+.rp-preview-banner{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:11px 14px;border-radius:10px;font-size:14.5px;
+  background:#fdf0e3;color:#8a4d10;border:1px solid #f0d8bb;
+}
+.rp-preview-banner button{
+  border:1px solid #d8b98f;background:#fff;border-radius:999px;padding:5px 14px;
+  font-size:13.5px;font-weight:700;color:#8a4d10;cursor:pointer;font-family:inherit;
+}
+
+/* 제목 카드 우측 상단의 OpenReview 링크 — 예전엔 화면 맨 아래 별도 카드였는데,
+   "원문에서 확인하고 싶다"는 요구는 스크롤 안 해도 바로 눈에 띄는 게 낫다. */
+/* 제목과 OpenReview 링크는 한 줄이 기본이지만, 자리가 없으면 링크가 아래로
+   내려간다. 링크는 white-space:nowrap이라 안 줄어들고 제목 쪽은 얼마든지
+   짓눌려서, wrap이 없으면 제목이 좁은 열에 갇힌다(실측: 375px에서 제목 열 60px,
+   70자 제목이 11줄로 흘렀다).
+   기준을 뷰포트가 아니라 이 줄의 폭으로 잡는 이유: 좁은 건 화면이 아니라 이
+   줄이다 — 레일이 붙어 작업 영역이 줄어든 780px 부근에서도 같은 일이 생긴다.
+   min-width가 "이보다 좁아지면 차라리 줄을 바꿔라"의 기준이고, 100%로 상한을
+   두는 건 줄 자체가 280px보다 좁을 때 넘치지 않게 하기 위해서다. */
+.pd-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+/* basis가 0이어야 한다. auto로 두면 줄바꿈 판단에 제목의 자연 폭(max-content)이
+   쓰여서, 자리가 충분한 넓은 화면에서도 링크가 아래로 내려간다. basis 0이면
+   판단 기준이 아래 min-width가 되고, 남는 자리는 grow로 제목이 가져간다. */
+.pd-title-main{flex:1 1 0;min-width:min(100%,280px);}
+/* 알약(999px)이 아니라 각진 버튼이다 — 콘솔 화면의 버튼은 전부 8px 곡률로
+   맞춰, 둥근 알약은 랜딩의 CTA에만 남긴다. */
+.pd-openreview-link{
+  flex:none;font-size:13.5px;font-weight:700;color:var(--teal-deep);
+  border:1px solid var(--card-line);border-radius:8px;padding:6px 14px;text-decoration:none;
+  white-space:nowrap;background:#fff;
+}
+.pd-openreview-link:hover{border-color:var(--teal);background:var(--teal-soft);}
+
+/* ---------- 결과: 상세 화면 2단 레이아웃 (본문 diff + 심사 서사) ----------
+   .workspace-body가 max-width:720px로 좁게 잡아두는데, 본문 diff 패널을
+   옆에 붙이려면 그 폭 제한을 상세 화면에서만 풀어야 한다. 부모(WorkspaceShell)
+   구조는 안 건드리고, 흔한 "full-bleed" 트릭으로 뷰포트 전체 폭까지 벗어난
+   뒤 padding으로 다시 안쪽 콘텐츠 폭을 잡는다. */
+/* .workspace-body가 이미 콘솔 폭(1240px)을 잡아주므로 예전의 full-bleed
+   트릭(width:100vw로 부모 폭 제한을 탈출하던 것)은 더 필요 없다. */
+.pd-wide{display:flex;flex-direction:column;}
+@media (min-width:1000px){
+  /* 끝까지 스크롤해도 sticky 패널의 하단 간격이 부모 경계 안에 남아
+     패널이 위로 밀리거나 아래에 큰 공백이 생기지 않게 한다. */
+  .pd-wide{margin-bottom:-28px;}
+}
+.pd-back-row{display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap;}
+/* 본문 대조가 주인공이고 서사는 곁이다 — 오른쪽은 읽기 좋은 고정 폭으로
+   묶고, 남는 폭은 전부 왼쪽 diff에 준다(디자인 1fr / 440px). */
+.pd-columns{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:16px;align-items:start;margin-top:14px;}
+.pd-right{min-width:0;}
+.pd-columns > .pd-right{margin-top:0;}
+
+/* 논문 상세 머리 카드 — 학회·최종 결과·평균이 한 줄, 제목이 그 아래 */
+.pd-head-card{display:flex;flex-direction:column;}
+.pd-head-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.pd-head-venue{font-family:var(--mono);font-size:12.5px;letter-spacing:0.08em;color:var(--muted);}
+.pd-head-decision{display:inline-flex;align-items:center;gap:7px;}
+.pd-head-stats{font-family:var(--mono);font-size:12.5px;color:var(--label);}
+.pd-head-title{font-size:23px;font-weight:800;line-height:1.4;letter-spacing:-0.015em;margin-top:10px;}
+/* "왜 이 논문인가"는 결과가 아니라 근거다 — 본문과 같은 무게로 흐르지 않도록
+   왼쪽에 브랜드색 세로선을 세우고 라벨을 붙인다. */
+.pd-why{
+  display:flex;gap:10px;margin-top:14px;padding:12px 14px;border-radius:8px;
+  background:#f0f6f3;border-left:2px solid var(--teal-deep);
+}
+.pd-why-label{
+  font-family:var(--mono);font-size:11.5px;font-weight:700;letter-spacing:0.1em;
+  color:var(--teal-deep);flex:none;padding-top:2px;
+}
+.pd-why-text{font-size:14px;line-height:1.7;color:#2c322c;}
+
+/* 논문 상세 오른쪽은 읽기 도구에 가깝게: 얇은 경계, 작은 곡률, 제한된 강조색. */
+.pd-right.wr-stack{gap:14px;}
+.pd-right > .wr-card{padding:18px 20px;box-shadow:none;}
+.pd-right .wr-card-title{
+  font-size:16px;line-height:1.4;letter-spacing:-.01em;margin-bottom:10px;
+}
+
+
+@media (max-width:999px){
+  .pd-columns{grid-template-columns:minmax(0,1fr);}
+}
+
+/* ---------- 결과: 수정 전/후 대조 (상세 화면) ---------- */
+.rc-field{margin-top:16px;}
+.rc-field-label{font-size:14px;font-weight:700;color:var(--muted);margin-bottom:8px;}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.rc-col{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg);}
+.rc-col-head{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  font-size:13.5px;font-weight:700;margin-bottom:8px;
+}
+.rc-legend{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;}
+.rc-legend-before{background:#e9ebe8;color:#5c645f;}
+.rc-legend-after{background:#fdf1a9;color:#7a6410;}
+.rc-text{font-size:14.5px;line-height:1.75;word-break:break-word;}
+/* 형광펜 — 회색은 "곧 사라질 부분", 노랑은 "새로 들어온 부분". */
+.rc-mark-before{background:#e9ebe8;color:var(--muted);border-radius:3px;padding:1px 2px;}
+.rc-mark-after{background:#fdf1a9;color:var(--ink);border-radius:3px;padding:1px 2px;}
+
+@media (max-width:700px){
+  .rc-grid{grid-template-columns:1fr;}
+}
+
+/* ---------- 내 정보 ----------
+   왼쪽은 고치는 것(계정·비밀번호), 오른쪽은 확인하고 드물게 건드리는 것
+   (온보딩 답변·탈퇴). MyPage.jsx 주석 참고. */
+.mypage-grid{
+  display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:16px;align-items:start;
+}
+.mypage-aside{display:flex;flex-direction:column;gap:16px;min-width:0;}
+@media (max-width:960px){
+  .mypage-grid{grid-template-columns:minmax(0,1fr);}
+}
+
+/* 라벨을 왼쪽 고정 열로 세운다 — Field는 라벨을 입력칸 위에 놓지만, 여기서는
+   값이 세로로 정렬돼야 무엇이 비었는지가 훑어서 보인다. */
+.mypage-fields .auth-field{
+  flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:11px 0;border-bottom:1px solid var(--rule-soft);
+}
+/* 라벨 열은 132px — "OPENREVIEW ID"가 13px/자간 0.1em에서 118.3px라 128px에도
+   들어가긴 하지만, 남는 폭이 10px뿐이라 폰트 폴백이나 다른 OS의 렌더 차이로
+   바로 줄바꿈될 수 있어 여유를 조금 더 둔다. */
+.mypage-fields .auth-field-label{
+  flex:0 0 132px;
+  font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:0.1em;
+  color:var(--label);text-transform:uppercase;
+}
+.mypage-fields .auth-input{
+  flex:1;min-width:180px;width:auto;
+  border-width:1px;border-color:var(--card-line);border-radius:8px;
+  padding:9px 12px;font-size:16px;
+}
+/* 오류 문구는 라벨 열을 비우고 입력칸 아래에 붙어야 짝이 보인다. */
+.mypage-fields .auth-field-error{flex:1 0 100%;margin-left:148px;}
+
+.mypage-row{
+  display:flex;gap:16px;align-items:baseline;padding:11px 0;
+  border-bottom:1px solid var(--rule-soft);
+}
+.mypage-key{
+  flex:0 0 132px;
+  font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:0.1em;color:var(--label);
+}
+.mypage-val{flex:1;font-size:16px;min-width:0;word-break:break-word;}
+.mypage-note-inline{font-size:14px;color:var(--label);margin-left:8px;}
+.mypage-hint{font-size:14.5px;color:var(--label);line-height:1.65;padding:8px 0 0 148px;}
+.mypage-blank{color:var(--muted);font-size:15px;}
+.mypage-tags{display:flex;gap:6px;flex-wrap:wrap;}
+
+.mypage-subsection{margin-top:20px;padding-top:16px;border-top:1px solid var(--rule);}
+.mypage-subsection-title{font-size:16px;font-weight:800;margin-bottom:4px;}
+
+@media (max-width:640px){
+  .mypage-row,.mypage-fields .auth-field{flex-direction:column;align-items:stretch;gap:5px;}
+  .mypage-key,.mypage-fields .auth-field-label{flex:none;}
+  .mypage-hint,.mypage-fields .auth-field-error{padding-left:0;margin-left:0;}
+}
+
+/* 섹션 머리 — 제목·설명 왼쪽, '수정' 버튼 오른쪽 */
+.mypage-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+.mypage-edit-btn{
+  flex:none;border:1px solid var(--card-line);background:#fff;border-radius:8px;
+  padding:6px 14px;font-size:13.5px;font-weight:700;color:var(--teal-deep);
+  cursor:pointer;font-family:inherit;
+}
+.mypage-edit-btn:hover{border-color:var(--teal);background:var(--teal-soft);}
+
+/* 온보딩 답변 인라인 수정 */
+.mypage-edit-group{margin-top:20px;}
+.mypage-edit-group:first-child{margin-top:0;}
+.mypage-edit-label{font-size:14.5px;font-weight:700;color:var(--ink);margin-bottom:10px;}
+.mypage-edit-options{display:flex;flex-direction:column;gap:8px;}
+.mypage-custom-input{margin-top:10px;}
+
+.mypage-edit-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
+.mypage-edit-actions .pill{min-width:96px;justify-content:center;}
+.mypage-edit-actions .pill.ghost{border:1.5px solid var(--line);}
+
+/* 되돌릴 수 없는 동작 — 서비스의 teal 계열과 확실히 구분되어야 한다 */
+/* .wr-card와 특이도가 같으면 소스 순서로 밀린다(.wr-card가 이 파일 아래에
+   정의돼 있다) — 클래스를 하나 더 물려 확실히 이기게 둔다. */
+.wr-card.mypage-danger-card{border-color:#f2c9c5;}
+.mypage-danger-title{color:#8f2f28;}
+.mypage-danger-btn{
+  border:1.5px solid var(--red);color:var(--red);background:#fff;
+  border-radius:999px;padding:10px 20px;font-size:15px;font-weight:700;
+}
+.mypage-danger-btn:hover:not(:disabled){background:var(--red);color:#fff;}
+.mypage-danger-btn:disabled{opacity:0.45;cursor:not-allowed;}
+
+/* ---------- report cards (wr = workspace report) ----------
+   콘솔 카드. 랜딩의 카드(1.5px 테두리·16px 곡률·그림자)보다 얇고 각지다 —
+   한 장을 돋보이게 하는 게 아니라 열 장을 나란히 놓는 게 목적이라, 테두리가
+   두꺼우면 화면이 격자로 뒤덮인다. */
+.wr-stack{display:flex;flex-direction:column;gap:14px;}
+.wr-card{
+  background:#fff;border:1px solid var(--card-line);border-radius:12px;
+  padding:18px 22px;
+}
+.wr-card-title{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.wr-pill{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--teal-soft);color:var(--teal-deep);}
+.wr-muted{color:var(--muted);font-size:14px;}
+
+/* 카드 안 구획 — 제목 줄 오른쪽에 모노 메타를 붙여 "이 카드가 무엇으로
+   만들어졌는지"(개수·출처·정렬 기준)를 값처럼 밝힌다. */
+/* 제목과 모노 메타가 한 줄이 기본이되, 자리가 없으면 메타가 아래로 내려간다.
+   메타는 nowrap + flex:none이라 안 줄어들고 제목만 일방적으로 깎여서, 좁은
+   화면에서 "비슷한 논문 5편"이 29px 열에 갇혔다(375px 실측). 제목에 최소 폭을
+   주면 그 아래로는 줄을 바꾼다 — .pd-title-row와 같은 처방이다. */
+.wr-card-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:13px 22px;border-bottom:1px solid var(--rule);
+}
+.wr-card-head .wr-card-title{flex:1 1 0;min-width:min(100%,150px);}
+.wr-card-head .wr-card-title{margin-bottom:0;}
+.wr-card-head-meta{
+  font-family:var(--mono);font-size:12.5px;letter-spacing:0.08em;color:var(--label);
+  white-space:nowrap;flex:none;
+}
+/* 머리·바닥 줄을 카드 폭 끝까지 붙이려면 카드 자체의 padding을 걷어야 한다. */
+/* 표가 실제로 받은 폭을 재는 기준점. 아래 좁은 화면 전환이 뷰포트가 아니라
+   이 폭을 보고 판단한다(.rp-row의 @container 참고). */
+.wr-card-flush{padding:0;overflow:hidden;container-type:inline-size;}
+.wr-card-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 22px;background:var(--field);border-top:1px solid var(--rule);
+}
+.wr-card-pad{padding:16px 22px;}
+
+/* 상태 칩 — 표에서 색으로 먼저 읽히고 글자로 확인된다 */
+.ws-chip{
+  display:inline-block;font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:5px;
+  white-space:nowrap;background:#f2f3f1;color:var(--muted);
+}
+.ws-chip.accept{background:var(--teal-soft);color:var(--teal-deep);}
+.ws-chip.reject{background:#fdeceb;color:var(--red);}
+.ws-chip.withdrawn{background:#fdf0e3;color:#a35b12;}
+.ws-chip.neutral{background:#f2f3f1;color:var(--muted);}
+.wr-hint{color:var(--teal-deep);font-size:13px;font-weight:600;margin:2px 0 12px;}
+
+.wr-banner{margin-top:0;padding:11px 14px;border-radius:10px;font-size:14.5px;background:#fdf0e3;color:#8a4d10;border:1px solid #f0d8bb;}
+.wr-banner-danger{background:#fdeceb;color:#8f2f28;border-color:#f2c9c5;font-weight:600;}
+/* 색을 뺀 알림 상자 — 마이페이지 전용이다.
+   결과 화면의 배너는 색이 곧 뜻이다(주황=단서 있음, 붉은색=믿기 어려움). 반면
+   마이페이지는 한 화면에 성격이 다른 알림이 여럿 세로로 쌓여서, 상자마다 색이
+   다르면 페이지가 경고문 모음처럼 보인다 — 여기서는 색을 빼고 글로만 말한다.
+   경중은 <b>로 굵게 세운 문장이 진다. */
+.wr-banner-plain{background:var(--surface);color:var(--ink);border-color:var(--line);font-weight:400;}
+
+/* similar papers — 랜딩 시뮬레이터(SelectedPapers)가 쓰는 카드형 목록.
+   /app의 결과 화면은 표(.rp-row)로 옮겼지만, 랜딩은 한 편씩 펼쳐 보여주는
+   데모라 카드 형태가 그대로 맞다. */
+.wr-paper-rank{color:var(--muted);font-variant-numeric:tabular-nums;font-size:14px;min-width:20px;}
+.wr-paper-main{flex:1;min-width:0;}
+.wr-paper-top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;}
+.wr-paper-title{font-weight:700;font-size:15.5px;flex:1;}
+.wr-decision{font-size:13.5px;font-weight:700;color:var(--ink);}
+.wr-decision.accept{color:var(--teal-deep);}
+.wr-decision.reject{color:var(--red);}
+.wr-decision.withdrawn{color:#a35b12;}
+.wr-paper-meta{font-size:13.5px;color:var(--muted);margin-top:3px;}
+.wr-match-badge{display:inline-block;font-size:12px;padding:1px 7px;border-radius:9px;background:var(--teal-soft);color:var(--teal-deep);margin-left:6px;cursor:help;}
+.wr-split-badge{display:inline-block;font-size:12px;padding:1px 7px;border-radius:9px;background:#fdf0e3;color:#a35b12;margin-left:6px;}
+.wr-more-btn{
+  background:none;border:1px solid var(--line);border-radius:8px;color:var(--teal-deep);
+  font-size:14px;font-weight:700;padding:8px 16px;margin-top:12px;cursor:pointer;font-family:inherit;
+}
+
+/* ---------- first-time tour (Grammarly 스타일 코치마크) ---------- */
+.tour-card{
+  position:fixed;top:24px;left:24px;z-index:200;width:260px;
+  background:var(--teal-deep);color:#fff;border-radius:14px;padding:18px 20px;
+  box-shadow:0 20px 40px -14px rgba(11,110,87,0.5);
+}
+.tour-progress{height:4px;border-radius:999px;background:rgba(255,255,255,0.25);overflow:hidden;margin-bottom:14px;}
+.tour-progress-fill{height:100%;background:var(--teal-bright);transition:width .25s ease;}
+.tour-title{font-size:15.5px;font-weight:800;margin-bottom:6px;}
+.tour-body{font-size:14px;line-height:1.55;color:#d7f0e8;margin-bottom:16px;}
+.tour-actions{display:flex;align-items:center;justify-content:space-between;}
+.tour-skip{border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;color:#bfe6d8;}
+.tour-skip:hover{color:#fff;}
+.tour-next{border:none;border-radius:999px;background:#fff;color:var(--teal-deep);font-family:inherit;font-size:13.5px;font-weight:700;padding:8px 16px;cursor:pointer;}
+.tour-next:hover{background:#eafff6;}
+
+@media (max-width:520px){
+  .tour-card{left:12px;right:12px;top:12px;width:auto;}
+  .wr-ex{margin-left:0;}
+}
+
+/* ---------- PAPER STORY PANEL (유사 논문 클릭 시 여는 상세 패널) ---------- */
+.story-overlay{
+  position:fixed;inset:0;background:rgba(12,18,16,0.45);z-index:300;
+  display:flex;justify-content:flex-end;
+}
+.story-panel{
+  position:relative;background:var(--bg);width:min(640px,100%);height:100%;
+  overflow-y:auto;padding:56px 32px 60px;box-shadow:-20px 0 50px rgba(0,0,0,0.25);
+  flex:0 0 auto;
+}
+.story-close{
+  position:absolute;top:18px;right:20px;width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--line);background:#fff;cursor:pointer;font-size:16px;color:var(--muted);
+}
+.story-close:hover{color:var(--ink);border-color:var(--teal);}
+
+.story-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:80px 20px;text-align:center;}
+.story-spinner{width:26px;height:26px;border:3px solid var(--teal-soft);border-top-color:var(--teal-deep);border-radius:50%;animation:story-spin .8s linear infinite;}
+@keyframes story-spin{to{transform:rotate(360deg);}}
+
+.story-content{display:flex;flex-direction:column;gap:16px;}
+.story-head-meta{font-size:14px;color:var(--muted);font-weight:600;margin-bottom:6px;}
+.story-title{font-size:clamp(19px,2.4vw,23px);font-weight:800;letter-spacing:-0.01em;line-height:1.35;}
+
+.story-journey{border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;background:#fafaf8;}
+.story-journey-chain{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:14.5px;font-weight:600;}
+.story-journey-arrow{color:var(--teal-deep);font-weight:700;margin-right:8px;}
+.story-journey-stop.is-query{color:var(--teal-deep);}
+.story-journey-outcome{margin-top:10px;font-size:13.5px;font-weight:700;color:var(--teal-deep);}
+.story-journey-outcome.outcome-still_rejected{color:var(--red);}
+
+.story-caveats{display:flex;flex-direction:column;gap:6px;}
+
+.story-card-head,.bodydiff-head-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.story-card-head{padding-right:8px;}
+.story-card-head .wr-card-title,.bodydiff-head-row .bodydiff-head-title{margin-bottom:0;}
+.story-detail-toggle{
+  flex:0 0 22px;width:22px;height:22px;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--teal-deep);
+  font:inherit;font-size:16px;font-weight:500;line-height:1;cursor:pointer;
+}
+.story-detail-toggle:hover{border-color:var(--teal-deep);}
+.story-detail-toggle[aria-expanded="true"]{border-color:var(--teal-deep);}
+.bodydiff-guide-toggle{
+  flex:none;border:0;background:none;padding:2px 0;color:var(--teal-deep);
+  font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
+}
+.bodydiff-guide-toggle:hover{text-decoration:underline;text-underline-offset:3px;}
+.story-narrative-headline{font-size:15.5px;line-height:1.7;color:#2c302a;margin-top:8px;}
+.story-subhead{font-size:13.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);margin:16px 0 6px;}
+.story-list{margin:0 0 0 20px;padding:0;display:flex;flex-direction:column;gap:5px;}
+.story-list li{font-size:14.5px;color:#33372f;}
+.story-timeline{display:flex;flex-direction:column;gap:0;margin-top:2px;}
+.story-event{
+  border-left:1px solid var(--line);padding-left:16px;position:relative;padding-bottom:10px;
+  transition:border-color .15s ease;
+}
+.story-event.is-open{border-left-color:var(--teal-deep);}
+.story-event::before{content:'';position:absolute;left:-4px;top:7px;width:7px;height:7px;border-radius:50%;background:var(--line);}
+.story-event.tone-blue::before{background:#6a63e0;}
+.story-event.tone-author::before{background:var(--teal-deep);}
+.story-event.tone-green::before{background:var(--teal-bright);}
+.story-event.tone-amber::before{background:var(--amber);}
+.story-event.tone-strong::before{background:var(--ink);}
+.story-event-head{
+  width:100%;text-align:left;background:none;border:none;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:6px 0 6px 8px;margin:-5px -8px 0;
+  border-radius:8px;transition:background .15s ease;
+}
+.story-event.is-expandable .story-event-head:hover{background:#f5f6f4;}
+.story-event.is-open .story-event-head{background:var(--teal-soft);}
+.story-event-date{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;}
+.story-event-actor{font-size:13px;font-weight:700;color:var(--teal-deep);white-space:nowrap;}
+.story-event-headline{font-size:14.5px;color:#2c302a;flex:1;min-width:160px;}
+.story-event-toggle{
+  flex:0 0 22px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--teal-deep);
+  font-size:16px;font-weight:500;line-height:1;
+}
+.story-event.is-open .story-event-toggle{border-color:var(--teal-deep);}
+.story-event-body{margin-top:6px;padding:12px 14px;background:#fafaf8;border:1px solid var(--line);border-radius:8px;}
+.story-review-body{font-size:14.5px;line-height:1.7;color:#33372f;white-space:pre-wrap;}
+.story-review-body p{margin:0 0 8px;}
+.story-review-body p:last-child{margin-bottom:0;}
+.story-review-body b{display:block;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.03em;margin-bottom:2px;}
+
+.story-changes{display:flex;flex-direction:column;gap:12px;}
+.story-change-label{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.story-change-text,.story-change-value{font-size:14px;line-height:1.7;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;}
+.story-change-file{font-size:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.story-change-file a{color:var(--teal-deep);font-weight:600;text-decoration:underline;text-underline-offset:2px;}
+.diff-ins{background:#d6f0e6;color:#0b6e57;border-radius:3px;padding:0 2px;}
+.diff-del{background:#fbeceb;color:#8f2f28;border-radius:3px;padding:0 2px;text-decoration:line-through;}
+.diff-moved{background:#e8ecfb;color:#33409e;border-radius:3px;padding:0 2px;border-bottom:1px dashed #8891d6;}
+.diff-media{background:#fdf3c7;color:#8a6d0c;border-radius:3px;padding:0 2px;}
+
+@media (max-width:700px){
+  .story-panel{width:100%;padding:52px 20px 48px;}
+}
+
+/* ---------- 본문/그림/표 diff 패널 (PaperStoryPanel 왼쪽) ---------- */
+.bodydiff-panel{
+  position:relative;background:var(--bg);flex:1 1 auto;min-width:360px;max-width:860px;
+  height:100%;display:flex;flex-direction:column;padding:32px 28px 0;
+  box-shadow:-10px 0 30px rgba(0,0,0,0.1);border-right:1px solid var(--line);
+}
+/* 콜아웃·버전 탭(.bodydiff-head, .bodydiff-timeline)은 이 스크롤 밖에 있는
+   .bodydiff-panel의 직계 자식이라 늘 보인다 — 실제로 길어지는 건 본문
+   텍스트뿐이라, 스크롤도 .bodydiff-body를 감싼 이 영역 하나로 좁혔다. */
+.bodydiff-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;padding:0 0 24px;}
+/* 로딩/에러/"리비전 없음" 같은 짧은 상태 메시지도 같은 flex column의 직계
+   자식이라 위와 같은 이유로 찌그러질 수 있다 — 마찬가지로 막아둔다. */
+.bodydiff-panel > .story-loading,
+.bodydiff-panel > p{flex-shrink:0;}
+/* flex-shrink:0 필수 — .bodydiff-panel이 고정 높이 flex column이라, 이걸
+   안 막으면 내용이 넘칠 때 브라우저가 .bodydiff-scroll 대신 이 항목들을
+   찌그러뜨린다(버전 탭이 안 보이거나 본문 박스와 겹치는 버그가 났었다). */
+.bodydiff-head{margin-bottom:18px;flex-shrink:0;}
+.bodydiff-head-row{margin-bottom:6px;}
+.bodydiff-head-title{
+  display:flex;align-items:center;gap:8px;margin-bottom:6px;
+  font-size:17px;font-weight:800;line-height:1.4;letter-spacing:-.01em;
+}
+.bodydiff-callout{
+  background:var(--teal-soft);color:#0b5445;border:1px solid #cdeae0;border-radius:10px;
+  padding:11px 14px;font-size:13.5px;line-height:1.65;
+}
+.bodydiff-callout b{font-weight:800;}
+.bodydiff-callout p{margin:0 0 6px;}
+.bodydiff-callout p:last-child{margin-bottom:0;}
+.bodydiff-warn{color:var(--amber);font-size:14.5px;}
+
+.bodydiff-timeline{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 16px;flex-shrink:0;}
+.bodydiff-version-btn{
+  flex:0 0 auto;text-align:left;padding:9px 14px;border-radius:10px;cursor:pointer;
+  border:1.5px solid var(--line);background:#fff;font-family:inherit;transition:border-color .15s,background .15s;
+}
+.bodydiff-version-btn:hover{border-color:var(--teal);}
+.bodydiff-version-btn.is-active{border-color:var(--teal-deep);background:var(--teal-soft);}
+/* 탭에서 시각을 뗀 만큼(BodyDiffPanel의 dateOnly) 남은 폭을 크기로 돌린다.
+   메타 12px는 흰 바탕 대비 6.1:1로 대비는 기준을 넘지만, 그래도 안 읽히던 건
+   크기 탓이었다 — 이 줄은 리비전 종류라 버전명만큼 실질적인 정보다. */
+.bodydiff-version-no{font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;}
+.bodydiff-version-meta{font-size:13.5px;color:var(--muted);white-space:nowrap;margin-top:3px;}
+
+/* 헤더(버전·PDF링크·범례)와 요약 칩은 늘 보이고, 실제 diff 텍스트만 그
+   안의 .bodydiff-scroll에서 스크롤한다 — 바깥 .bodydiff-scroll(콜아웃·버전
+   탭용)과 같은 이유로 flex:1 1 auto + min-height:0이 필요하다. */
+.bodydiff-body{
+  border:1.5px solid var(--line);border-radius:var(--radius);padding:18px 20px;background:#fff;
+  flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+}
+.bodydiff-body-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);flex-shrink:0;
+}
+.bodydiff-body-head-left{display:flex;flex-direction:column;gap:6px;flex:1 1 auto;min-width:0;}
+.bodydiff-body-head-title{font-size:14.5px;font-weight:800;color:var(--ink);}
+.bodydiff-legend-item{font-size:12.5px;}
+
+.bodydiff-pdf-links{display:flex;gap:14px;flex-wrap:wrap;}
+.bodydiff-pdf-link{font-size:13.5px;color:var(--teal-deep);font-weight:600;text-decoration:none;}
+.bodydiff-pdf-link:hover{text-decoration:underline;text-underline-offset:2px;}
+
+.bodydiff-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;flex-shrink:0;}
+.bodydiff-summary-empty{margin-bottom:20px;flex-shrink:0;}
+.bodydiff-body-head .bodydiff-summary{
+  flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-end;align-self:flex-end;margin-bottom:0;
+}
+.bodydiff-body-tools{
+  flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:7px;
+}
+.bodydiff-fullview-open{
+  flex:none;border:1px solid var(--line);border-radius:6px;background:#fff;padding:4px 7px;
+  color:var(--teal-deep);font:inherit;font-size:12.5px;font-weight:700;line-height:1.2;cursor:pointer;
+}
+.bodydiff-fullview-open:hover{border-color:var(--teal-deep);background:var(--teal-soft);}
+
+.bodydiff-fullview-backdrop{
+  position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:rgba(15,22,19,.52);backdrop-filter:blur(2px);
+}
+.bodydiff-fullview{
+  width:min(92vw,1500px);height:90vh;display:flex;flex-direction:column;min-height:0;
+  padding:22px 24px 16px;background:#fff;border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 24px 70px rgba(0,0,0,.22);
+}
+.bodydiff-fullview-head{
+  flex:0 0 auto;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
+  padding-bottom:14px;border-bottom:1px solid var(--line);
+}
+.bodydiff-fullview-head-actions{display:flex;align-items:flex-start;justify-content:flex-end;gap:14px;}
+.bodydiff-fullview-head .bodydiff-summary{justify-content:flex-end;margin-bottom:0;}
+.bodydiff-fullview-close{
+  flex:0 0 32px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+  font:inherit;font-size:23px;line-height:1;cursor:pointer;
+}
+.bodydiff-fullview-close:hover{border-color:var(--teal-deep);color:var(--teal-deep);}
+.bodydiff-fullview-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;padding:24px 20px 32px;}
+.bodydiff-fullview-scroll .bodydiff-text{max-width:1100px;margin:0 auto;font-size:16px;line-height:1.9;}
+.bodydiff-fullview-nav{margin:12px 0 0;box-shadow:none;}
+
+@media (max-width:700px){
+  .bodydiff-body-head .bodydiff-summary{flex-wrap:wrap;}
+  .bodydiff-fullview-backdrop{padding:0;}
+  .bodydiff-fullview{width:100vw;height:100dvh;border:0;border-radius:0;padding:16px;}
+  .bodydiff-fullview-head{gap:10px;}
+  .bodydiff-fullview-head-actions .bodydiff-summary{display:none;}
+  .bodydiff-fullview-scroll{padding:20px 4px 28px;}
+}
+
+.bodydiff-change-nav{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;
+  background:#fff;padding:8px 12px;margin:0 0 16px;
+  border:1.5px solid var(--line);border-radius:10px;box-shadow:0 -2px 8px rgba(0,0,0,0.08);
+}
+.bodydiff-change-nav-btn{
+  border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 12px;
+  font-size:13px;font-weight:700;color:var(--teal-deep);cursor:pointer;font-family:inherit;
+}
+.bodydiff-change-nav-btn:hover{border-color:var(--teal);background:var(--teal-soft);}
+.bodydiff-change-nav-pos{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;}
+
+.bodydiff-text{font-size:14.5px;line-height:1.85;white-space:pre-wrap;color:#2c302a;}
+.bodydiff-change-focus{outline:2px solid var(--teal-deep);outline-offset:2px;border-radius:3px;}
+
+.bodydiff-media-block{margin:18px 0;white-space:normal;background:#fafaf8;border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+.bodydiff-media-title{font-weight:700;font-size:13.5px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.bodydiff-moved-badge{font-weight:600;font-size:12.5px;}
+.bodydiff-media-pair{display:flex;gap:12px;flex-wrap:wrap;}
+.bodydiff-media-slot{flex:1 1 220px;}
+.bodydiff-media-slot-label{font-size:12.5px;color:var(--muted);margin-bottom:4px;}
+.bodydiff-media-img{max-width:100%;border:1px solid var(--line);border-radius:6px;background:#fff;}
+
+@media (max-width:999px){
+  .bodydiff-panel{display:none;}
+  /* inline은 모달이 아니라 페이지의 메인 콘텐츠라, 좁은 화면에서 숨기면
+     기능 자체가 사라진다 — 위 규칙을 취소하고 대신 세로로 쌓는다(.pd-columns). */
+  .bodydiff-panel--inline{display:flex;}
+}
+
+/* PaperDetail처럼 페이지 안에 카드로 놓일 때 — 오버레이 전용 그림자·오른쪽
+   테두리만 카드 스타일로 바꾼다. 높이·내부 스크롤은 모달과 동일한 메커니즘을
+   그대로 쓴다(.bodydiff-scroll이 유일한 스크롤 영역, .bodydiff-change-nav는
+   그 아래 고정) — 다른 점은 fixed 오버레이 대신 sticky로 페이지 스크롤을
+   따라간다는 것뿐이다. 기본 .bodydiff-panel{position:relative}보다 이 규칙이
+   파일에서 나중에 나와야 이긴다(특이도가 같아서 소스 순서가 결정한다).
+   오른쪽(요약/리뷰/타임라인)은 아직 길이 제한 없이 그대로 둔다 — 카드 순서·
+   길이 제한은 별도로 논의할 것. */
+.pd-columns > .bodydiff-panel--inline{
+  min-width:0;max-width:none;flex:1 1 480px;
+  box-shadow:none;border:1.5px solid var(--line);border-radius:var(--radius);
+  position:sticky;top:16px;align-self:flex-start;height:calc(100vh - 32px);
+}
+@media (max-width:999px){
+  /* 좁은 화면에서는 좌우가 세로로 쌓이므로(.pd-columns) sticky·높이 제한을
+     풀어서 페이지가 자연스럽게 위→아래로 흐르게 한다. */
+  .pd-columns > .bodydiff-panel--inline{position:static;align-self:stretch;height:auto;}
+}
+
+/* ---------- 선정 논문 + 리뷰 (개편: 화면의 본론) ---------- */
+.wr-selected-intro{padding-bottom:14px;}
+.wr-selected-card{border-color:var(--teal-soft);}
+.wr-selected-head{display:flex;gap:10px;}
+
+/* 왜 골랐는지 — 유사도 점수를 못 주는 대신 사람이 읽을 근거를 준다 */
+.wr-selection-reason{
+  margin-top:10px;padding:10px 12px;border-radius:10px;
+  background:var(--teal-soft);color:var(--teal-deep);font-size:14px;line-height:1.6;
+}
+.wr-selection-reason b{margin-right:6px;}
+
+.wr-meta-review{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--bg);}
+.wr-meta-review p{margin:4px 0 0;font-size:14px;line-height:1.65;color:var(--muted);}
+
+.wr-reviews{margin-top:14px;}
+.wr-review-part-label{font-size:12.5px;font-weight:800;color:var(--muted);letter-spacing:.02em;}
+.wr-review-part-caption{margin-top:3px;font-size:12.5px;color:var(--muted);}
+
+.wr-review{border-top:1px solid var(--line);}
+.wr-review-head{
+  display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;
+  background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;
+}
+.wr-review-no{font-size:13.5px;font-weight:700;}
+.wr-review-score{font-size:13.5px;color:var(--muted);}
+.wr-review-toggle{margin-left:auto;color:var(--teal-deep);font-size:13px;font-weight:600;white-space:nowrap;}
+.wr-review-body{padding:0 0 12px;}
+.wr-review-part{margin-top:10px;}
+.wr-review-part p{margin:4px 0 0;font-size:14px;line-height:1.7;white-space:pre-wrap;}
+
+.wr-review-translate{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.wr-translate-btn{
+  padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;
+  color:var(--teal-deep);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .15s ease,border-color .15s ease;
+}
+.wr-translate-btn:hover:not(:disabled){background:var(--teal-soft);border-color:var(--teal-deep);}
+.wr-translate-btn.is-on{background:var(--teal-soft);border-color:var(--teal-deep);}
+.wr-translate-btn:disabled{opacity:.6;cursor:default;}
+.wr-translate-note{font-size:12.5px;color:var(--muted);}
+.wr-translate-error{font-size:12.5px;color:#b4341f;}
+
+.wr-review.is-detail .wr-review-head{
+  padding:10px 8px 10px 0;border-radius:8px;transition:background .15s ease;
+}
+.wr-review.is-detail .wr-review-head:hover{background:#f7f8f6;}
+.wr-review.is-detail.is-open .wr-review-head{background:var(--teal-soft);}
+.wr-review.is-detail .wr-review-toggle{
+  flex:0 0 22px;width:22px;height:22px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--teal-deep);
+  font-size:16px;font-weight:500;line-height:1;
+}
+.wr-review.is-detail.is-open .wr-review-toggle{border-color:var(--teal-deep);}
+.wr-review.is-detail .wr-review-part-label{font-size:14.5px;color:var(--teal-deep);letter-spacing:.01em;}
+.wr-review.is-detail .wr-review-part p{margin-top:5px;font-size:14.5px;line-height:1.75;}
+.pd-right .wr-reviews{margin-top:10px;}
+
+.wr-section-head{
+  display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;
+  background:none;border:none;cursor:pointer;font-family:inherit;text-align:left;
+}
+.wr-section-toggle{
+  margin-left:auto;color:var(--teal-deep);font-size:13px;font-weight:700;white-space:nowrap;
+}
+
+.wr-paper-links{
+  display:flex;align-items:center;gap:14px;margin-top:14px;
+  padding-top:12px;border-top:1px solid var(--line);
+}
+.wr-paper-links a{font-size:13.5px;color:var(--teal-deep);font-weight:600;text-decoration:none;}
+.wr-paper-links a:hover{text-decoration:underline;}
+
+/* ---------- 검색 후보 (근거 추적용, 기본 접힘) ---------- */
+/* 점선 = "결과가 아니라 근거". 실선 카드와 섞이면 고르지 않은 논문까지
+   결과로 읽힌다. */
+.wr-candidate-card{border-style:dashed;border-color:#cfd6d0;padding:16px 20px;}
+.wr-candidate-lede{font-size:13.5px;line-height:1.65;color:var(--label);margin-top:6px;}
+/* 검색 순위 눈금 — 왼쪽이 1위. 눈금 하나가 후보 한 편이라 개수는 후보 수를
+   따라간다. 눈금 폭에 상한을 두는 건 후보가 몇 편뿐일 때를 위한 것이다:
+   flex:1만 주면 5편짜리 후보 풀이 손가락만 한 막대 다섯 개가 되어 순위 축이
+   아니라 막대그래프처럼 읽힌다. */
+.wr-rankstrip{display:flex;align-items:flex-end;gap:2px;margin-top:12px;height:22px;}
+.wr-rank-tick{flex:1 1 0;min-width:2px;max-width:12px;height:9px;border-radius:2px;background:#dfe4e0;}
+/* 검색에 걸린 이유(의미/용어/양쪽)를 진하기로 — 색을 하나 더 쓰면 '선택됨'의
+   초록과 겨루게 되고, 이 줄에서 제일 먼저 읽혀야 하는 건 무엇이 골라졌나다. */
+.wr-rank-tick.m-both{background:#8d968f;}
+.wr-rank-tick.m-semantic{background:#b3bcb5;}
+.wr-rank-tick.m-lexical{background:#d5dbd6;}
+.wr-rank-tick.is-picked{height:22px;background:var(--teal-deep);}
+
+.wr-rankstrip-legend{
+  display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;
+  font-size:11.5px;color:var(--label);
+}
+.wr-rankstrip-legend .lg{display:inline-flex;align-items:center;gap:5px;}
+.wr-rankstrip-legend .lg::before{
+  content:'';width:8px;height:8px;border-radius:2px;background:#dfe4e0;
+}
+.wr-rankstrip-legend .lg.is-picked::before{background:var(--teal-deep);height:12px;}
+.wr-rankstrip-legend .lg.m-both::before{background:#8d968f;}
+.wr-rankstrip-legend .lg.m-semantic::before{background:#b3bcb5;}
+.wr-rankstrip-legend .lg.m-lexical::before{background:#d5dbd6;}
+
+.wr-candidate-ratio{
+  display:flex;justify-content:space-between;gap:10px;
+  font-family:var(--mono);font-size:11.5px;letter-spacing:0.08em;color:var(--label);margin-top:7px;
+}
+.wr-rankstrip-axis{color:#a7ada7;}
+/* 펼친 상태에서는 목록의 머리글 노릇을 하므로 목록과 붙여 세운다. */
+.wr-candidate-ratio-open{margin-top:10px;padding-bottom:2px;}
+/* 화면 높이에 맡긴다 — 420px 고정은 큰 모니터에서도 한 번에 8줄쯤만 보여줘,
+   50편을 훑는 데 스크롤을 계속 굴리게 했다. vh로 두되 상한을 걸어 아주 긴
+   화면에서 목록 하나가 페이지를 통째로 차지하지는 않게 한다. */
+/* 후보가 어디 실렸나 (VenueBreakdown) — 순위 눈금과 같은 50편을 다른 각도로 센다.
+   카드 폭을 그대로 쓴다. 이름과 숫자가 멀어져도 줄이 흩어지지 않는 건 막대가
+   줄 아래를 가로질러 양쪽을 묶어 주기 때문이다(바로 위 순위 눈금과 같은 폭이라
+   두 그림이 한 벌로 읽히는 효과도 있다). */
+.vb{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);}
+.vb-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.vb-title{font-size:13.5px;font-weight:700;color:var(--ink);}
+.vb-mode{font-family:var(--mono);font-size:11px;letter-spacing:0.08em;color:#a7ada7;}
+.vb-rows{margin-top:8px;}
+/* 막대는 줄 전체 폭을 쓰는 둘째 칸에 깔린다 — 이름 옆에 좁게 두면 32편과 18편의
+   차이가 몇 px 차이로 줄어 눈에 안 걸린다. */
+.vb-row{
+  display:grid;grid-template-columns:minmax(0,1fr) 28px 52px;gap:2px 10px;
+  align-items:baseline;padding:7px 0;border-top:1px solid var(--rule-soft);
+}
+.vb-rows .vb-row:first-child{border-top:none;}
+.vb-name{font-size:13.5px;color:var(--ink);min-width:0;}
+.vb-years{display:block;font-family:var(--mono);font-size:11px;color:var(--label);margin-top:2px;}
+.vb-count{
+  font-family:var(--mono);font-size:13.5px;font-weight:700;
+  font-variant-numeric:tabular-nums;text-align:right;
+}
+.vb-picked{font-size:12px;color:var(--teal-deep);text-align:right;white-space:nowrap;}
+.vb-picked.is-none{color:#b6bdb7;}
+.vb-bar{grid-column:1 / -1;display:block;height:4px;border-radius:2px;background:#e9ece9;margin-top:5px;}
+.vb-bar > i{display:block;height:100%;border-radius:2px;background:var(--teal-deep);}
+.vb-note{font-size:11.5px;line-height:1.6;color:var(--label);margin-top:10px;}
+
+.wr-candidate-list{margin-top:10px;max-height:min(62vh,620px);overflow-y:auto;}
+.wr-candidate{
+  display:flex;align-items:baseline;gap:12px;padding:9px 2px;
+  border-top:1px solid var(--rule-soft);font-size:13.5px;
+}
+.wr-candidate.picked{background:var(--teal-soft);border-radius:6px;padding-left:8px;}
+.wr-candidate-rank{font-family:var(--mono);font-size:12.5px;color:#a7ada7;flex:none;}
+.wr-candidate-title{flex:1;min-width:0;}
+.wr-candidate-meta{color:var(--muted);white-space:nowrap;}
+.wr-picked-badge{
+  display:inline-block;font-size:12px;font-weight:700;padding:1px 7px;border-radius:9px;
+  background:var(--teal-deep);color:#fff;margin-left:6px;
+}
+
+/* ---------- 업로드: 분석 진행 단계 ---------- */
+/* 이 카드만 지금 살아서 돈다 — 머리를 딥그린으로 채워 나머지 정지한 화면과
+   구분한다. 머리·바닥 줄은 카드 폭 끝까지 붙으므로 .wr-card-flush와 함께 쓴다. */
+.analysis-card{overflow:hidden;}
+.analysis-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:13px 20px;background:var(--teal-deep);color:#fff;
+}
+.analysis-head-title{display:flex;align-items:center;gap:9px;font-size:15.5px;font-weight:700;}
+.analysis-head-spinner{
+  flex:none;width:13px;height:13px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;
+  animation:story-spin .8s linear infinite;
+}
+.analysis-head-clock{font-family:var(--mono);font-size:12.5px;color:#bfe6d8;}
+.analysis-lede{font-size:15px;line-height:1.7;color:#3a413a;}
+
+/* 채워지지 않는 막대 — 비율이 아니라 "멈추지 않았다"만 말한다. */
+.analysis-sweep{
+  height:4px;border-radius:2px;background:#eef1ee;margin-top:16px;
+  overflow:hidden;position:relative;
+}
+.analysis-sweep > span{
+  position:absolute;inset:0;width:30%;
+  background:linear-gradient(90deg,rgba(11,110,87,0),var(--teal-bright),rgba(11,110,87,0));
+  animation:analysis-sweep 2.2s linear infinite;
+}
+@keyframes analysis-sweep{
+  0%{transform:translateX(-100%);}
+  100%{transform:translateX(300%);}
+}
+
+/* 무엇을 상대로 도는가 — 분석이 길어질수록 "내가 뭘 올렸더라"가 흐려진다. */
+.analysis-target{margin-top:18px;border-top:1px solid var(--rule);padding-top:14px;}
+.analysis-target-title{font-size:15px;font-weight:700;line-height:1.5;margin-top:6px;}
+.analysis-target-meta{font-family:var(--mono);font-size:12.5px;color:var(--label);margin-top:6px;}
+
+.analysis-foot{
+  padding:12px 20px;background:var(--field);border-top:1px solid var(--rule);
+  font-size:13.5px;color:var(--label);line-height:1.6;
+}
+
+/* 서버가 알려준 단계를 위에서 아래로 쌓는다. 끝난 단계는 체크, 지금 것은 스피너.
+   막대(progress bar)를 쓰지 않는 이유는 AnalysisProgress.jsx 주석 참고. */
+.analysis-steps{
+  list-style:none;margin:16px 0 0;padding:0;
+  display:flex;flex-direction:column;gap:2px;
+}
+.analysis-step{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:9px 12px;border-radius:10px;font-size:14.5px;line-height:1.5;
+}
+/* 지금 도는 단계만 배경으로 띄운다 — 전부 칠하면 어디를 봐야 할지 사라진다. */
+.analysis-step.is-current{background:var(--teal-soft);}
+.analysis-step.is-done{color:var(--muted);}
+
+.analysis-step-mark{
+  flex-shrink:0;width:16px;height:16px;margin-top:2px;
+  display:flex;align-items:center;justify-content:center;color:var(--teal-deep);
+}
+.analysis-step-spinner{
+  width:13px;height:13px;border:2px solid rgba(15,138,107,0.25);
+  border-top-color:var(--teal-deep);border-radius:50%;
+  animation:story-spin .8s linear infinite;
+}
+.analysis-step-body{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.analysis-step.is-current .analysis-step-label{font-weight:700;}
+/* detail은 논문 제목이 오기도 한다 — 길면 줄바꿈 대신 잘라서 줄 수를 지킨다. */
+.analysis-step-detail{
+  font-size:13.5px;color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* 움직임을 줄여 달라고 한 사용자에게는 회전 대신 점만 남긴다. 스피너가 유일한
+   "살아 있다"는 신호라 아예 지우지는 않는다. 훑고 지나가는 막대는 정보가
+   아니라 분위기라 아예 멈춰 세운다. */
+@media (prefers-reduced-motion:reduce){
+  .analysis-step-spinner,.analysis-head-spinner{animation:none;border-color:var(--teal-deep);}
+  .analysis-head-spinner{border-color:rgba(255,255,255,0.6);}
+  .analysis-sweep > span{animation:none;width:100%;opacity:.5;}
+}
+
+@media (max-width:700px){
+  /* 좁은 화면에서는 한 줄에 순위·제목·메타가 다 못 들어간다. flex-wrap만으로는
+     안 되는데, 제목이 min-width:0이라 줄을 바꾸는 대신 끝까지 짓눌리기 때문이다
+     (실측: 375px에서 제목 칸 126px, 한 줄이 6줄로 접힘). 메타의 basis를 100%로
+     줘서 항상 아랫줄로 내리면 첫 줄이 통째로 제목 몫이 된다. */
+  .wr-candidate{flex-wrap:wrap;row-gap:3px;}
+  .wr-candidate-meta{white-space:normal;flex-basis:100%;padding-left:32px;}
+}

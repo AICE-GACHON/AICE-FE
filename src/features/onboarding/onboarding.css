@@ -1,0 +1,128 @@
+/* ---------- ONBOARDING (Get Started → 3단계 → 미리보기) ---------- */
+
+.onboard-shell{min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+
+.onboard-topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 32px;border-bottom:1px solid var(--line);
+}
+.onboard-brand{
+  display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;letter-spacing:-0.01em;
+  border:none;background:none;cursor:pointer;font-family:inherit;color:var(--ink);
+}
+.onboard-exit{border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--muted);}
+.onboard-exit:hover{color:var(--teal-deep);}
+
+.onboard-main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;}
+@media (max-width:900px){ .onboard-main{grid-template-columns:1fr;} }
+
+.onboard-panel-form{
+  padding:56px clamp(28px,6vw,88px);display:flex;flex-direction:column;
+  max-width:640px;width:100%;margin:0 auto;
+}
+
+.onboard-progress{display:flex;gap:8px;margin-bottom:22px;}
+.onboard-dot{width:36px;height:6px;border-radius:999px;background:var(--line);}
+.onboard-dot.done{background:var(--teal-deep);}
+.onboard-dot.active{background:var(--teal-bright);}
+
+/* "STEP 1 / 3 · 사용자 유형" — 앞은 라틴, 뒤는 한글이라 한 줄 안에서 폰트가
+   갈린다(--mono 주석). 폰트는 스택이 처리하고, 여기서는 뒤쪽 한글이 읽히도록
+   크기만 반 단계 올린다. */
+.onboard-step-label{
+  font-family:var(--mono);font-size:12.5px;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;margin-bottom:28px;
+}
+
+.onboard-q h2{font-size:clamp(22px,2.6vw,28px);font-weight:800;letter-spacing:-0.015em;line-height:1.32;}
+.onboard-desc{margin-top:10px;color:var(--muted);font-size:15px;}
+.onboard-subq{font-size:15.5px;font-weight:700;margin-bottom:14px;}
+.onboard-optional{font-weight:500;color:var(--muted);font-size:13px;}
+
+.onboard-options{display:flex;flex-direction:column;gap:10px;}
+
+.onboard-option{
+  display:flex;align-items:flex-start;gap:12px;text-align:left;
+  border:1.5px solid var(--line);border-radius:12px;padding:13px 16px;
+  background:#fff;cursor:pointer;font-family:inherit;
+  transition:border-color .15s,background .15s;
+}
+.onboard-option:hover:not(:disabled){border-color:var(--teal);}
+.onboard-option.selected{border-color:var(--teal-deep);background:var(--teal-soft);}
+.onboard-option:disabled{opacity:0.4;cursor:not-allowed;}
+
+.onboard-indicator{
+  flex:0 0 auto;width:18px;height:18px;margin-top:1px;border:1.5px solid var(--line);
+  background:#fff;transition:border-color .15s,background .15s;
+}
+.onboard-indicator.radio{border-radius:50%;}
+.onboard-indicator.checkbox{border-radius:5px;}
+.onboard-indicator.on{border-color:var(--teal-deep);background:var(--teal-deep);box-shadow:inset 0 0 0 3px #fff;}
+
+.onboard-option-text{display:flex;flex-direction:column;gap:3px;}
+.onboard-option-label{font-size:15px;font-weight:700;color:var(--ink);}
+.onboard-option-desc{font-size:13px;color:var(--muted);line-height:1.5;}
+
+.onboard-input{
+  margin-top:12px;width:100%;border:1.5px solid var(--line);border-radius:10px;
+  padding:12px 14px;font-size:14.5px;font-family:inherit;color:var(--ink);
+}
+.onboard-input:focus-visible{outline:2px solid var(--teal);outline-offset:1px;}
+
+.onboard-nav{display:flex;align-items:center;justify-content:space-between;margin-top:40px;padding-top:24px;border-top:1px solid var(--line);}
+.onboard-nav-right{display:flex;align-items:center;gap:18px;}
+.onboard-back,.onboard-skip{border:none;background:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;color:var(--muted);}
+.onboard-back:hover:not(:disabled),.onboard-skip:hover:not(:disabled){color:var(--teal-deep);}
+.onboard-back:disabled{opacity:0.35;cursor:not-allowed;}
+.onboard-nav .pill.btn-lg:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+
+/* ---------- right illustration panel ---------- */
+.onboard-panel-art{
+  background:linear-gradient(160deg,var(--teal-soft) 0%,var(--card-lime-1) 100%);
+  display:flex;align-items:center;justify-content:center;padding:48px;position:relative;overflow:hidden;
+}
+.onboard-panel-art::before,
+.onboard-panel-art::after{
+  content:'';position:absolute;border-radius:50%;opacity:0.5;
+}
+.onboard-panel-art::before{width:260px;height:260px;background:var(--card-violet-2);filter:blur(60px);top:-60px;right:-60px;}
+.onboard-panel-art::after{width:220px;height:220px;background:var(--teal-bright);filter:blur(70px);bottom:-40px;left:-40px;opacity:0.3;}
+@media (max-width:900px){ .onboard-panel-art{display:none;} }
+
+/* 랜딩의 .float-panel을 쓰던 카드 — 랜딩 쇼케이스 개편으로 그 규칙이 사라져서
+   여기로 옮겨왔다. */
+.onboard-art-card.float-panel{
+  background:#fff;border-radius:12px;box-shadow:0 20px 40px -12px rgba(0,0,0,0.35);
+}
+.onboard-art-card{position:relative;max-width:360px;width:100%;padding:22px 24px;}
+/* .tag·.headline·.quote는 개편 전 랜딩 .float-panel 스타일에 얹혀있던 것들인데,
+   그 규칙이 사라지면서 이것도 같이 스타일이 하나도 안 남아있었다(그냥 기본 검정
+   글씨로 나오고 있었음) — 여기서 새로 잡는다. 이 카드에서는 "왜 물어보나요?"가
+   제목보다 더 큰 1차 헤드라인 역할이라, 제목(.headline)은 그보다 작게 둔다. */
+.onboard-art-card .tag{
+  font-size:21px;font-weight:800;color:var(--teal-deep);margin-bottom:18px;
+}
+.onboard-art-card .headline{font-size:16px;font-weight:800;line-height:1.4;letter-spacing:-0.01em;color:var(--ink);}
+.onboard-art-card .quote{margin-top:10px;font-size:14px;line-height:1.6;color:var(--muted);}
+
+/* ---------- preview / handoff screen ---------- */
+.onboard-preview-body{flex:1;display:flex;align-items:center;justify-content:center;padding:48px 24px;}
+.onboard-preview-card{
+  width:100%;max-width:560px;background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);
+  padding:44px clamp(24px,4vw,48px);box-shadow:0 30px 60px -30px rgba(12,18,16,0.18);
+}
+.onboard-preview-card h2{font-size:clamp(22px,2.6vw,26px);font-weight:800;letter-spacing:-0.01em;margin-top:8px;line-height:1.35;}
+.onboard-summary-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:26px;padding:20px;background:#fafaf8;border-radius:12px;}
+.onboard-summary-grid > div{display:flex;flex-direction:column;gap:4px;}
+/* 이 네 개는 라벨이 전부 한글이다(역할·전공 분야·검색 우선순위·목표 학회).
+   10.5px + 자간은 "작은 대문자 라벨" 관례를 노린 값인데, uppercase가 한글에는
+   아무 효과가 없으니 한글에서는 작기만 하다. 값이 14px인데 라벨이 10.5px면
+   대비가 지나쳐 라벨을 못 읽고 값만 훑게 된다 — 12.5px로 올리고 자간은 줄인다
+   (한글은 자간을 벌리면 글자가 낱개로 흩어져 단어로 안 읽힌다). */
+.onboard-summary-key{font-family:var(--mono);font-size:12.5px;letter-spacing:0.02em;text-transform:uppercase;color:var(--teal-deep);font-weight:600;}
+.onboard-summary-val{font-size:14px;font-weight:700;color:var(--ink);}
+
+.onboard-preview-actions{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:32px;}
+.onboard-preview-actions .pill.btn-lg{width:100%;justify-content:center;}
+.onboard-login-link{border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--muted);}
+.onboard-login-link:hover{color:var(--teal-deep);}
