@@ -58,7 +58,7 @@ export default function ConsoleLayout({ children }) {
   const [query, setQuery] = useState('');
   // allSubmissions로 부른다 — org.folders.map() 안에서 "이 파일에 든 항목"을
   // 가리키는 지역 변수 items와 이름이 겹치면 헷갈린다.
-  const { items: allSubmissions, status, removeSubmission } = useSubmissionsHistory();
+  const { items: allSubmissions, status, removeSubmission, refresh } = useSubmissionsHistory();
 
   const userKey = user?.user_id || user?.email || 'anon';
   const org = useOrganize(userKey);
@@ -239,6 +239,10 @@ export default function ConsoleLayout({ children }) {
   };
 
   const ready = status === 'ready';
+  // 파일(폴더)은 서버가 아니라 localStorage(organizeStore)에 있다 — 이력 조회가
+  // 실패해도 멀쩡히 그릴 수 있다. ready에 묶어두면 fetch 한 번 실패에 폴더까지
+  // 통째로 사라져, 사용자에겐 "내가 만든 파일이 없어졌다"로 보인다.
+  const organizeReady = ready || status === 'error';
 
   return (
     <div className={`home-chat${collapsed ? ' is-collapsed' : ''}`}>
@@ -270,7 +274,12 @@ export default function ConsoleLayout({ children }) {
 
         <div className="home-side-history">
           {status === 'loading' && <p className="home-side-empty">불러오는 중…</p>}
-          {status === 'error' && <p className="home-side-empty">불러오지 못했어요.</p>}
+          {status === 'error' && (
+            <p className="home-side-empty">
+              분석 이력을 불러오지 못했어요.{' '}
+              <button type="button" className="txt-link" onClick={refresh}>다시 시도</button>
+            </p>
+          )}
 
           {/* 고정됨 — 하나도 없으면 줄 자체를 안 그린다. 빈 섹션은 자리만 먹는다. */}
           {ready && pinned.length > 0 && (
@@ -281,7 +290,7 @@ export default function ConsoleLayout({ children }) {
           )}
 
           {/* 파일(폴더) */}
-          {ready && (
+          {organizeReady && (
             <>
               <div className="home-side-section">
                 <span>파일</span>
