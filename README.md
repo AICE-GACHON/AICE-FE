@@ -25,6 +25,7 @@ src/
 │   ├── auth/               로그인·가입·비밀번호 재설정
 │   ├── onboarding/         가입 전 4단계 설문
 │   ├── legal/              약관·개인정보처리방침
+│   ├── share/              비로그인 공개 공유 뷰 (SharedReportPage)
 │   └── workspace/          로그인 후 앱 (/app)
 │       ├── report/         분석 결과 화면
 │       ├── story/          논문 개정 히스토리
